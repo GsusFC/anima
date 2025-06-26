@@ -1,0 +1,72 @@
+Server listening at http://localhost:3001
+Processing export request with recipe: [
+  {
+    "id": "4178d9b5-6ac7-4e25-a504-1f079c409a52",
+    "duration": 2000,
+    "fileName": "WAIRE - SYSTEM IN OPERATION.jpg",
+    "transitionType": "none",
+    "transitionDuration": 500
+  },
+  {
+    "id": "6ebbb650-30c0-4ee6-94c6-eee603764270",
+    "duration": 2000,
+    "fileName": "PAID - CREATIVITY H3.jpg",
+    "transitionType": "slide_right",
+    "transitionDuration": 500
+  },
+  {
+    "id": "110f7a5a-c624-485b-833c-a6b56d4d8841",
+    "duration": 2000,
+    "fileName": "WAIRE - CREATIVITY H1.jpg",
+    "transitionType": "slide_up",
+    "transitionDuration": 500
+  },
+  {
+    "id": "30810c8d-5bd3-4fd9-8482-d42e676a35d2",
+    "duration": 2000,
+    "fileName": "PAID - POSTER MOCKUP.jpg",
+    "transitionType": "zoom_in",
+    "transitionDuration": 500
+  },
+  {
+    "id": "0da3e902-214a-4a95-9435-7b8c49a36bc5",
+    "duration": 2000,
+    "fileName": "PAID - SOCIAL.jpg",
+    "transitionType": "zoom_out",
+    "transitionDuration": 1000
+  }
+]
+Quality setting: custom
+Custom settings: {
+  fps: 30,
+  scale: 1440,
+  maxColors: 64,
+  dither: 'bayer:bayer_scale=2',
+  statsMode: 'diff'
+}
+Using quality settings: {
+  fps: 30,
+  scale: 1440,
+  maxColors: 64,
+  dither: 'bayer:bayer_scale=2',
+  statsMode: 'diff'
+}
+Adding input: /Users/gsus/CascadeProjects/AnimaGen/backend/temp/1750891041756/WAIRE - SYSTEM IN OPERATION.jpg (duration: 2000ms)
+Adding input: /Users/gsus/CascadeProjects/AnimaGen/backend/temp/1750891041756/PAID - CREATIVITY H3.jpg (duration: 2000ms)
+Adding input: /Users/gsus/CascadeProjects/AnimaGen/backend/temp/1750891041756/WAIRE - CREATIVITY H1.jpg (duration: 2000ms)
+Adding input: /Users/gsus/CascadeProjects/AnimaGen/backend/temp/1750891041756/PAID - POSTER MOCKUP.jpg (duration: 2000ms)
+Adding input: /Users/gsus/CascadeProjects/AnimaGen/backend/temp/1750891041756/PAID - SOCIAL.jpg (duration: 2000ms)
+Building filter complex...
+Multi-frame filter parts: [
+  '[0:v][1:v]xfade=transition=slideright:duration=0.500:offset=1.500[v1]',
+  '[v1][2:v]xfade=transition=slideup:duration=0.500:offset=3.000[v2]',
+  '[v2][3:v]xfade=transition=zoomin:duration=0.500:offset=4.500[v3]',
+  '[v3][4:v]xfade=transition=fade:duration=1.000:offset=5.500[v_chain_end]'
+]
+Complete base filter: [0:v][1:v]xfade=transition=slideright:duration=0.500:offset=1.500[v1];[v1][2:v]xfade=transition=slideup:duration=0.500:offset=3.000[v2];[v2][3:v]xfade=transition=zoomin:duration=0.500:offset=4.500[v3];[v3][4:v]xfade=transition=fade:duration=1.000:offset=5.500[v_chain_end];[v_chain_end]fps=30,scale=1440:-1:flags=lanczos[v_out]
+Final complete filter: [0:v][1:v]xfade=transition=slideright:duration=0.500:offset=1.500[v1];[v1][2:v]xfade=transition=slideup:duration=0.500:offset=3.000[v2];[v2][3:v]xfade=transition=zoomin:duration=0.500:offset=4.500[v3];[v3][4:v]xfade=transition=fade:duration=1.000:offset=5.500[v_chain_end];[v_chain_end]fps=30,scale=1440:-1:flags=lanczos[v_out];[v_out]split[gif1][gif2];[gif1]palettegen=max_colors=64:reserve_transparent=0:stats_mode=diff[pal];[gif2][pal]paletteuse=dither=bayer:bayer_scale=2:diff_mode=rectangle
+Temp directory: /Users/gsus/CascadeProjects/AnimaGen/backend/temp/1750891041756
+Output GIF path: /Users/gsus/CascadeProjects/AnimaGen/backend/output/animagen_1750891041756.gif
+Directory exists: true
+GIF generation command: ffmpeg -loop 1 -t 2 -i /Users/gsus/CascadeProjects/AnimaGen/backend/temp/1750891041756/WAIRE - SYSTEM IN OPERATION.jpg -loop 1 -t 2 -i /Users/gsus/CascadeProjects/AnimaGen/backend/temp/1750891041756/PAID - CREATIVITY H3.jpg -loop 1 -t 2 -i /Users/gsus/CascadeProjects/AnimaGen/backend/temp/1750891041756/WAIRE - CREATIVITY H1.jpg -loop 1 -t 2 -i /Users/gsus/CascadeProjects/AnimaGen/backend/temp/1750891041756/PAID - POSTER MOCKUP.jpg -loop 1 -t 2 -i /Users/gsus/CascadeProjects/AnimaGen/backend/temp/1750891041756/PAID - SOCIAL.jpg -y -filter_complex [0:v][1:v]xfade=transition=slideright:duration=0.500:offset=1.500[v1];[v1][2:v]xfade=transition=slideup:duration=0.500:offset=3.000[v2];[v2][3:v]xfade=transition=zoomin:duration=0.500:offset=4.500[v3];[v3][4:v]xfade=transition=fade:duration=1.000:offset=5.500[v_chain_end];[v_chain_end]fps=30,scale=1440:-1:flags=lanczos[v_out];[v_out]split[gif1][gif2];[gif1]palettegen=max_colors=64:reserve_transparent=0:stats_mode=diff[pal];[gif2][pal]paletteuse=dither=bayer:bayer_scale=2:diff_mode=rectangle -loop 0 -preset veryslow /Users/gsus/CascadeProjects/AnimaGen/backend/output/animagen_1750891041756.gif
+GIF created successfully

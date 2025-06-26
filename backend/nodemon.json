@@ -1,0 +1,6 @@
+{
+  "watch": ["index.js"],
+  "ignore": ["temp/*", "output/*"],
+  "signal": "SIGTERM",
+  "delay": "750"
+} 

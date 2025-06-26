@@ -1,0 +1,20 @@
+{
+  "images": [
+    {
+      "filename": "1750917479153_frame1.png"
+    },
+    {
+      "filename": "1750917479156_frame2.png"
+    },
+    {
+      "filename": "1750917479157_frame3.png"
+    }
+  ],
+  "transitions": [
+    {"type": "fade", "duration": 0.5},
+    {"type": "fade", "duration": 0.5}
+  ],
+  "duration": 1,
+  "quality": "standard",
+  "sessionId": "1750917479136"
+}
