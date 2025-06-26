@@ -29,7 +29,7 @@ const App: React.FC = () => {
         <div style={{
           flex: 1,
           display: 'flex',
-          minHeight: '400px'
+          minHeight: '380px'
         }}>
           {/* Left Sidebar - Image Upload */}
           <div style={{
@@ -63,7 +63,7 @@ const App: React.FC = () => {
         
         {/* Bottom Section - Timeline */}
         <div style={{
-          height: '280px',
+          height: '240px',
           borderTop: '1px solid #343536',
           flexShrink: 0
         }}>

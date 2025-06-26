@@ -206,7 +206,7 @@ const Timeline: React.FC = () => {
           display: 'flex',
           alignItems: timelineFrames.length === 0 ? 'center' : 'flex-start',
           justifyContent: timelineFrames.length === 0 ? 'center' : 'flex-start',
-          minHeight: '180px',
+          minHeight: '140px',
           transition: 'all 0.2s ease',
           gap: '16px',
           overflowX: 'auto',
@@ -248,8 +248,8 @@ const Timeline: React.FC = () => {
                   {/* Frame preview */}
                   <div style={{
                     position: 'relative',
-                    width: '200px',
-                    height: '130px',
+                    width: '160px',
+                    height: '100px',
                     backgroundColor: '#374151',
                     borderRadius: '3px',
                     border: '2px solid #4b5563',
@@ -331,8 +331,8 @@ const Timeline: React.FC = () => {
                   <div style={{
                     display: 'flex',
                     flexDirection: 'column',
-                    gap: '8px',
-                    width: '200px'
+                    gap: '6px',
+                    width: '160px'
                   }}>
                     {/* Duration */}
                     <div>
@@ -408,7 +408,7 @@ const Timeline: React.FC = () => {
                       <div style={{
                         display: 'flex',
                         alignItems: 'center',
-                        height: '130px' // Same height as frame cards (200x130)
+                        height: '100px' // Same height as frame cards (160x100)
                       }}>
                         <button
                           onClick={() => setExpandedTransitionId(frame.id)}
