@@ -108,8 +108,8 @@ const Preview: React.FC = () => {
         alignItems: 'center',
         justifyContent: 'center',
         position: 'relative',
-        minHeight: '250px',
-        maxHeight: '300px'
+        minHeight: '500px',
+        maxHeight: '600px'
       }}>
         {/* Preview Content */}
         {getCurrentPreview() ? (

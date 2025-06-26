@@ -29,7 +29,7 @@ const App: React.FC = () => {
         <div style={{
           flex: 1,
           display: 'flex',
-          minHeight: '380px'
+          minHeight: '580px'
         }}>
           {/* Left Sidebar - Image Upload */}
           <div style={{
