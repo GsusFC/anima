@@ -183,8 +183,13 @@ io.on('connection', (socket) => {
   });
 });
 
-// Routes
-app.get('/', (req, res) => {
+// Serve static frontend files in production FIRST
+if (process.env.NODE_ENV === 'production') {
+  app.use(express.static(path.join(__dirname, 'public')));
+}
+
+// API Routes
+app.get('/api/status', (req, res) => {
   res.json({ 
     message: 'AnimaGen Backend Server',
     status: 'running',
@@ -1012,11 +1017,8 @@ if (process.env.NODE_ENV !== 'test') {
   process.on('SIGINT', shutdown);
 }
 
-// Serve static frontend files in production
+// Serve React app for all non-API routes (catch-all route)
 if (process.env.NODE_ENV === 'production') {
-  app.use(express.static(path.join(__dirname, 'public')));
-  
-  // Serve React app for all non-API routes
   app.get('*', (req, res) => {
     // Skip API routes
     if (req.path.startsWith('/api') || req.path.startsWith('/upload') || req.path.startsWith('/download') || req.path.startsWith('/compositions')) {
