@@ -1012,5 +1012,29 @@ if (process.env.NODE_ENV !== 'test') {
   process.on('SIGINT', shutdown);
 }
 
+// Serve static frontend files in production
+if (process.env.NODE_ENV === 'production') {
+  app.use(express.static(path.join(__dirname, 'public')));
+  
+  // Serve React app for all non-API routes
+  app.get('*', (req, res) => {
+    // Skip API routes
+    if (req.path.startsWith('/api') || req.path.startsWith('/upload') || req.path.startsWith('/download') || req.path.startsWith('/compositions')) {
+      return res.status(404).json({ error: 'API endpoint not found' });
+    }
+    
+    res.sendFile(path.join(__dirname, 'public', 'index.html'));
+  });
+}
+
+// Health check endpoint for Railway
+app.get('/api/health', (req, res) => {
+  res.status(200).json({ 
+    status: 'ok', 
+    timestamp: new Date().toISOString(),
+    uptime: process.uptime()
+  });
+});
+
 // Export app for testing
 module.exports = app; 

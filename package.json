@@ -1,0 +1,18 @@
+{
+  "name": "animagen",
+  "version": "1.0.0",
+  "description": "Professional animation creation tool",
+  "main": "backend/index.js",
+  "scripts": {
+    "start": "cd backend && npm start",
+    "build": "cd frontend && npm install && npm run build",
+    "install-all": "cd backend && npm install && cd ../frontend && npm install",
+    "dev": "concurrently \"cd backend && npm run dev\" \"cd frontend && npm run dev\"",
+    "test": "cd backend && npm test"
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  },
+  "author": "GsusFC",
+  "license": "MIT"
+}
