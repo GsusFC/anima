@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import TransitionModal from './TransitionModal';
 
 interface TimelineFrame {
   id: string;
@@ -14,7 +15,8 @@ const Timeline: React.FC = () => {
   const [dragActive, setDragActive] = useState(false);
   const [previews, setPreviews] = useState<{[key: string]: string}>({});
   const [hoveredFrameId, setHoveredFrameId] = useState<string | null>(null);
-  const [expandedTransitionId, setExpandedTransitionId] = useState<string | null>(null);
+  const [transitionModalOpen, setTransitionModalOpen] = useState(false);
+  const [editingTransitionId, setEditingTransitionId] = useState<string | null>(null);
 
   // Listen for file addition events from ImageUpload
   React.useEffect(() => {
@@ -144,6 +146,32 @@ const Timeline: React.FC = () => {
     );
   };
 
+  const openTransitionModal = (frameId: string) => {
+    setEditingTransitionId(frameId);
+    setTransitionModalOpen(true);
+  };
+
+  const closeTransitionModal = () => {
+    setTransitionModalOpen(false);
+    setEditingTransitionId(null);
+  };
+
+  const applyTransition = (transition: string, duration: number) => {
+    if (editingTransitionId) {
+      updateFrameTransition(editingTransitionId, transition);
+      updateTransitionDuration(editingTransitionId, duration);
+    }
+  };
+
+  const getCurrentTransition = () => {
+    if (!editingTransitionId) return { transition: 'none', duration: 0.3 };
+    const frame = timelineFrames.find(f => f.id === editingTransitionId);
+    return {
+      transition: frame?.transition || 'none',
+      duration: frame?.transitionDuration || 0.3
+    };
+  };
+
   const duplicateFrame = (id: string) => {
     const frameToClone = timelineFrames.find(frame => frame.id === id);
     if (frameToClone) {
@@ -183,10 +211,7 @@ const Timeline: React.FC = () => {
     }));
   }, [totalDuration, timelineFrames]);
 
-  const transitions = [
-    'none', 'fade', 'crossfade', 'dissolve', 'slideLeft', 'slideRight', 
-    'slideUp', 'slideDown', 'zoomIn', 'zoomOut', 'rotateLeft', 'rotateRight'
-  ];
+
 
   return (
     <div style={{
@@ -260,6 +285,22 @@ const Timeline: React.FC = () => {
                     transition: 'all 0.2s ease',
                     overflow: 'hidden'
                   }}>
+                    {/* Frame number indicator */}
+                    <div style={{
+                      position: 'absolute',
+                      top: '4px',
+                      left: '4px',
+                      backgroundColor: 'rgba(0, 0, 0, 0.7)',
+                      color: '#ff4500',
+                      fontSize: '10px',
+                      fontFamily: '"Space Mono", monospace',
+                      padding: '2px 6px',
+                      borderRadius: '2px',
+                      zIndex: 5
+                    }}>
+                      #{index + 1}
+                    </div>
+
                     {/* Image preview */}
                     {previews[frame.file.name + frame.file.size] ? (
                       <img
@@ -403,15 +444,15 @@ const Timeline: React.FC = () => {
                     marginTop: '20px',
                     position: 'relative'
                   }}>
-                    {/* STATE 1: No Transition - Just centered + button */}
-                    {frame.transition === 'none' && expandedTransitionId !== frame.id && (
+                    {/* No Transition - Add Button */}
+                    {frame.transition === 'none' && (
                       <div style={{
                         display: 'flex',
                         alignItems: 'center',
-                        height: '100px' // Same height as frame cards (160x100)
+                        height: '100px'
                       }}>
                         <button
-                          onClick={() => setExpandedTransitionId(frame.id)}
+                          onClick={() => openTransitionModal(frame.id)}
                           style={{
                             width: '28px',
                             height: '28px',
@@ -445,147 +486,10 @@ const Timeline: React.FC = () => {
                       </div>
                     )}
 
-                    {/* STATE 2: Configuring Transition */}
-                    {expandedTransitionId === frame.id && (
-                      <div style={{
-                        width: '140px',
-                        backgroundColor: '#1a1a1b',
-                        border: '1px solid #343536',
-                        borderRadius: '3px',
-                        padding: '12px',
-                        transition: 'all 0.3s ease'
-                      }}>
-                        {/* Header with close and delete buttons */}
-                        <div style={{
-                          display: 'flex',
-                          justifyContent: 'space-between',
-                          alignItems: 'center',
-                          marginBottom: '8px'
-                        }}>
-                          <button
-                            onClick={() => {
-                              updateFrameTransition(frame.id, 'none');
-                              setExpandedTransitionId(null);
-                            }}
-                            style={{
-                              padding: '2px 6px',
-                              fontSize: '8px',
-                              backgroundColor: '#ef4444',
-                              color: 'white',
-                              border: 'none',
-                              borderRadius: '2px',
-                              cursor: 'pointer',
-                              fontFamily: '"Space Mono", monospace'
-                            }}
-                          >
-                            DELETE
-                          </button>
-                          <button
-                            onClick={() => setExpandedTransitionId(null)}
-                            style={{
-                              width: '16px',
-                              height: '16px',
-                              backgroundColor: 'transparent',
-                              border: 'none',
-                              color: '#9ca3af',
-                              cursor: 'pointer',
-                              fontSize: '12px'
-                            }}
-                          >
-                            ×
-                          </button>
-                        </div>
-
-                        {/* Transition Type */}
-                        <div style={{ marginBottom: '10px' }}>
-                          <label style={{
-                            fontSize: '9px',
-                            color: '#9ca3af',
-                            fontFamily: '"Space Mono", monospace',
-                            display: 'block',
-                            marginBottom: '4px'
-                          }}>
-                            TYPE
-                          </label>
-                          <select
-                            value={frame.transition}
-                            onChange={(e) => updateFrameTransition(frame.id, e.target.value)}
-                            style={{
-                              width: '100%',
-                              padding: '6px 8px',
-                              fontSize: '10px',
-                              backgroundColor: '#374151',
-                              border: '1px solid #4a5568',
-                              borderRadius: '2px',
-                              color: 'white',
-                              fontFamily: '"Space Mono", monospace'
-                            }}
-                          >
-                            <option value="none">NO TRANSITION</option>
-                            {transitions.filter(t => t !== 'none').map(trans => (
-                              <option key={trans} value={trans}>
-                                {trans.toUpperCase()}
-                              </option>
-                            ))}
-                          </select>
-                        </div>
-
-                        {/* Duration Slider */}
-                        <div>
-                          <label style={{
-                            fontSize: '9px',
-                            color: '#9ca3af',
-                            fontFamily: '"Space Mono", monospace',
-                            display: 'block',
-                            marginBottom: '4px'
-                          }}>
-                            DURATION: {frame.transitionDuration}s
-                          </label>
-                          <input
-                            type="range"
-                            min="0"
-                            max="4"
-                            step="1"
-                            value={[0.1, 0.3, 0.5, 1.0, 2.0].indexOf(frame.transitionDuration)}
-                            onChange={(e) => {
-                              const durations = [0.1, 0.3, 0.5, 1.0, 2.0];
-                              updateTransitionDuration(frame.id, durations[parseInt(e.target.value)]);
-                            }}
-                            style={{
-                              width: '100%',
-                              height: '4px',
-                              background: `linear-gradient(to right, #ff4500 0%, #ff4500 ${([0.1, 0.3, 0.5, 1.0, 2.0].indexOf(frame.transitionDuration) / 4) * 100}%, #4a5568 ${([0.1, 0.3, 0.5, 1.0, 2.0].indexOf(frame.transitionDuration) / 4) * 100}%, #4a5568 100%)`,
-                              borderRadius: '2px',
-                              outline: 'none',
-                              appearance: 'none',
-                              cursor: 'pointer',
-                              WebkitAppearance: 'none'
-                            }}
-                          />
-                          <div style={{
-                            display: 'flex',
-                            justifyContent: 'space-between',
-                            fontSize: '7px',
-                            color: '#6b7280',
-                            fontFamily: '"Space Mono", monospace',
-                            marginTop: '2px'
-                          }}>
-                            <span>0.1s</span>
-                            <span>0.3s</span>
-                            <span>0.5s</span>
-                            <span>1s</span>
-                            <span>2s</span>
-                          </div>
-                        </div>
-
-
-                      </div>
-                    )}
-
-                    {/* STATE 3: Configured Transition */}
-                    {frame.transition !== 'none' && expandedTransitionId !== frame.id && (
+                    {/* Configured Transition */}
+                    {frame.transition !== 'none' && (
                       <div 
-                        onClick={() => setExpandedTransitionId(frame.id)}
+                        onClick={() => openTransitionModal(frame.id)}
                         style={{
                           width: '120px',
                           height: '32px',
@@ -651,6 +555,15 @@ const Timeline: React.FC = () => {
           </div>
         )}
       </div>
+
+      {/* Transition Configuration Modal */}
+      <TransitionModal
+        isOpen={transitionModalOpen}
+        currentTransition={getCurrentTransition().transition}
+        currentDuration={getCurrentTransition().duration}
+        onClose={closeTransitionModal}
+        onApply={applyTransition}
+      />
     </div>
   );
 };

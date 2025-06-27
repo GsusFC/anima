@@ -1,1 +1,64 @@
- 
+# Dependencies
+node_modules/
+*/node_modules/
+
+# Build outputs
+dist/
+build/
+
+# Environment files
+.env
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+
+# Logs
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+*.log
+backend/backend.log
+backend/preview_debug.log
+
+# Runtime data
+pids
+*.pid
+*.seed
+*.pid.lock
+
+# Generated files and temp directories
+backend/output/
+backend/temp/
+backend/compositions/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS generated files
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+
+# Testing
+coverage/
+
+# Build info
+*.tsbuildinfo
+
+# Vite
+.vite/
+
+# FFmpeg temp files
+*.tmp
+
+# Test files
+test_*.json

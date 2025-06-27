@@ -8,12 +8,13 @@ import ExportControls from './components/ExportControls/ExportControls';
 const App: React.FC = () => {
   return (
     <div style={{
-      minHeight: '100vh',
+      height: '100vh',
       backgroundColor: '#0a0a0b',
       color: 'white',
       display: 'flex',
       flexDirection: 'column',
-      fontFamily: '"Space Mono", monospace'
+      fontFamily: '"Space Mono", monospace',
+      overflow: 'hidden'
     }}>
       {/* Header */}
       <Header />
@@ -29,14 +30,15 @@ const App: React.FC = () => {
         <div style={{
           flex: 1,
           display: 'flex',
-          minHeight: '580px'
+          minHeight: 0
         }}>
           {/* Left Sidebar - Image Upload */}
           <div style={{
             width: '320px',
             borderRight: '1px solid #343536',
             display: 'flex',
-            flexDirection: 'column'
+            flexDirection: 'column',
+            minHeight: 0
           }}>
             <ImageUpload />
           </div>
@@ -46,7 +48,8 @@ const App: React.FC = () => {
             flex: 1,
             borderRight: '1px solid #343536',
             display: 'flex',
-            flexDirection: 'column'
+            flexDirection: 'column',
+            minHeight: 0
           }}>
             <Preview />
           </div>
@@ -55,7 +58,8 @@ const App: React.FC = () => {
           <div style={{
             width: '320px',
             display: 'flex',
-            flexDirection: 'column'
+            flexDirection: 'column',
+            minHeight: 0
           }}>
             <ExportControls />
           </div>
@@ -65,7 +69,8 @@ const App: React.FC = () => {
         <div style={{
           height: '240px',
           borderTop: '1px solid #343536',
-          flexShrink: 0
+          flexShrink: 0,
+          overflow: 'hidden'
         }}>
           <Timeline />
         </div>

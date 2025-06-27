@@ -1,0 +1,219 @@
+/* General Transition Group Setup */
+.transition-group {
+  position: relative;
+}
+
+.transition-group > * {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  will-change: transform, opacity;
+  backface-visibility: hidden;
+}
+
+/* --- FADE TRANSITION --- */
+.fade-enter {
+  opacity: 0;
+}
+.fade-enter-active {
+  opacity: 1;
+  transition: opacity 300ms ease-in-out;
+}
+.fade-exit {
+  opacity: 1;
+}
+.fade-exit-active {
+  opacity: 0;
+  transition: opacity 300ms ease-in-out;
+}
+
+/* --- SLIDE LEFT TRANSITION --- */
+/* Enter: New image slides in from the right */
+.slideLeft-enter {
+  transform: translateX(100%);
+}
+.slideLeft-enter-active {
+  transform: translateX(0%);
+  transition: transform 300ms cubic-bezier(0.4, 0, 0.2, 1);
+}
+/* Exit: Old image slides out to the left */
+.slideLeft-exit {
+  transform: translateX(0%);
+}
+.slideLeft-exit-active {
+  transform: translateX(-100%);
+  transition: transform 300ms cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* --- SLIDE RIGHT TRANSITION --- */
+/* Enter: New image slides in from the left */
+.slideRight-enter {
+  transform: translateX(-100%);
+}
+.slideRight-enter-active {
+  transform: translateX(0%);
+  transition: transform 300ms cubic-bezier(0.4, 0, 0.2, 1);
+}
+/* Exit: Old image slides out to the right */
+.slideRight-exit {
+  transform: translateX(0%);
+}
+.slideRight-exit-active {
+  transform: translateX(100%);
+  transition: transform 300ms cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* --- SLIDE UP TRANSITION --- */
+/* Enter: New image slides in from the bottom */
+.slideUp-enter {
+  transform: translateY(100%);
+}
+.slideUp-enter-active {
+  transform: translateY(0%);
+  transition: transform 300ms cubic-bezier(0.4, 0, 0.2, 1);
+}
+/* Exit: Old image slides out to the top */
+.slideUp-exit {
+  transform: translateY(0%);
+}
+.slideUp-exit-active {
+  transform: translateY(-100%);
+  transition: transform 300ms cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* --- SLIDE DOWN TRANSITION --- */
+/* Enter: New image slides in from the top */
+.slideDown-enter {
+  transform: translateY(-100%);
+}
+.slideDown-enter-active {
+  transform: translateY(0%);
+  transition: transform 300ms cubic-bezier(0.4, 0, 0.2, 1);
+}
+/* Exit: Old image slides out to the bottom */
+.slideDown-exit {
+  transform: translateY(0%);
+}
+.slideDown-exit-active {
+  transform: translateY(100%);
+  transition: transform 300ms cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* --- ZOOM IN TRANSITION --- */
+.zoomIn-enter {
+  transform: scale(0.9);
+  opacity: 0;
+}
+.zoomIn-enter-active {
+  transform: scale(1);
+  opacity: 1;
+  transition: transform 300ms, opacity 300ms;
+}
+.zoomIn-exit {
+  transform: scale(1);
+  opacity: 1;
+}
+.zoomIn-exit-active {
+  transform: scale(1.1);
+  opacity: 0;
+  transition: transform 300ms, opacity 300ms;
+}
+
+/* --- ZOOM OUT TRANSITION --- */
+.zoomOut-enter {
+  transform: scale(1.1);
+  opacity: 0;
+}
+.zoomOut-enter-active {
+  transform: scale(1);
+  opacity: 1;
+  transition: transform 300ms, opacity 300ms;
+}
+.zoomOut-exit {
+  transform: scale(1);
+  opacity: 1;
+}
+.zoomOut-exit-active {
+  transform: scale(0.9);
+  opacity: 0;
+  transition: transform 300ms, opacity 300ms;
+}
+
+/* --- ROTATE LEFT TRANSITION --- */
+.rotateLeft-enter {
+  transform: rotate(180deg) scale(0.8);
+  opacity: 0;
+}
+.rotateLeft-enter-active {
+  transform: rotate(0deg) scale(1);
+  opacity: 1;
+  transition: transform 400ms cubic-bezier(0.25, 0.46, 0.45, 0.94), opacity 300ms ease-in-out;
+}
+.rotateLeft-exit {
+  transform: rotate(0deg) scale(1);
+  opacity: 1;
+}
+.rotateLeft-exit-active {
+  transform: rotate(-180deg) scale(0.8);
+  opacity: 0;
+  transition: transform 400ms cubic-bezier(0.25, 0.46, 0.45, 0.94), opacity 300ms ease-in-out;
+}
+
+/* --- ROTATE RIGHT TRANSITION --- */
+.rotateRight-enter {
+  transform: rotate(-180deg) scale(0.8);
+  opacity: 0;
+}
+.rotateRight-enter-active {
+  transform: rotate(0deg) scale(1);
+  opacity: 1;
+  transition: transform 400ms cubic-bezier(0.25, 0.46, 0.45, 0.94), opacity 300ms ease-in-out;
+}
+.rotateRight-exit {
+  transform: rotate(0deg) scale(1);
+  opacity: 1;
+}
+.rotateRight-exit-active {
+  transform: rotate(180deg) scale(0.8);
+  opacity: 0;
+  transition: transform 400ms cubic-bezier(0.25, 0.46, 0.45, 0.94), opacity 300ms ease-in-out;
+}
+
+/* --- CROSSFADE --- */
+.crossfade-enter {
+  opacity: 0;
+}
+.crossfade-enter-active {
+  opacity: 1;
+  transition: opacity 300ms ease-in-out;
+}
+.crossfade-exit {
+  opacity: 1;
+}
+.crossfade-exit-active {
+  opacity: 0;
+  transition: opacity 300ms ease-in-out;
+}
+
+/* --- DISSOLVE TRANSITION --- */
+.dissolve-enter {
+  opacity: 0;
+  filter: blur(10px);
+}
+.dissolve-enter-active {
+  opacity: 1;
+  filter: blur(0px);
+  transition: opacity 400ms ease-in-out, filter 400ms ease-in-out;
+}
+.dissolve-exit {
+  opacity: 1;
+  filter: blur(0px);
+}
+.dissolve-exit-active {
+  opacity: 0;
+  filter: blur(10px);
+  transition: opacity 400ms ease-in-out, filter 400ms ease-in-out;
+} 

@@ -22,6 +22,24 @@ export interface ExportResponse {
   filename: string;
   downloadUrl: string;
   message: string;
+  compositionId?: string; // Added for composition tracking
+}
+
+export interface CompositionData {
+  id: string;
+  sessionId: string;
+  images: Array<{ filename: string; originalFilename: string; path: string }>;
+  transitions: Array<{ type: string; duration: number }>;
+  frameDurations: number[];
+  quality: string;
+  type: string;
+  createdAt: string;
+  exports: Array<{
+    format: string;
+    filename: string;
+    settings: any;
+    timestamp: string;
+  }>;
 }
 
 export interface ProgressEvent {
@@ -104,11 +122,13 @@ export const useAPI = () => {
     quality?: string;
     sessionId: string;
   }): Promise<ExportResponse> => {
+    console.log('🚀 Starting GIF export with params:', params);
     setIsExporting(true);
     setExportProgress(null);
     connectSocket();
 
     try {
+      console.log('📤 Sending fetch request to /export/gif');
       const response = await fetch(`${API_BASE_URL}/export/gif`, {
         method: 'POST',
         headers: {
@@ -117,14 +137,20 @@ export const useAPI = () => {
         body: JSON.stringify(params),
       });
 
+      console.log('📥 Received response:', response.status, response.statusText);
+
       if (!response.ok) {
         const error = await response.json();
+        console.log('❌ Response error:', error);
         throw new Error(error.details || 'GIF export failed');
       }
 
       const result: ExportResponse = await response.json();
+      console.log('✅ Parsed response JSON:', result);
+      setIsExporting(false);  // Reset exporting state on success
       return result;
     } catch (error) {
+      console.log('💥 Export error in useAPI:', error);
       setIsExporting(false);
       throw error;
     }
@@ -158,6 +184,7 @@ export const useAPI = () => {
       }
 
       const result: ExportResponse = await response.json();
+      setIsExporting(false);  // Reset exporting state on success
       return result;
     } catch (error) {
       setIsExporting(false);
@@ -169,6 +196,56 @@ export const useAPI = () => {
   const downloadFile = (filename: string) => {
     const url = `${API_BASE_URL}/download/${filename}`;
     window.open(url, '_blank');
+  };
+
+  // Re-export existing composition in different format
+  const reExportComposition = async (compositionId: string, format: 'gif' | 'mp4' | 'webm', quality?: string): Promise<ExportResponse> => {
+    console.log(`🔄 Re-exporting composition ${compositionId} as ${format.toUpperCase()}`);
+    setIsExporting(true);
+    setExportProgress(null);
+    connectSocket();
+
+    try {
+      const response = await fetch(`${API_BASE_URL}/compositions/${compositionId}/export`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ format, quality }),
+      });
+
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.details || `${format.toUpperCase()} re-export failed`);
+      }
+
+      const result: ExportResponse = await response.json();
+      console.log(`✅ Re-export successful:`, result);
+      setIsExporting(false);  // Reset exporting state on success
+      return result;
+    } catch (error) {
+      console.error('💥 Re-export error:', error);
+      setIsExporting(false);
+      throw error;
+    }
+  };
+
+  // Get composition details
+  const getComposition = async (compositionId: string): Promise<CompositionData> => {
+    try {
+      const response = await fetch(`${API_BASE_URL}/compositions/${compositionId}`);
+      
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.details || 'Failed to get composition');
+      }
+
+      const result = await response.json();
+      return result.composition;
+    } catch (error) {
+      console.error('Failed to get composition:', error);
+      throw error;
+    }
   };
 
   // Cleanup session
@@ -196,6 +273,8 @@ export const useAPI = () => {
     uploadFiles,
     exportGIF,
     exportVideo,
+    reExportComposition,
+    getComposition,
     downloadFile,
     cleanupSession,
     connectSocket,

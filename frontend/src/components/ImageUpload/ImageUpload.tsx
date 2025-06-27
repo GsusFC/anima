@@ -32,8 +32,19 @@ const ImageUpload: React.FC = () => {
   // Function to add all files to timeline
   const addAllToTimeline = () => {
     files.forEach(file => {
+      const uploadedFile = uploadedFiles[file.name + file.size];
+      // Store file data for timeline access
       (window as any).__selectedFile = file;
-      window.dispatchEvent(new CustomEvent('addFileToTimeline', { detail: { file } }));
+      (window as any).__uploadedFileInfo = uploadedFile;
+      (window as any).__sessionId = sessionId;
+      // Dispatch custom event to notify timeline
+      window.dispatchEvent(new CustomEvent('addFileToTimeline', { 
+        detail: { 
+          file, 
+          uploadedFile,
+          sessionId 
+        } 
+      }));
     });
   };
 
@@ -147,7 +158,7 @@ const ImageUpload: React.FC = () => {
 
   return (
     <div style={{
-      flex: 1,
+      height: '100%',
       display: 'flex',
       flexDirection: 'column',
       padding: '16px'
@@ -164,175 +175,205 @@ const ImageUpload: React.FC = () => {
       {/* File List */}
       <div style={{
         flex: 1,
-        overflow: 'auto'
+        display: 'flex',
+        flexDirection: 'column',
+        minHeight: 0
       }}>
-        <div style={{
-          display: 'flex',
-          flexDirection: 'column',
-          gap: '8px'
-        }}>
-          {/* Add Image Card - Always first */}
-          <div 
-            style={{
-              position: 'relative',
-              width: '100%',
-              height: '60px',
-              backgroundColor: dragActive ? '#1a1a1b' : '#0f0f0f',
-              borderRadius: '2px',
-              border: `2px dashed ${dragActive ? '#ff4500' : '#343536'}`,
-              cursor: 'pointer',
-              overflow: 'hidden',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              transition: 'all 0.2s ease'
-            }}
-            onDragEnter={handleDrag}
-            onDragLeave={handleDrag}
-            onDragOver={handleDrag}
-            onDrop={handleDrop}
-            onClick={() => fileInputRef.current?.click()}
-          >
-            <svg style={{ width: '24px', height: '24px', color: '#6b7280', marginRight: '8px' }} fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
-            </svg>
-            <span style={{ 
-              color: dragActive ? '#ff4500' : '#9ca3af', 
-              fontSize: '12px', 
-              fontFamily: '"Space Mono", monospace' 
-            }}>
-              {isUploading ? 'UPLOADING...' : dragActive ? 'DROP HERE' : 'ADD IMAGES'}
-            </span>
-          </div>
+        {/* Add Image Card - Always visible at top */}
+        <div 
+          style={{
+            position: 'relative',
+            width: '100%',
+            height: '60px',
+            backgroundColor: dragActive ? '#1a1a1b' : '#0f0f0f',
+            borderRadius: '2px',
+            border: `2px dashed ${dragActive ? '#ff4500' : '#343536'}`,
+            cursor: 'pointer',
+            overflow: 'hidden',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            transition: 'all 0.2s ease',
+            marginBottom: '8px',
+            flexShrink: 0
+          }}
+          onDragEnter={handleDrag}
+          onDragLeave={handleDrag}
+          onDragOver={handleDrag}
+          onDrop={handleDrop}
+          onClick={() => fileInputRef.current?.click()}
+        >
+          <svg style={{ width: '24px', height: '24px', color: '#6b7280', marginRight: '8px' }} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
+          </svg>
+          <span style={{ 
+            color: dragActive ? '#ff4500' : '#9ca3af', 
+            fontSize: '12px', 
+            fontFamily: '"Space Mono", monospace' 
+          }}>
+            {isUploading ? 'UPLOADING...' : dragActive ? 'DROP HERE' : 'ADD IMAGES'}
+          </span>
+        </div>
 
-          {/* Existing Images */}
-          {files.map((file, index) => (
-              <div 
-                key={index}
-                draggable={true}
-                onDragStart={(e) => {
-                  e.dataTransfer.setData('application/x-file-name', file.name);
-                  e.dataTransfer.setData('application/x-file-index', index.toString());
-                  // Store file data for transfer
-                  (window as any).__draggedFile = file;
-                }}
-                onClick={() => addToTimeline(file)}
-                style={{
-                  position: 'relative',
-                  width: '100%',
-                  height: '60px',
-                  backgroundColor: '#1a1a1b',
-                  borderRadius: '2px',
-                  border: '1px solid #343536',
-                  cursor: 'pointer',
-                  overflow: 'hidden',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  transition: 'all 0.2s ease'
-                }}
-                onMouseEnter={(e) => {
-                  e.currentTarget.style.backgroundColor = '#343536';
-                  e.currentTarget.style.borderColor = '#ff4500';
-                }}
-                onMouseLeave={(e) => {
-                  e.currentTarget.style.backgroundColor = '#1a1a1b';
-                  e.currentTarget.style.borderColor = '#343536';
-                }}
-              >
-                {previews[file.name + file.size] ? (
-                  <img
-                    src={previews[file.name + file.size]}
-                    alt={file.name}
-                    style={{
-                      width: '100%',
-                      height: '100%',
-                      objectFit: 'cover',
-                      borderRadius: '2px'
-                    }}
-                  />
-                ) : (
-                  <svg style={{ width: '32px', height: '32px', color: '#9ca3af' }} fill="currentColor" viewBox="0 0 24 24">
-                    <path d="M21 19V5c0-1.1-.9-2-2-2H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2zM8.5 13.5l2.5 3.01L14.5 12l4.5 6H5l3.5-4.5z"/>
-                  </svg>
-                )}
-                
-                {/* Click indicator */}
-                <div style={{
-                  position: 'absolute',
-                  top: '4px',
-                  left: '4px',
-                  padding: '2px 6px',
-                  backgroundColor: 'rgba(255, 69, 0, 0.8)',
-                  borderRadius: '2px',
-                  fontSize: '8px',
-                  color: 'white',
-                  fontFamily: '"Space Mono", monospace',
-                  fontWeight: 'bold',
-                  backdropFilter: 'blur(4px)'
-                }}>
-                  CLICK TO ADD
-                </div>
-                
-                {/* Remove button */}
-                <button
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    removeFile(index);
+        {/* Scrollable Images List */}
+        <div style={{
+          flex: 1,
+          overflowY: 'auto',
+          overflowX: 'hidden',
+          paddingRight: '8px',
+          minHeight: 0,
+          scrollbarWidth: 'thin',
+          scrollbarColor: '#4b5563 transparent'
+        }}>
+          <div style={{
+            display: 'flex',
+            flexDirection: 'column',
+            gap: '8px',
+            paddingBottom: '8px'
+          }}>
+            {/* Debug info */}
+            <div style={{
+              padding: '8px',
+              backgroundColor: '#2a2a2a',
+              color: '#ff4500',
+              fontSize: '10px',
+              fontFamily: '"Space Mono", monospace'
+            }}>
+              DEBUG: {files.length} images loaded
+            </div>
+            
+            {/* Existing Images */}
+            {files.map((file, index) => (
+                <div 
+                  key={index}
+                  draggable={true}
+                  onDragStart={(e) => {
+                    e.dataTransfer.setData('application/x-file-name', file.name);
+                    e.dataTransfer.setData('application/x-file-index', index.toString());
+                    (window as any).__draggedFile = file;
                   }}
+                  onClick={() => addToTimeline(file)}
                   style={{
-                    position: 'absolute',
-                    top: '4px',
-                    right: '4px',
-                    width: '20px',
-                    height: '20px',
-                    borderRadius: '50%',
-                    backgroundColor: 'rgba(239, 68, 68, 0.8)',
-                    border: 'none',
-                    color: 'white',
+                    position: 'relative',
+                    width: '100%',
+                    height: '60px',
+                    backgroundColor: '#1a1a1b',
+                    borderRadius: '2px',
+                    border: '1px solid #343536',
                     cursor: 'pointer',
+                    overflow: 'hidden',
                     display: 'flex',
                     alignItems: 'center',
                     justifyContent: 'center',
-                    fontSize: '12px',
-                    backdropFilter: 'blur(4px)'
+                    transition: 'all 0.2s ease',
+                    flexShrink: 0
+                  }}
+                  onMouseEnter={(e) => {
+                    e.currentTarget.style.backgroundColor = '#343536';
+                    e.currentTarget.style.borderColor = '#ff4500';
+                  }}
+                  onMouseLeave={(e) => {
+                    e.currentTarget.style.backgroundColor = '#1a1a1b';
+                    e.currentTarget.style.borderColor = '#343536';
                   }}
                 >
-                  ×
-                </button>
-              </div>
-            ))}
-
-          {/* ADD ALL Button - After images */}
-          {files.length > 0 && (
-            <div style={{ marginTop: '8px' }}>
-              <button
-                onClick={addAllToTimeline}
-                style={{
-                  width: '100%',
-                  padding: '8px 12px',
-                  fontSize: '11px',
-                  backgroundColor: 'rgba(255, 69, 0, 0.15)',
-                  color: '#ff4500',
-                  border: '1px solid #ff4500',
-                  borderRadius: '2px',
-                  cursor: 'pointer',
-                  fontFamily: '"Space Mono", monospace',
-                  fontWeight: 'bold',
-                  transition: 'all 0.2s ease'
-                }}
-                onMouseEnter={(e) => {
-                  e.currentTarget.style.backgroundColor = 'rgba(255, 69, 0, 0.25)';
-                }}
-                onMouseLeave={(e) => {
-                  e.currentTarget.style.backgroundColor = 'rgba(255, 69, 0, 0.15)';
-                }}
-              >
-                ADD ALL TO TIMELINE ({files.length})
-              </button>
-            </div>
-          )}
+                  {previews[file.name + file.size] ? (
+                    <img
+                      src={previews[file.name + file.size]}
+                      alt={file.name}
+                      style={{
+                        width: '100%',
+                        height: '100%',
+                        objectFit: 'cover',
+                        borderRadius: '2px'
+                      }}
+                    />
+                  ) : (
+                    <svg style={{ width: '32px', height: '32px', color: '#9ca3af' }} fill="currentColor" viewBox="0 0 24 24">
+                      <path d="M21 19V5c0-1.1-.9-2-2-2H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2zM8.5 13.5l2.5 3.01L14.5 12l4.5 6H5l3.5-4.5z"/>
+                    </svg>
+                  )}
+                  
+                  {/* Click indicator */}
+                  <div style={{
+                    position: 'absolute',
+                    top: '4px',
+                    left: '4px',
+                    padding: '2px 6px',
+                    backgroundColor: 'rgba(255, 69, 0, 0.8)',
+                    borderRadius: '2px',
+                    fontSize: '8px',
+                    color: 'white',
+                    fontFamily: '"Space Mono", monospace',
+                    fontWeight: 'bold',
+                    backdropFilter: 'blur(4px)'
+                  }}>
+                    CLICK TO ADD
+                  </div>
+                  
+                  {/* Remove button */}
+                  <button
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      removeFile(index);
+                    }}
+                    style={{
+                      position: 'absolute',
+                      top: '4px',
+                      right: '4px',
+                      width: '20px',
+                      height: '20px',
+                      borderRadius: '50%',
+                      backgroundColor: 'rgba(239, 68, 68, 0.8)',
+                      border: 'none',
+                      color: 'white',
+                      cursor: 'pointer',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      fontSize: '12px',
+                      backdropFilter: 'blur(4px)'
+                    }}
+                  >
+                    ×
+                  </button>
+                </div>
+              ))}
+          </div>
         </div>
+
+        {/* ADD ALL Button - Always visible at bottom */}
+        {files.length > 0 && (
+          <div style={{ 
+            marginTop: '8px',
+            flexShrink: 0
+          }}>
+            <button
+              onClick={addAllToTimeline}
+              style={{
+                width: '100%',
+                padding: '8px 12px',
+                fontSize: '11px',
+                backgroundColor: 'rgba(255, 69, 0, 0.15)',
+                color: '#ff4500',
+                border: '1px solid #ff4500',
+                borderRadius: '2px',
+                cursor: 'pointer',
+                fontFamily: '"Space Mono", monospace',
+                fontWeight: 'bold',
+                transition: 'all 0.2s ease'
+              }}
+              onMouseEnter={(e) => {
+                e.currentTarget.style.backgroundColor = 'rgba(255, 69, 0, 0.25)';
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.backgroundColor = 'rgba(255, 69, 0, 0.15)';
+              }}
+            >
+              ADD ALL TO TIMELINE ({files.length})
+            </button>
+          </div>
+        )}
       </div>
     </div>
   );
