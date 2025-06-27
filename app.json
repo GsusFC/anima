@@ -1,0 +1,17 @@
+{
+  "name": "AnimaGen",
+  "description": "Professional animation creation tool for converting images to GIF, MP4, and WebM formats",
+  "buildpacks": [
+    {
+      "url": "heroku/nodejs"
+    }
+  ],
+  "env": {
+    "NODE_ENV": {
+      "value": "production"
+    }
+  },
+  "scripts": {
+    "postdeploy": "echo 'AnimaGen deployed successfully!'"
+  }
+}
