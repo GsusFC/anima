@@ -15,25 +15,26 @@ RUN apt-get update && apt-get install -y \
 # Set working directory
 WORKDIR /app
 
-# Copy package files
-COPY package*.json ./
-
-# Install root dependencies (main deps are in backend)
-RUN npm install --production
-
-# Copy backend
-COPY backend/ ./backend/
+# Copy backend first
+COPY backend/package*.json ./backend/
 RUN cd backend && npm install --production
 
-# Copy frontend
+# Copy frontend package files
+COPY frontend/package*.json ./frontend/
+RUN cd frontend && npm install
+
+# Copy all source code
+COPY backend/ ./backend/
 COPY frontend/ ./frontend/
-RUN cd frontend && npm install && npm run build
+
+# Build frontend
+RUN cd frontend && npm run build
 
 # Move frontend build to backend public folder
 RUN mkdir -p backend/public && cp -r frontend/dist/* backend/public/
 
 # Clean up frontend source (keep only built files)
-RUN rm -rf frontend/src frontend/node_modules
+RUN rm -rf frontend/src frontend/node_modules frontend/package*.json frontend/tsconfig* frontend/vite* frontend/tailwind*
 
 # Expose port
 EXPOSE 3001
