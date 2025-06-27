@@ -1,9 +1,7 @@
 import React, { useState, useRef } from 'react';
-import { useMedia } from '../../context/MediaProvider';
 import { useAPI } from '../../hooks/useAPI';
 
 const ImageUpload: React.FC = () => {
-  const { mediaItems } = useMedia();
   const { uploadFiles, isUploading } = useAPI();
   const [dragActive, setDragActive] = useState(false);
   const [files, setFiles] = useState<File[]>([]);
