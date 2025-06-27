@@ -1,0 +1,5 @@
+# Don't ignore Dockerfile or any build files
+!Dockerfile
+!package.json
+!backend/
+!frontend/
