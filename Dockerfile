@@ -21,7 +21,13 @@ RUN cd backend && npm install --production
 
 # Copy frontend package files
 COPY frontend/package*.json ./frontend/
-RUN cd frontend && npm install
+
+# Install frontend dependencies with rollup fix
+RUN cd frontend && \
+    npm cache clean --force && \
+    rm -rf node_modules package-lock.json && \
+    npm install --no-optional && \
+    npm install @rollup/rollup-linux-x64-gnu --save-optional --force
 
 # Copy all source code
 COPY backend/ ./backend/
