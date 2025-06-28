@@ -70,14 +70,18 @@ const upload = multer({
     files: parseInt(process.env.MAX_FILES) || 50 // Max 50 files
   },
   fileFilter: (req, file, cb) => {
-    const allowedTypes = /jpeg|jpg|png|gif|bmp|webp/;
-    const extname = allowedTypes.test(path.extname(file.originalname).toLowerCase());
-    const mimetype = allowedTypes.test(file.mimetype);
+    const allowedImageTypes = /jpeg|jpg|png|gif|bmp|webp/;
+    const allowedVideoTypes = /mp4|mov|webm|avi|mkv/;
+    const allowedMimeTypes = /image\/(jpeg|jpg|png|gif|bmp|webp)|video\/(mp4|quicktime|webm|x-msvideo|x-matroska)/;
+    
+    const extname = allowedImageTypes.test(path.extname(file.originalname).toLowerCase()) || 
+                   allowedVideoTypes.test(path.extname(file.originalname).toLowerCase());
+    const mimetype = allowedMimeTypes.test(file.mimetype);
     
     if (mimetype && extname) {
       return cb(null, true);
     } else {
-      cb(new Error('Only image files are allowed!'));
+      cb(new Error('Only image and video files are allowed!'));
     }
   }
 });
@@ -193,13 +197,14 @@ app.get('/api/status', (req, res) => {
   res.json({ 
     message: 'AnimaGen Backend Server',
     status: 'running',
-    version: '1.0.0',
+    version: '1.1.0',
     endpoints: {
       upload: 'POST /upload',
       preview: 'POST /preview',
       exportGif: 'POST /export/gif',
       exportVideo: 'POST /export/video',
-      download: 'GET /download/:filename'
+      download: 'GET /download/:filename',
+      videoMetadata: 'POST /video/metadata'
     }
   });
 });
@@ -1028,6 +1033,68 @@ if (process.env.NODE_ENV === 'production') {
     res.sendFile(path.join(__dirname, 'public', 'index.html'));
   });
 }
+
+// Video metadata extraction endpoint
+app.post('/video/metadata', async (req, res) => {
+  try {
+    const { filename, sessionId } = req.body;
+    
+    if (!filename || !sessionId) {
+      return res.status(400).json({ error: 'Filename and sessionId are required' });
+    }
+    
+    const filePath = path.join(tempDir, sessionId, filename);
+    
+    if (!fs.existsSync(filePath)) {
+      return res.status(404).json({ error: 'Video file not found' });
+    }
+    
+    // Extract metadata using ffprobe
+    ffmpeg.ffprobe(filePath, (err, metadata) => {
+      if (err) {
+        console.error('FFprobe error:', err);
+        return res.status(500).json({ error: 'Failed to extract video metadata', details: err.message });
+      }
+      
+      const videoStream = metadata.streams.find(stream => stream.codec_type === 'video');
+      const audioStream = metadata.streams.find(stream => stream.codec_type === 'audio');
+      
+      if (!videoStream) {
+        return res.status(400).json({ error: 'No video stream found in file' });
+      }
+      
+      // Calculate frame rate
+      let fps = 30; // default
+      if (videoStream.r_frame_rate) {
+        const [num, den] = videoStream.r_frame_rate.split('/').map(Number);
+        fps = den ? Math.round(num / den) : 30;
+      }
+      
+      const videoMetadata = {
+        success: true,
+        filename,
+        type: 'video',
+        duration: parseFloat(metadata.format.duration) || 0,
+        width: videoStream.width || 0,
+        height: videoStream.height || 0,
+        fps: fps,
+        bitrate: parseInt(metadata.format.bit_rate) || 0,
+        codec: videoStream.codec_name || 'unknown',
+        hasAudio: !!audioStream,
+        fileSize: parseInt(metadata.format.size) || 0,
+        format: metadata.format.format_name || 'unknown'
+      };
+      
+      console.log(`📹 Video metadata extracted: ${filename} - ${videoMetadata.duration}s, ${videoMetadata.width}x${videoMetadata.height}@${videoMetadata.fps}fps`);
+      
+      res.json(videoMetadata);
+    });
+    
+  } catch (error) {
+    console.error('Video metadata error:', error);
+    res.status(500).json({ error: 'Video metadata extraction failed', details: error.message });
+  }
+});
 
 // Health check endpoint for Railway
 app.get('/api/health', (req, res) => {
