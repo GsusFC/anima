@@ -126,6 +126,12 @@ const ImageUpload: React.FC = () => {
     if (e.dataTransfer.files && e.dataTransfer.files[0]) {
       const newFiles = Array.from(e.dataTransfer.files);
       
+      console.log('🎯 Files dropped:', newFiles.map(f => ({ 
+        name: f.name, 
+        type: f.type, 
+        isVideo: isVideoFile(f) 
+      })));
+      
       // Create previews locally for immediate feedback
       newFiles.forEach(file => createPreview(file));
       setFiles(prev => [...prev, ...newFiles]);
@@ -159,6 +165,12 @@ const ImageUpload: React.FC = () => {
   const handleFileInput = async (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files[0]) {
       const newFiles = Array.from(e.target.files);
+      
+      console.log('🎯 Files selected via input:', newFiles.map(f => ({ 
+        name: f.name, 
+        type: f.type, 
+        isVideo: isVideoFile(f) 
+      })));
       
       // Create previews locally for immediate feedback
       newFiles.forEach(file => createPreview(file));
@@ -214,7 +226,7 @@ const ImageUpload: React.FC = () => {
         ref={fileInputRef}
         type="file"
         multiple
-        accept="image/*,video/*"
+        accept="image/*,video/*,.mp4,.mov,.webm,.avi,.mkv"
         onChange={handleFileInput}
         style={{ display: 'none' }}
       />
