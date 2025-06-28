@@ -426,14 +426,27 @@ app.post('/preview', async (req, res) => {
     }
     if (!sessionId) return res.status(400).json({ error: 'Session ID is required' });
 
-    const validImages = images.map(img => {
-      const imagePath = path.join(tempDir, sessionId, img.filename);
-      return fs.existsSync(imagePath) ? { ...img, path: imagePath } : null;
+    // Helper function to detect video files
+    const isVideoFile = (filename) => {
+      const videoExtensions = /\.(mp4|mov|webm|avi|mkv)$/i;
+      return videoExtensions.test(filename);
+    };
+
+    const validMedia = images.map(img => {
+      const mediaPath = path.join(tempDir, sessionId, img.filename);
+      if (fs.existsSync(mediaPath)) {
+        return { 
+          ...img, 
+          path: mediaPath,
+          type: isVideoFile(img.filename) ? 'video' : 'image'
+        };
+      }
+      return null;
     }).filter(Boolean);
 
-    if (validImages.length === 0) return res.status(400).json({ error: 'No valid images found' });
+    if (validMedia.length === 0) return res.status(400).json({ error: 'No valid media files found' });
     
-    console.log(`Preview: Processing ${validImages.length} images with transitions`);
+    console.log(`Preview: Processing ${validMedia.length} media files (${validMedia.filter(m => m.type === 'image').length} images, ${validMedia.filter(m => m.type === 'video').length} videos)`);
     console.log(`Preview: Frame durations (ms):`, frameDurations);
     console.log(`Preview: Transitions:`, transitions?.map(t => `${t.type}:${t.duration}ms`));
     console.log(`Preview: Default duration (ms):`, defaultDuration);
@@ -441,7 +454,7 @@ app.post('/preview', async (req, res) => {
     // Write detailed log to file for debugging
     const logData = {
       timestamp: new Date().toISOString(),
-      validImages: validImages.length,
+      validMedia: validMedia.length,
       frameDurations,
       transitions,
       defaultDuration
@@ -458,21 +471,29 @@ app.post('/preview', async (req, res) => {
     let complexFilter = [];
 
     // Calculate optimal input durations using consolidated helper
-    const durationCalc = calculateInputDurations(validImages, transitions, frameDurations, defaultDuration);
+    const durationCalc = calculateInputDurations(validMedia, transitions, frameDurations, defaultDuration);
     console.log(`Preview: Total duration: ${durationCalc.totalDuration.toFixed(2)}s, Max transition: ${durationCalc.maxTransitionDuration.toFixed(2)}s`);
 
     // Add inputs with optimized durations
-    validImages.forEach((image, index) => {
+    validMedia.forEach((media, index) => {
       const inputDuration = durationCalc.inputDurations[index];
       const baseDuration = (frameDurations[index] || defaultDuration) / 1000;
       
-      console.log(`Preview: Image ${index + 1}/${validImages.length} - Base: ${baseDuration.toFixed(2)}s, Input: ${inputDuration.toFixed(2)}s`);
-      command.input(image.path).inputOptions(['-loop', '1', '-t', String(inputDuration)]);
-      complexFilter.push(`[${index}:v]scale=${previewSettings.width}:${previewSettings.height}:force_original_aspect_ratio=decrease,pad=${previewSettings.width}:${previewSettings.height}:(ow-iw)/2:(oh-ih)/2,setpts=PTS-STARTPTS,fps=${previewSettings.fps}[v${index}]`);
+      console.log(`Preview: ${media.type} ${index + 1}/${validMedia.length} - Base: ${baseDuration.toFixed(2)}s, Input: ${inputDuration.toFixed(2)}s`);
+      
+      if (media.type === 'video') {
+        // For videos, use the video directly with duration limit
+        command.input(media.path).inputOptions(['-t', String(inputDuration)]);
+        complexFilter.push(`[${index}:v]scale=${previewSettings.width}:${previewSettings.height}:force_original_aspect_ratio=decrease,pad=${previewSettings.width}:${previewSettings.height}:(ow-iw)/2:(oh-ih)/2,setpts=PTS-STARTPTS,fps=${previewSettings.fps}[v${index}]`);
+      } else {
+        // For images, loop as before
+        command.input(media.path).inputOptions(['-loop', '1', '-t', String(inputDuration)]);
+        complexFilter.push(`[${index}:v]scale=${previewSettings.width}:${previewSettings.height}:force_original_aspect_ratio=decrease,pad=${previewSettings.width}:${previewSettings.height}:(ow-iw)/2:(oh-ih)/2,setpts=PTS-STARTPTS,fps=${previewSettings.fps}[v${index}]`);
+      }
     });
 
     // Use unified transition chain - pass frameDurations directly as they're already processed
-    const lastOutput = buildUnifiedTransitionChain(validImages, transitions, frameDurations, defaultDuration, complexFilter);
+    const lastOutput = buildUnifiedTransitionChain(validMedia, transitions, frameDurations, defaultDuration, complexFilter);
     
     command
       .complexFilter(complexFilter)
