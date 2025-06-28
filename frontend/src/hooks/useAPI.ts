@@ -1,7 +1,9 @@
 import { useState } from 'react';
 import { io, Socket } from 'socket.io-client';
 
-const API_BASE_URL = 'http://localhost:3001';
+const API_BASE_URL = window.location.hostname === 'localhost' 
+  ? 'http://localhost:3001' 
+  : window.location.origin;
 
 export interface UploadResponse {
   success: boolean;

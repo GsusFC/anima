@@ -60,7 +60,11 @@ const Preview: React.FC = () => {
 
       console.log('Preview payload:', JSON.stringify(payload, null, 2));
 
-      const response = await fetch('http://localhost:3001/preview', {
+      const API_BASE_URL = window.location.hostname === 'localhost' 
+        ? 'http://localhost:3001' 
+        : window.location.origin;
+      
+      const response = await fetch(`${API_BASE_URL}/preview`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(payload)
@@ -70,7 +74,7 @@ const Preview: React.FC = () => {
       console.log('Preview response:', result);
       
       if (result.success) {
-        const videoUrl = `http://localhost:3001${result.previewUrl}?t=${Date.now()}`;
+        const videoUrl = `${API_BASE_URL}${result.previewUrl}?t=${Date.now()}`;
         console.log('Setting preview video URL:', videoUrl);
         setPreviewVideoUrl(videoUrl);
       } else {
