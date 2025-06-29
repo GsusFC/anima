@@ -70,18 +70,14 @@ const upload = multer({
     files: parseInt(process.env.MAX_FILES) || 50 // Max 50 files
   },
   fileFilter: (req, file, cb) => {
-    const allowedImageTypes = /jpeg|jpg|png|gif|bmp|webp/;
-    const allowedVideoTypes = /mp4|mov|webm|avi|mkv/;
-    const allowedMimeTypes = /image\/(jpeg|jpg|png|gif|bmp|webp)|video\/(mp4|quicktime|webm|x-msvideo|x-matroska)/;
-    
-    const extname = allowedImageTypes.test(path.extname(file.originalname).toLowerCase()) || 
-                   allowedVideoTypes.test(path.extname(file.originalname).toLowerCase());
-    const mimetype = allowedMimeTypes.test(file.mimetype);
+    const allowedTypes = /jpeg|jpg|png|gif|bmp|webp/;
+    const extname = allowedTypes.test(path.extname(file.originalname).toLowerCase());
+    const mimetype = allowedTypes.test(file.mimetype);
     
     if (mimetype && extname) {
       return cb(null, true);
     } else {
-      cb(new Error('Only image and video files are allowed!'));
+      cb(new Error('Only image files are allowed!'));
     }
   }
 });
@@ -197,14 +193,13 @@ app.get('/api/status', (req, res) => {
   res.json({ 
     message: 'AnimaGen Backend Server',
     status: 'running',
-    version: '1.1.0',
+    version: '1.0.0',
     endpoints: {
       upload: 'POST /upload',
       preview: 'POST /preview',
       exportGif: 'POST /export/gif',
       exportVideo: 'POST /export/video',
-      download: 'GET /download/:filename',
-      videoMetadata: 'POST /video/metadata'
+      download: 'GET /download/:filename'
     }
   });
 });
@@ -426,27 +421,14 @@ app.post('/preview', async (req, res) => {
     }
     if (!sessionId) return res.status(400).json({ error: 'Session ID is required' });
 
-    // Helper function to detect video files
-    const isVideoFile = (filename) => {
-      const videoExtensions = /\.(mp4|mov|webm|avi|mkv)$/i;
-      return videoExtensions.test(filename);
-    };
-
-    const validMedia = images.map(img => {
-      const mediaPath = path.join(tempDir, sessionId, img.filename);
-      if (fs.existsSync(mediaPath)) {
-        return { 
-          ...img, 
-          path: mediaPath,
-          type: isVideoFile(img.filename) ? 'video' : 'image'
-        };
-      }
-      return null;
+    const validImages = images.map(img => {
+      const imagePath = path.join(tempDir, sessionId, img.filename);
+      return fs.existsSync(imagePath) ? { ...img, path: imagePath } : null;
     }).filter(Boolean);
 
-    if (validMedia.length === 0) return res.status(400).json({ error: 'No valid media files found' });
+    if (validImages.length === 0) return res.status(400).json({ error: 'No valid images found' });
     
-    console.log(`Preview: Processing ${validMedia.length} media files (${validMedia.filter(m => m.type === 'image').length} images, ${validMedia.filter(m => m.type === 'video').length} videos)`);
+    console.log(`Preview: Processing ${validImages.length} images with transitions`);
     console.log(`Preview: Frame durations (ms):`, frameDurations);
     console.log(`Preview: Transitions:`, transitions?.map(t => `${t.type}:${t.duration}ms`));
     console.log(`Preview: Default duration (ms):`, defaultDuration);
@@ -454,7 +436,7 @@ app.post('/preview', async (req, res) => {
     // Write detailed log to file for debugging
     const logData = {
       timestamp: new Date().toISOString(),
-      validMedia: validMedia.length,
+      validImages: validImages.length,
       frameDurations,
       transitions,
       defaultDuration
@@ -471,29 +453,21 @@ app.post('/preview', async (req, res) => {
     let complexFilter = [];
 
     // Calculate optimal input durations using consolidated helper
-    const durationCalc = calculateInputDurations(validMedia, transitions, frameDurations, defaultDuration);
+    const durationCalc = calculateInputDurations(validImages, transitions, frameDurations, defaultDuration);
     console.log(`Preview: Total duration: ${durationCalc.totalDuration.toFixed(2)}s, Max transition: ${durationCalc.maxTransitionDuration.toFixed(2)}s`);
 
     // Add inputs with optimized durations
-    validMedia.forEach((media, index) => {
+    validImages.forEach((image, index) => {
       const inputDuration = durationCalc.inputDurations[index];
       const baseDuration = (frameDurations[index] || defaultDuration) / 1000;
       
-      console.log(`Preview: ${media.type} ${index + 1}/${validMedia.length} - Base: ${baseDuration.toFixed(2)}s, Input: ${inputDuration.toFixed(2)}s`);
-      
-      if (media.type === 'video') {
-        // For videos, use the video directly with duration limit
-        command.input(media.path).inputOptions(['-t', String(inputDuration)]);
-        complexFilter.push(`[${index}:v]scale=${previewSettings.width}:${previewSettings.height}:force_original_aspect_ratio=decrease,pad=${previewSettings.width}:${previewSettings.height}:(ow-iw)/2:(oh-ih)/2,setpts=PTS-STARTPTS,fps=${previewSettings.fps}[v${index}]`);
-      } else {
-        // For images, loop as before
-        command.input(media.path).inputOptions(['-loop', '1', '-t', String(inputDuration)]);
-        complexFilter.push(`[${index}:v]scale=${previewSettings.width}:${previewSettings.height}:force_original_aspect_ratio=decrease,pad=${previewSettings.width}:${previewSettings.height}:(ow-iw)/2:(oh-ih)/2,setpts=PTS-STARTPTS,fps=${previewSettings.fps}[v${index}]`);
-      }
+      console.log(`Preview: Image ${index + 1}/${validImages.length} - Base: ${baseDuration.toFixed(2)}s, Input: ${inputDuration.toFixed(2)}s`);
+      command.input(image.path).inputOptions(['-loop', '1', '-t', String(inputDuration)]);
+      complexFilter.push(`[${index}:v]scale=${previewSettings.width}:${previewSettings.height}:force_original_aspect_ratio=decrease,pad=${previewSettings.width}:${previewSettings.height}:(ow-iw)/2:(oh-ih)/2,setpts=PTS-STARTPTS,fps=${previewSettings.fps}[v${index}]`);
     });
 
     // Use unified transition chain - pass frameDurations directly as they're already processed
-    const lastOutput = buildUnifiedTransitionChain(validMedia, transitions, frameDurations, defaultDuration, complexFilter);
+    const lastOutput = buildUnifiedTransitionChain(validImages, transitions, frameDurations, defaultDuration, complexFilter);
     
     command
       .complexFilter(complexFilter)
@@ -1054,68 +1028,6 @@ if (process.env.NODE_ENV === 'production') {
     res.sendFile(path.join(__dirname, 'public', 'index.html'));
   });
 }
-
-// Video metadata extraction endpoint
-app.post('/video/metadata', async (req, res) => {
-  try {
-    const { filename, sessionId } = req.body;
-    
-    if (!filename || !sessionId) {
-      return res.status(400).json({ error: 'Filename and sessionId are required' });
-    }
-    
-    const filePath = path.join(tempDir, sessionId, filename);
-    
-    if (!fs.existsSync(filePath)) {
-      return res.status(404).json({ error: 'Video file not found' });
-    }
-    
-    // Extract metadata using ffprobe
-    ffmpeg.ffprobe(filePath, (err, metadata) => {
-      if (err) {
-        console.error('FFprobe error:', err);
-        return res.status(500).json({ error: 'Failed to extract video metadata', details: err.message });
-      }
-      
-      const videoStream = metadata.streams.find(stream => stream.codec_type === 'video');
-      const audioStream = metadata.streams.find(stream => stream.codec_type === 'audio');
-      
-      if (!videoStream) {
-        return res.status(400).json({ error: 'No video stream found in file' });
-      }
-      
-      // Calculate frame rate
-      let fps = 30; // default
-      if (videoStream.r_frame_rate) {
-        const [num, den] = videoStream.r_frame_rate.split('/').map(Number);
-        fps = den ? Math.round(num / den) : 30;
-      }
-      
-      const videoMetadata = {
-        success: true,
-        filename,
-        type: 'video',
-        duration: parseFloat(metadata.format.duration) || 0,
-        width: videoStream.width || 0,
-        height: videoStream.height || 0,
-        fps: fps,
-        bitrate: parseInt(metadata.format.bit_rate) || 0,
-        codec: videoStream.codec_name || 'unknown',
-        hasAudio: !!audioStream,
-        fileSize: parseInt(metadata.format.size) || 0,
-        format: metadata.format.format_name || 'unknown'
-      };
-      
-      console.log(`📹 Video metadata extracted: ${filename} - ${videoMetadata.duration}s, ${videoMetadata.width}x${videoMetadata.height}@${videoMetadata.fps}fps`);
-      
-      res.json(videoMetadata);
-    });
-    
-  } catch (error) {
-    console.error('Video metadata error:', error);
-    res.status(500).json({ error: 'Video metadata extraction failed', details: error.message });
-  }
-});
 
 // Health check endpoint for Railway
 app.get('/api/health', (req, res) => {

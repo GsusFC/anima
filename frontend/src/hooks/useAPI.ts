@@ -89,11 +89,8 @@ export const useAPI = () => {
     setIsUploading(true);
     
     try {
-      console.log('📁 Uploading files:', files.map(f => ({ name: f.name, type: f.type, size: f.size })));
-      
       const formData = new FormData();
       files.forEach(file => {
-        console.log(`📎 Adding file to FormData: ${file.name} (${file.type})`);
         formData.append('images', file);
       });
 

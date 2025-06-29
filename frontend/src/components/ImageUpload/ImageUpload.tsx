@@ -10,41 +10,6 @@ const ImageUpload: React.FC = () => {
   const [sessionId, setSessionId] = useState<string>('');
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  // Helper function to determine if file is video
-  const isVideoFile = (file: File): boolean => {
-    return file.type.startsWith('video/');
-  };
-
-  // Generate video thumbnail
-  const createVideoThumbnail = (file: File): Promise<string> => {
-    return new Promise((resolve) => {
-      const video = document.createElement('video');
-      const canvas = document.createElement('canvas');
-      const ctx = canvas.getContext('2d');
-      
-      video.onloadedmetadata = () => {
-        canvas.width = video.videoWidth;
-        canvas.height = video.videoHeight;
-        video.currentTime = Math.min(1, video.duration * 0.1); // 10% into video or 1 second
-      };
-      
-      video.onseeked = () => {
-        if (ctx) {
-          ctx.drawImage(video, 0, 0);
-          const thumbnail = canvas.toDataURL('image/jpeg', 0.8);
-          resolve(thumbnail);
-        }
-      };
-      
-      video.onerror = () => {
-        // Fallback to a video icon placeholder
-        resolve('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" width="100" height="100" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="23 7 16 12 23 17 23 7"></polygon><rect x="1" y="5" width="15" height="14" rx="2" ry="2"></rect></svg>');
-      };
-      
-      video.src = URL.createObjectURL(file);
-    });
-  };
-
   // Function to add single file to timeline
   const addToTimeline = (file: File) => {
     const uploadedFile = uploadedFiles[file.name + file.size];
@@ -91,31 +56,17 @@ const ImageUpload: React.FC = () => {
     }
   };
 
-  const createPreview = async (file: File) => {
-    if (isVideoFile(file)) {
-      // Generate video thumbnail
-      try {
-        const thumbnail = await createVideoThumbnail(file);
+  const createPreview = (file: File) => {
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      if (e.target?.result) {
         setPreviews(prev => ({
           ...prev,
-          [file.name + file.size]: thumbnail
+          [file.name + file.size]: e.target?.result as string
         }));
-      } catch (error) {
-        console.error('Failed to generate video thumbnail:', error);
       }
-    } else {
-      // Handle image files as before
-      const reader = new FileReader();
-      reader.onload = (e) => {
-        if (e.target?.result) {
-          setPreviews(prev => ({
-            ...prev,
-            [file.name + file.size]: e.target?.result as string
-          }));
-        }
-      };
-      reader.readAsDataURL(file);
-    }
+    };
+    reader.readAsDataURL(file);
   };
 
   const handleDrop = async (e: React.DragEvent) => {
@@ -126,14 +77,8 @@ const ImageUpload: React.FC = () => {
     if (e.dataTransfer.files && e.dataTransfer.files[0]) {
       const newFiles = Array.from(e.dataTransfer.files);
       
-      console.log('🎯 Files dropped:', newFiles.map(f => ({ 
-        name: f.name, 
-        type: f.type, 
-        isVideo: isVideoFile(f) 
-      })));
-      
       // Create previews locally for immediate feedback
-      newFiles.forEach(file => createPreview(file));
+      newFiles.forEach(createPreview);
       setFiles(prev => [...prev, ...newFiles]);
       
       // Upload to backend
@@ -166,14 +111,8 @@ const ImageUpload: React.FC = () => {
     if (e.target.files && e.target.files[0]) {
       const newFiles = Array.from(e.target.files);
       
-      console.log('🎯 Files selected via input:', newFiles.map(f => ({ 
-        name: f.name, 
-        type: f.type, 
-        isVideo: isVideoFile(f) 
-      })));
-      
       // Create previews locally for immediate feedback
-      newFiles.forEach(file => createPreview(file));
+      newFiles.forEach(createPreview);
       setFiles(prev => [...prev, ...newFiles]);
       
       // Upload to backend
@@ -226,7 +165,7 @@ const ImageUpload: React.FC = () => {
         ref={fileInputRef}
         type="file"
         multiple
-        accept="image/*,video/*,.mp4,.mov,.webm,.avi,.mkv"
+        accept="image/*"
         onChange={handleFileInput}
         style={{ display: 'none' }}
       />
@@ -336,37 +275,18 @@ const ImageUpload: React.FC = () => {
                     e.currentTarget.style.borderColor = '#343536';
                   }}
                 >
-                {/* Video/Image badge */}
-                {isVideoFile(file) && (
-                <div style={{
-                position: 'absolute',
-                top: '4px',
-                right: '4px',
-                backgroundColor: 'rgba(255, 69, 0, 0.9)',
-                color: 'white',
-                padding: '2px 6px',
-                borderRadius: '3px',
-                  fontSize: '10px',
-                    fontWeight: '600',
-                       fontFamily: '"Space Mono", monospace',
-                       zIndex: 1
-                     }}>
-                       VIDEO
-                     </div>
-                   )}
-                   
-                   {previews[file.name + file.size] ? (
-                     <img
-                       src={previews[file.name + file.size]}
-                       alt={file.name}
-                       style={{
-                         width: '100%',
-                         height: '100%',
-                         objectFit: 'cover',
-                         borderRadius: '2px'
-                       }}
-                     />
-                   ) : (
+                  {previews[file.name + file.size] ? (
+                    <img
+                      src={previews[file.name + file.size]}
+                      alt={file.name}
+                      style={{
+                        width: '100%',
+                        height: '100%',
+                        objectFit: 'cover',
+                        borderRadius: '2px'
+                      }}
+                    />
+                  ) : (
                     <svg style={{ width: '32px', height: '32px', color: '#9ca3af' }} fill="currentColor" viewBox="0 0 24 24">
                       <path d="M21 19V5c0-1.1-.9-2-2-2H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2zM8.5 13.5l2.5 3.01L14.5 12l4.5 6H5l3.5-4.5z"/>
                     </svg>
