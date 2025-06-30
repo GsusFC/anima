@@ -20,8 +20,11 @@ COPY frontend/.npmrc ./frontend/
 
 # Install frontend dependencies with proper native modules
 RUN cd frontend && \
-    npm ci && \
-    npm rebuild
+    rm -rf node_modules package-lock.json && \
+    npm cache clean --force && \
+    npm install && \
+    npm install @rollup/rollup-linux-x64-gnu --force && \
+    npm rebuild rollup
 
 # Copy source code
 COPY backend/ ./backend/

@@ -8,7 +8,17 @@ export default defineConfig({
     port: 5173,
     host: true
   },
+  build: {
+    rollupOptions: {
+      external: [],
+    },
+    // Force esbuild for better compatibility in Docker
+    minify: 'esbuild'
+  },
   esbuild: {
     jsx: 'automatic'
+  },
+  optimizeDeps: {
+    force: true
   }
 }) 
