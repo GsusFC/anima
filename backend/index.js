@@ -1202,7 +1202,7 @@ app.post('/export/gif', async (req, res) => {
     
     // GIF-specific settings
     const gifSettings = userExportSettings.gif || {};
-    const dither = gifSettings.dither || 'floyd_steinberg'; // Best quality by default
+    const dither = gifSettings.dither || 'bayer'; // Use basic bayer instead of floyd_steinberg for compatibility
     const maxColors = gifSettings.colors || 256; // Maximum colors by default
     
     // Build custom settings from advanced options
@@ -1251,6 +1251,7 @@ app.post('/export/gif', async (req, res) => {
     }
     
     console.log(`GIF Export: Processing ${validImages.length} images with transitions. Durations: ${JSON.stringify(frameDurations)}`);
+    console.log(`🎨 GIF Options: Dither=${safeDither}, Colors=${maxColors}, Quality=${quality}`);
 
     const outputFilename = `animagen_${Date.now()}.gif`;
     const outputPath = path.join(outputDir, outputFilename);
@@ -1278,7 +1279,16 @@ app.post('/export/gif', async (req, res) => {
     
     // Add GIF-specific palette generation and optimization with dithering
     const paletteGenOptions = maxColors < 256 ? `max_colors=${maxColors}` : '';
-    const paletteUseOptions = dither !== 'none' ? `dither=${dither}` : '';
+    // Map complex dither names to FFmpeg compatible ones
+    const ditherMap = {
+      'floyd_steinberg': 'floyd_steinberg',
+      'sierra2': 'sierra2',
+      'sierra2_4a': 'sierra2_4a',
+      'bayer': 'bayer',
+      'none': 'none'
+    };
+    const safeDither = ditherMap[dither] || 'bayer'; // Fallback to basic bayer
+    const paletteUseOptions = safeDither !== 'none' ? `dither=${safeDither}` : '';
     
     let paletteFilter = `${lastOutput}split[s0][s1];[s0]palettegen`;
     if (paletteGenOptions) paletteFilter += `:${paletteGenOptions}`;
