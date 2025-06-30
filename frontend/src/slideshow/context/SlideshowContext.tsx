@@ -20,6 +20,7 @@ interface SlideshowContextType {
   removeImage: (imageId: string) => void;
   updateTimelineItem: (itemId: string, updates: any) => void;
   removeFromTimeline: (itemId: string) => void;
+  reorderTimeline: (newTimeline: any[]) => void;
   generatePreview: () => Promise<void>;
   exportSlideshow: () => Promise<void>;
   updateExportSettings: (updates: any) => void;

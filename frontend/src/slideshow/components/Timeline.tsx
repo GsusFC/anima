@@ -1,6 +1,5 @@
 import React, { useState } from 'react';
 import { useSlideshowContext } from '../context/SlideshowContext';
-import { TransitionType } from '../types/slideshow.types';
 import TransitionModal from './TransitionModal';
 
 const Timeline: React.FC = () => {
@@ -64,7 +63,11 @@ const Timeline: React.FC = () => {
       }
     `;
     document.head.appendChild(style);
-    return () => document.head.removeChild(style);
+    return () => {
+      if (document.head.contains(style)) {
+        document.head.removeChild(style);
+      }
+    };
   }, []);
 
   // Modal states
@@ -149,7 +152,7 @@ const Timeline: React.FC = () => {
     );
   }
 
-  const totalDuration = project.timeline.reduce((sum, item) => sum + item.duration, 0);
+  // const totalDuration = project.timeline.reduce((sum, item) => sum + item.duration, 0);
 
   return (
     <div style={{

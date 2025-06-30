@@ -30,7 +30,11 @@ const ExportControls: React.FC = () => {
       }
     `;
     document.head.appendChild(style);
-    return () => document.head.removeChild(style);
+    return () => {
+      if (document.head.contains(style)) {
+        document.head.removeChild(style);
+      }
+    };
   }, []);
 
   const handleFormatChange = (format: 'gif' | 'mp4' | 'webm') => {
@@ -375,8 +379,8 @@ const ExportControls: React.FC = () => {
               </label>
               <div style={{ display: 'flex', gap: '8px' }}>
                 <select
-                  value={exportSettings.loop || 'infinite'}
-                  onChange={(e) => updateExportSettings({ loop: e.target.value })}
+                  value={exportSettings.loop ? 'true' : 'false'}
+                  onChange={(e) => updateExportSettings({ loop: e.target.value === 'true' })}
                   style={{
                     flex: 1,
                     padding: '6px',

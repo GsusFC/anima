@@ -53,6 +53,10 @@ export interface ExportSettings {
   };
   loop: boolean;
   tags: {[key: string]: string};
+  bitrate?: number;
+  fastStart?: boolean;
+  optimizeSize?: boolean;
+  filename?: string;
 }
 
 export interface PreviewState {

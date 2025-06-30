@@ -1,14 +1,12 @@
 import { useState, useCallback } from 'react';
 import { 
-  SlideshowProject, 
   ImageFile, 
   TimelineItem, 
   ExportSettings,
   SlideshowState,
   UploadResponse,
   PreviewResponse,
-  ExportResponse,
-  TransitionConfig
+  ExportResponse
 } from '../types/slideshow.types';
 
 const API_BASE_URL = window.location.hostname === 'localhost' 
