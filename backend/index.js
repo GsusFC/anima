@@ -1088,6 +1088,10 @@ app.post('/export/mov', async (req, res) => {
 });
 
 app.post('/export/gif', async (req, res) => {
+  console.log('🎬 GIF Export Request received');
+  console.log('Request body keys:', Object.keys(req.body));
+  console.log('Request body:', JSON.stringify(req.body, null, 2));
+  
   try {
     // Check if this is a video editor export (has videoPath) or image-to-animation export (has images)
     if (req.body.videoPath) {
