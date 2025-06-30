@@ -31,7 +31,17 @@ export interface TransitionConfig {
   duration: number; // milliseconds
 }
 
-export type TransitionType = 'fade' | 'slide' | 'zoom' | 'dissolve' | 'cut';
+export type TransitionType = 
+  // Básicas
+  | 'cut' | 'fade' | 'dissolve' | 'fadeblack' | 'fadewhite'
+  // Slides
+  | 'slideleft' | 'slideright' | 'slideup' | 'slidedown'
+  // Wipes
+  | 'wipeleft' | 'wiperight' | 'wipeup' | 'wipedown' | 'wipetl' | 'wipetr'
+  // Efectos especiales
+  | 'zoomin' | 'circleopen' | 'circleclose' | 'radial' | 'pixelize' | 'hblur'
+  // Legacy (mantener compatibilidad)
+  | 'slide' | 'zoom';
 
 export interface SlideshowProject {
   id: string;

@@ -23,36 +23,47 @@ const TransitionModal: React.FC<TransitionModalProps> = ({
     currentTransition?.duration || 500
   );
 
-  const transitionOptions = [
-    { 
-      type: 'fade' as TransitionType, 
-      name: 'Fade', 
-      description: 'Smooth opacity transition',
-      icon: '🌅'
+  const transitionCategories = [
+    {
+      name: 'BÁSICAS',
+      transitions: [
+        { type: 'cut' as TransitionType, name: 'Cut', description: 'Cambio instantáneo sin transición', duration: '0ms' },
+        { type: 'fade' as TransitionType, name: 'Fade', description: 'Transición suave de opacidad', duration: '400-800ms' },
+        { type: 'dissolve' as TransitionType, name: 'Dissolve', description: 'Disolución granular entre imágenes', duration: '500-1000ms' },
+        { type: 'fadeblack' as TransitionType, name: 'Fade to Black', description: 'Fundido a negro intermedio', duration: '600-1200ms' },
+        { type: 'fadewhite' as TransitionType, name: 'Fade to White', description: 'Fundido a blanco intermedio', duration: '600-1200ms' }
+      ]
     },
-    { 
-      type: 'slide' as TransitionType, 
-      name: 'Slide', 
-      description: 'Slide from left to right',
-      icon: '➡️'
+    {
+      name: 'DESLIZAMIENTOS',
+      transitions: [
+        { type: 'slideleft' as TransitionType, name: 'Slide Left', description: 'Nueva imagen entra desde la izquierda', duration: '300-600ms' },
+        { type: 'slideright' as TransitionType, name: 'Slide Right', description: 'Nueva imagen entra desde la derecha', duration: '300-600ms' },
+        { type: 'slideup' as TransitionType, name: 'Slide Up', description: 'Nueva imagen entra desde abajo', duration: '300-600ms' },
+        { type: 'slidedown' as TransitionType, name: 'Slide Down', description: 'Nueva imagen entra desde arriba', duration: '300-600ms' }
+      ]
     },
-    { 
-      type: 'zoom' as TransitionType, 
-      name: 'Zoom', 
-      description: 'Scale in/out effect',
-      icon: '🔍'
+    {
+      name: 'BARRIDOS',
+      transitions: [
+        { type: 'wipeleft' as TransitionType, name: 'Wipe Left', description: 'Barrido horizontal de izquierda a derecha', duration: '400-800ms' },
+        { type: 'wiperight' as TransitionType, name: 'Wipe Right', description: 'Barrido horizontal de derecha a izquierda', duration: '400-800ms' },
+        { type: 'wipeup' as TransitionType, name: 'Wipe Up', description: 'Barrido vertical de abajo hacia arriba', duration: '400-800ms' },
+        { type: 'wipedown' as TransitionType, name: 'Wipe Down', description: 'Barrido vertical de arriba hacia abajo', duration: '400-800ms' },
+        { type: 'wipetl' as TransitionType, name: 'Wipe Top-Left', description: 'Barrido diagonal desde esquina superior izquierda', duration: '500-900ms' },
+        { type: 'wipetr' as TransitionType, name: 'Wipe Top-Right', description: 'Barrido diagonal desde esquina superior derecha', duration: '500-900ms' }
+      ]
     },
-    { 
-      type: 'dissolve' as TransitionType, 
-      name: 'Dissolve', 
-      description: 'Pixelated transition',
-      icon: '✨'
-    },
-    { 
-      type: 'cut' as TransitionType, 
-      name: 'Cut', 
-      description: 'Instant change',
-      icon: '✂️'
+    {
+      name: 'EFECTOS ESPECIALES',
+      transitions: [
+        { type: 'zoomin' as TransitionType, name: 'Zoom In', description: 'Nueva imagen aparece escalando desde el centro', duration: '400-800ms' },
+        { type: 'circleopen' as TransitionType, name: 'Circle Open', description: 'Apertura circular desde el centro', duration: '500-1000ms' },
+        { type: 'circleclose' as TransitionType, name: 'Circle Close', description: 'Cierre circular hacia el centro', duration: '500-1000ms' },
+        { type: 'radial' as TransitionType, name: 'Radial', description: 'Transición radial en forma de reloj', duration: '600-1200ms' },
+        { type: 'pixelize' as TransitionType, name: 'Pixelize', description: 'Efecto de pixelación progresiva', duration: '700-1400ms' },
+        { type: 'hblur' as TransitionType, name: 'Horizontal Blur', description: 'Desenfoque horizontal dinámico', duration: '500-1000ms' }
+      ]
     }
   ];
 
@@ -124,53 +135,95 @@ const TransitionModal: React.FC<TransitionModalProps> = ({
 
         {/* Content */}
         <div style={{ padding: '12px 16px', flex: 1, overflow: 'auto' }}>
-          {/* Transition Type Selection */}
-          <div style={{ marginBottom: '16px' }}>
-            <label style={{
-              display: 'block',
-              fontSize: '11px',
-              color: '#9ca3af',
-              marginBottom: '8px',
-              fontFamily: '"Space Mono", monospace'
-            }}>
-              Transition Type
-            </label>
-            <div style={{
-              display: 'grid',
-              gridTemplateColumns: 'repeat(5, 1fr)',
-              gap: '6px'
-            }}>
-              {transitionOptions.map((option) => (
-                <div
-                  key={option.type}
-                  onClick={() => setSelectedType(option.type)}
-                  style={{
-                    padding: '8px 4px',
-                    backgroundColor: selectedType === option.type ? '#ff4500' : '#0f0f0f',
-                    border: `1px solid ${selectedType === option.type ? '#ff4500' : '#343536'}`,
-                    borderRadius: '4px',
-                    cursor: 'pointer',
-                    transition: 'all 0.2s ease',
-                    textAlign: 'center'
-                  }}
-                >
-                  <div style={{
-                    fontSize: '16px',
-                    marginBottom: '2px'
-                  }}>
-                    {option.icon}
-                  </div>
-                  <div style={{
-                    fontSize: '9px',
-                    color: '#ffffff',
+          {/* Transition Selection */}
+          <div style={{
+            maxHeight: '350px',
+            overflowY: 'auto',
+            marginBottom: '16px',
+            paddingRight: '8px'
+          }}>
+            {transitionCategories.map((category) => (
+              <div key={category.name} style={{ marginBottom: '20px' }}>
+                {/* Category Header */}
+                <div style={{
+                  borderBottom: '1px solid #374151',
+                  paddingBottom: '6px',
+                  marginBottom: '12px'
+                }}>
+                  <h3 style={{
+                    fontSize: '14px',
                     fontWeight: 'bold',
-                    fontFamily: '"Space Mono", monospace'
+                    color: '#f3f4f6',
+                    margin: 0,
+                    fontFamily: '"Space Mono", monospace',
+                    letterSpacing: '0.5px'
                   }}>
-                    {option.name}
-                  </div>
+                    {category.name}
+                  </h3>
                 </div>
-              ))}
-            </div>
+
+                {/* Transitions Grid */}
+                <div style={{
+                  display: 'grid',
+                  gridTemplateColumns: '1fr 1fr',
+                  gap: '8px'
+                }}>
+                  {category.transitions.map((transition) => (
+                    <button
+                      key={transition.type}
+                      onClick={() => setSelectedType(transition.type)}
+                      style={{
+                        padding: '12px',
+                        backgroundColor: selectedType === transition.type ? '#3b82f6' : '#111827',
+                        border: selectedType === transition.type ? '2px solid #60a5fa' : '1px solid #374151',
+                        borderRadius: '6px',
+                        color: 'white',
+                        cursor: 'pointer',
+                        textAlign: 'left',
+                        transition: 'all 0.2s ease',
+                        fontFamily: '"Space Mono", monospace'
+                      }}
+                      onMouseEnter={(e) => {
+                        if (selectedType !== transition.type) {
+                          e.currentTarget.style.backgroundColor = '#1f2937';
+                          e.currentTarget.style.borderColor = '#4b5563';
+                        }
+                      }}
+                      onMouseLeave={(e) => {
+                        if (selectedType !== transition.type) {
+                          e.currentTarget.style.backgroundColor = '#111827';
+                          e.currentTarget.style.borderColor = '#374151';
+                        }
+                      }}
+                    >
+                      <div style={{ 
+                        fontSize: '13px', 
+                        fontWeight: 'bold',
+                        color: selectedType === transition.type ? 'white' : '#f3f4f6',
+                        marginBottom: '4px'
+                      }}>
+                        {transition.name}
+                      </div>
+                      <div style={{
+                        fontSize: '10px',
+                        color: selectedType === transition.type ? '#bfdbfe' : '#9ca3af',
+                        lineHeight: '1.3',
+                        marginBottom: '4px'
+                      }}>
+                        {transition.description}
+                      </div>
+                      <div style={{
+                        fontSize: '9px',
+                        color: selectedType === transition.type ? '#93c5fd' : '#6b7280',
+                        fontStyle: 'italic'
+                      }}>
+                        {transition.duration}
+                      </div>
+                    </button>
+                  ))}
+                </div>
+              </div>
+            ))}
           </div>
 
           {/* Duration Control & Quick Presets */}
