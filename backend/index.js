@@ -896,16 +896,29 @@ app.get('/debug/output-files', (req, res) => {
 // Video Editor Export Endpoints
 app.post('/export/mp4', async (req, res) => {
   try {
+    console.log('🎬 MP4 Export request received');
+    console.log('Request body:', JSON.stringify(req.body, null, 2));
+    
     const { videoPath, startTime, endTime, quality = 'standard', resolution, fps = 30 } = req.body;
+    
+    console.log('Video path received:', videoPath);
+    console.log('Temp dir:', tempDir);
     
     if (!videoPath) {
       return res.status(400).json({ error: 'Video path is required' });
     }
 
     const inputPath = path.resolve(videoPath.startsWith('./') ? videoPath.slice(2) : videoPath);
+    console.log('Checking video at:', inputPath);
     
     if (!fs.existsSync(inputPath)) {
-      return res.status(400).json({ error: 'Video file not found' });
+      console.error('❌ Video file not found:', inputPath);
+      return res.status(400).json({ 
+        error: 'Original video path not available. Please re-upload video.',
+        videoPath: inputPath,
+        exists: false,
+        tempDir: tempDir
+      });
     }
 
     console.log(`🎬 Exporting MP4: ${inputPath}`);
@@ -975,16 +988,25 @@ app.post('/export/mp4', async (req, res) => {
 
 app.post('/export/webm', async (req, res) => {
   try {
+    console.log('🎬 WebM Export request received');
     const { videoPath, startTime, endTime, quality = 'standard', resolution, fps = 30 } = req.body;
+    
+    console.log('Video path received:', videoPath);
     
     if (!videoPath) {
       return res.status(400).json({ error: 'Video path is required' });
     }
 
     const inputPath = path.resolve(videoPath.startsWith('./') ? videoPath.slice(2) : videoPath);
+    console.log('Checking video at:', inputPath);
     
     if (!fs.existsSync(inputPath)) {
-      return res.status(400).json({ error: 'Video file not found' });
+      console.error('❌ Video file not found:', inputPath);
+      return res.status(400).json({ 
+        error: 'Original video path not available. Please re-upload video.',
+        videoPath: inputPath,
+        exists: false
+      });
     }
 
     console.log(`🎬 Exporting WebM: ${inputPath}`);
@@ -1055,16 +1077,25 @@ app.post('/export/webm', async (req, res) => {
 
 app.post('/export/mov', async (req, res) => {
   try {
+    console.log('🎬 MOV Export request received');
     const { videoPath, startTime, endTime, quality = 'standard', resolution, fps = 30 } = req.body;
+    
+    console.log('Video path received:', videoPath);
     
     if (!videoPath) {
       return res.status(400).json({ error: 'Video path is required' });
     }
 
     const inputPath = path.resolve(videoPath.startsWith('./') ? videoPath.slice(2) : videoPath);
+    console.log('Checking video at:', inputPath);
     
     if (!fs.existsSync(inputPath)) {
-      return res.status(400).json({ error: 'Video file not found' });
+      console.error('❌ Video file not found:', inputPath);
+      return res.status(400).json({ 
+        error: 'Original video path not available. Please re-upload video.',
+        videoPath: inputPath,
+        exists: false
+      });
     }
 
     console.log(`🎬 Exporting MOV: ${inputPath}`);
@@ -1147,9 +1178,15 @@ app.post('/export/gif', async (req, res) => {
       }
 
       const inputPath = path.resolve(videoPath.startsWith('./') ? videoPath.slice(2) : videoPath);
+      console.log('Checking video at:', inputPath);
       
       if (!fs.existsSync(inputPath)) {
-        return res.status(400).json({ error: 'Video file not found' });
+        console.error('❌ Video file not found:', inputPath);
+        return res.status(400).json({ 
+          error: 'Original video path not available. Please re-upload video.',
+          videoPath: inputPath,
+          exists: false
+        });
       }
 
       console.log(`🎨 Exporting GIF from video: ${inputPath}`);
