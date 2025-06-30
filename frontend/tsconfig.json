@@ -21,11 +21,5 @@
     "noFallthroughCasesInSwitch": true
   },
   "include": ["src"],
-  "exclude": [
-    "src/video-editor/VideoEditorAppComplete.tsx",
-    "src/video-editor/components/TimelineHoverPreview.tsx",
-    "src/video-editor/components/VideoExport.tsx",
-    "src/video-editor/components/VideoExportRefactored.tsx"
-  ],
   "references": [{ "path": "./tsconfig.node.json" }]
 } 

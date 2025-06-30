@@ -10,7 +10,7 @@ interface TimelineHoverPreviewProps {
 }
 
 const TimelineHoverPreview: React.FC<TimelineHoverPreviewProps> = ({
-  videoElement,
+  // videoElement,
   isVisible,
   timestamp,
   mousePosition,
