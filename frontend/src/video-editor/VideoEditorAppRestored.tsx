@@ -3,7 +3,7 @@ import { VideoEditorProvider } from './context/VideoEditorContext';
 import VideoUploader from './components/VideoUploader';
 import VideoPreview from './components/VideoPreview';
 import VideoTimeline from './components/VideoTimeline';
-import VideoExport from './components/VideoExportComplete';
+import VideoExportComplete from './components/VideoExportComplete';
 import ToastContainer from './components/Toast';
 
 const VideoEditorAppRestored: React.FC = () => {
@@ -88,7 +88,7 @@ const VideoEditorAppRestored: React.FC = () => {
               minHeight: 0,
               overflow: 'auto'
             }}>
-              <VideoExport />
+              <VideoExportComplete />
             </div>
           </div>
 
