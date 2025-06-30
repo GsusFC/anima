@@ -325,7 +325,7 @@ const VideoExportComplete: React.FC = () => {
           <h4 style={{
             margin: 0,
             fontSize: '11px',
-            color: '#ff4500',
+            color: '#22c55e',
             fontWeight: 'bold',
             marginBottom: '12px'
           }}>
@@ -458,7 +458,7 @@ const VideoExportComplete: React.FC = () => {
           marginBottom: '8px'
         }}>
           <span>Duration:</span>
-          <span style={{ color: '#ff4500', fontWeight: 'bold' }}>
+          <span style={{ color: '#22c55e', fontWeight: 'bold' }}>
             {Math.floor(totalDuration / 60)}:{(totalDuration % 60).toFixed(1).padStart(4, '0')}
           </span>
         </div>
@@ -509,7 +509,7 @@ const VideoExportComplete: React.FC = () => {
               <span style={{ fontSize: '11px', color: '#d1d5db', fontWeight: 'bold' }}>
                 EXPORTING...
               </span>
-              <span style={{ fontSize: '11px', color: '#ff4500', fontWeight: 'bold' }}>
+              <span style={{ fontSize: '11px', color: '#22c55e', fontWeight: 'bold' }}>
                 {exportProgress}%
               </span>
             </div>
@@ -524,7 +524,7 @@ const VideoExportComplete: React.FC = () => {
               <div style={{
                 width: `${exportProgress}%`,
                 height: '100%',
-                backgroundColor: '#ff4500',
+                backgroundColor: '#22c55e',
                 transition: 'width 0.2s ease'
               }} />
             </div>

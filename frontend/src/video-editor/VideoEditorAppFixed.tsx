@@ -161,7 +161,7 @@ const VideoEditorAppFixed: React.FC = () => {
         <h1 style={{
           margin: 0,
           fontSize: '18px',
-          color: '#ff4500',
+          color: '#22c55e',
           fontWeight: 'bold'
         }}>
           🎬 PROFESSIONAL VIDEO EDITOR - Multi-Video
@@ -196,7 +196,7 @@ const VideoEditorAppFixed: React.FC = () => {
             }}>
               <h3 style={{
                 margin: 0,
-                color: '#ff4500',
+                color: '#22c55e',
                 fontSize: '16px',
                 fontWeight: '600'
               }}>
@@ -569,7 +569,7 @@ const VideoEditorAppFixed: React.FC = () => {
                         fontSize: '12px',
                         textAlign: 'center',
                         cursor: 'pointer',
-                        border: selectedVideo === video ? '2px solid #ff4500' : '1px solid #2563eb',
+                        border: selectedVideo === video ? '2px solid #22c55e' : '1px solid #2563eb',
                         position: 'relative',
                         overflow: 'hidden'
                       }}
@@ -641,7 +641,7 @@ const VideoEditorAppFixed: React.FC = () => {
           }}>
             <h3 style={{
               margin: '0 0 8px 0',
-              color: '#ff4500',
+              color: '#22c55e',
               fontSize: '16px',
               fontWeight: '600'
             }}>
@@ -750,7 +750,7 @@ const VideoEditorAppFixed: React.FC = () => {
             }}>
               <h4 style={{
                 margin: '0 0 8px 0',
-                color: '#ff4500',
+                color: '#22c55e',
                 fontSize: '14px'
               }}>
                 Keyboard Shortcuts
@@ -781,7 +781,7 @@ const VideoEditorAppFixed: React.FC = () => {
               style={{
                 width: '100%',
                 padding: '12px',
-                backgroundColor: videos.length > 0 ? '#ff4500' : '#343536',
+                backgroundColor: videos.length > 0 ? '#22c55e' : '#343536',
                 color: 'white',
                 border: 'none',
                 borderRadius: '6px',

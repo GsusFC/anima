@@ -97,7 +97,7 @@ const TimelineHoverPreview: React.FC<TimelineHoverPreviewProps> = ({
         style={{
           textAlign: 'center',
           fontSize: '11px',
-          color: '#ff4500',
+          color: '#22c55e',
           fontWeight: 'bold',
           fontFamily: '"Space Mono", monospace'
         }}

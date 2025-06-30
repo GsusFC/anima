@@ -30,7 +30,7 @@ const VideoEditorAppRestored: React.FC = () => {
           <h1 style={{
             margin: 0,
             fontSize: '18px',
-            color: '#ff4500',
+            color: '#22c55e',
             fontWeight: 'bold'
           }}>
             🎬 VIDEO EDITOR - Enhanced Trimming Experience

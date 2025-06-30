@@ -28,7 +28,7 @@ const VideoEditorAppHybrid: React.FC = () => {
           <h1 style={{
             margin: 0,
             fontSize: '18px',
-            color: '#ff4500',
+            color: '#22c55e',
             fontWeight: 'bold'
           }}>
             🎬 PROFESSIONAL VIDEO EDITOR - Multi-Video
@@ -50,7 +50,7 @@ const VideoEditorAppHybrid: React.FC = () => {
             height: '100%'
           }}>
             <div style={{ padding: '20px' }}>
-              <h3 style={{ margin: '0 0 20px 0', color: '#ff4500' }}>Video Library</h3>
+              <h3 style={{ margin: '0 0 20px 0', color: '#22c55e' }}>Video Library</h3>
             </div>
             <div style={{ flex: 1, overflow: 'hidden' }}>
               <VideoLibrary />

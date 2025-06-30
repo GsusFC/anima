@@ -75,7 +75,7 @@ const VideoUploader: React.FC = () => {
         <div
           style={{
             flex: 1,
-            border: `2px dashed ${dragActive ? '#ff4500' : '#343536'}`,
+            border: `2px dashed ${dragActive ? '#22c55e' : '#343536'}`,
             borderRadius: '8px',
             display: 'flex',
             flexDirection: 'column',
@@ -83,7 +83,7 @@ const VideoUploader: React.FC = () => {
             justifyContent: 'center',
             cursor: 'pointer',
             transition: 'all 0.2s ease',
-            backgroundColor: dragActive ? 'rgba(255, 69, 0, 0.1)' : '#1a1a1b',
+            backgroundColor: dragActive ? 'rgba(34, 197, 94, 0.1)' : '#1a1a1b',
             minHeight: '200px'
           }}
           onDrop={handleDrop}
@@ -103,7 +103,7 @@ const VideoUploader: React.FC = () => {
               <p style={{
                 margin: 0,
                 fontSize: '14px',
-                color: dragActive ? '#ff4500' : '#d1d5db',
+                color: dragActive ? '#22c55e' : '#d1d5db',
                 fontWeight: 'bold',
                 marginBottom: '5px'
               }}>
@@ -178,9 +178,9 @@ const VideoUploader: React.FC = () => {
               width: '100%',
               padding: '8px 12px',
               fontSize: '11px',
-              backgroundColor: 'rgba(255, 69, 0, 0.1)',
-              color: '#ff4500',
-              border: '1px solid #ff4500',
+              backgroundColor: 'rgba(34, 197, 94, 0.1)',
+              color: '#22c55e',
+              border: '1px solid #22c55e',
               borderRadius: '4px',
               cursor: 'pointer',
               fontFamily: '"Space Mono", monospace',

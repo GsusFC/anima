@@ -209,7 +209,7 @@ const VideoTimeline: React.FC = () => {
           <h3 style={{
             margin: 0,
             fontSize: '14px',
-            color: '#ff4500',
+            color: '#22c55e',
             fontWeight: 'bold',
             fontFamily: '"Space Mono", monospace'
           }}>
@@ -222,7 +222,7 @@ const VideoTimeline: React.FC = () => {
               style={{
                 width: '40px',
                 height: '40px',
-                backgroundColor: '#ff4500',
+                backgroundColor: '#22c55e',
                 border: 'none',
                 borderRadius: '6px',
                 cursor: 'pointer',
@@ -479,8 +479,8 @@ const VideoTimeline: React.FC = () => {
                   left: `${timeToPixel(segment.startTime)}px`,
                   width: `${timeToPixel(segment.endTime - segment.startTime)}px`,
                   height: '100%',
-                  backgroundColor: 'rgba(255, 69, 0, 0.5)',
-                  border: '2px solid #ff4500',
+                  backgroundColor: 'rgba(34, 197, 94, 0.5)',
+                  border: '2px solid #22c55e',
                   borderRadius: '4px',
                   display: 'flex',
                   alignItems: 'center',

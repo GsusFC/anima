@@ -64,7 +64,7 @@ const VideoEditorAppDebug: React.FC = () => {
       fontFamily: '"Space Mono", monospace',
       padding: '20px'
     }}>
-      <h1 style={{ color: '#ff4500', marginBottom: '20px' }}>
+      <h1 style={{ color: '#22c55e', marginBottom: '20px' }}>
         🔍 Video Editor Debug Mode
       </h1>
       
@@ -104,7 +104,7 @@ const VideoEditorAppDebug: React.FC = () => {
           borderRadius: '8px',
           marginBottom: '20px'
         }}>
-          <h3 style={{ color: '#ff4500', margin: '0 0 10px 0' }}>Video Information</h3>
+          <h3 style={{ color: '#22c55e', margin: '0 0 10px 0' }}>Video Information</h3>
           <p>Name: {videoInfo.name}</p>
           <p>Size: {(videoInfo.size / 1024 / 1024).toFixed(2)} MB</p>
           <p>Duration: {videoInfo.duration.toFixed(2)} seconds</p>

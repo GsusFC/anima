@@ -12,7 +12,7 @@ const VideoEditorAppTest: React.FC = () => {
       fontSize: '24px'
     }}>
       <div style={{ textAlign: 'center' }}>
-        <h1 style={{ color: '#ff4500', marginBottom: '20px' }}>🎬 VIDEO EDITOR</h1>
+        <h1 style={{ color: '#22c55e', marginBottom: '20px' }}>🎬 VIDEO EDITOR</h1>
         <p>La nueva interfaz multi-video está funcionando!</p>
         <p style={{ fontSize: '16px', marginTop: '20px', color: '#9ca3af' }}>
           URL: /video-editor

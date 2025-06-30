@@ -22,7 +22,7 @@ const VideoEditorAppSimple: React.FC = () => {
         <h1 style={{
           margin: 0,
           fontSize: '18px',
-          color: '#ff4500',
+          color: '#22c55e',
           fontWeight: 'bold'
         }}>
           🎬 PROFESSIONAL VIDEO EDITOR
@@ -41,7 +41,7 @@ const VideoEditorAppSimple: React.FC = () => {
           backgroundColor: '#1a1a1b',
           padding: '20px'
         }}>
-          <h3 style={{ margin: '0 0 20px 0', color: '#ff4500' }}>Video Library</h3>
+          <h3 style={{ margin: '0 0 20px 0', color: '#22c55e' }}>Video Library</h3>
           <div style={{
             border: '2px dashed #343536',
             borderRadius: '8px',
@@ -52,7 +52,7 @@ const VideoEditorAppSimple: React.FC = () => {
             <div style={{ fontSize: '48px', marginBottom: '10px' }}>📹</div>
             <p>Drop videos here</p>
             <button style={{
-              backgroundColor: '#ff4500',
+              backgroundColor: '#22c55e',
               color: 'white',
               border: 'none',
               padding: '10px 20px',
@@ -100,7 +100,7 @@ const VideoEditorAppSimple: React.FC = () => {
               justifyContent: 'space-between',
               marginBottom: '10px'
             }}>
-              <h4 style={{ margin: 0, color: '#ff4500' }}>Timeline</h4>
+              <h4 style={{ margin: 0, color: '#22c55e' }}>Timeline</h4>
               <div style={{ display: 'flex', gap: '10px' }}>
                 <button style={{
                   backgroundColor: '#343536',
@@ -135,7 +135,7 @@ const VideoEditorAppSimple: React.FC = () => {
           backgroundColor: '#1a1a1b',
           padding: '20px'
         }}>
-          <h3 style={{ margin: '0 0 20px 0', color: '#ff4500' }}>Export Settings</h3>
+          <h3 style={{ margin: '0 0 20px 0', color: '#22c55e' }}>Export Settings</h3>
           
           <div style={{ marginBottom: '20px' }}>
             <label style={{ display: 'block', marginBottom: '8px', color: '#d1d5db' }}>
@@ -177,7 +177,7 @@ const VideoEditorAppSimple: React.FC = () => {
 
           <button style={{
             width: '100%',
-            backgroundColor: '#ff4500',
+            backgroundColor: '#22c55e',
             color: 'white',
             border: 'none',
             padding: '12px',

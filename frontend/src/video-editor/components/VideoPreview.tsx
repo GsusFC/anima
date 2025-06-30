@@ -109,7 +109,7 @@ const VideoPreview: React.FC = () => {
           fontSize: '11px',
           fontFamily: '"Space Mono", monospace'
         }}>
-          <div style={{ color: '#ff4500', marginBottom: '2px' }}>
+          <div style={{ color: '#22c55e', marginBottom: '2px' }}>
             {project.video!.width} × {project.video!.height}
           </div>
           <div style={{ color: '#9ca3af' }}>

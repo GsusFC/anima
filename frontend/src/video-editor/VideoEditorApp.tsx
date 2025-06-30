@@ -29,7 +29,7 @@ const VideoEditorApp: React.FC = () => {
             fontSize: '18px',
             fontWeight: '600',
             margin: 0,
-            color: '#ff4500'
+            color: '#22c55e'
           }}>
             🎬 AnimaGen - Professional Video Editor
           </h1>

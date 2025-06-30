@@ -389,7 +389,7 @@ const VideoEditorAppSimplified: React.FC = () => {
         <h1 style={{
           margin: 0,
           fontSize: '18px',
-          color: '#ff4500',
+          color: '#22c55e',
           fontWeight: 'bold'
         }}>
           🎬 VIDEO EDITOR - Funcional & Rápido
@@ -426,7 +426,7 @@ const VideoEditorAppSimplified: React.FC = () => {
             flexDirection: 'column',
             padding: '20px'
           }}>
-            <h3 style={{ margin: '0 0 20px 0', color: '#ff4500' }}>Upload Video</h3>
+            <h3 style={{ margin: '0 0 20px 0', color: '#22c55e' }}>Upload Video</h3>
             
             {!video ? (
               <div
@@ -464,7 +464,7 @@ const VideoEditorAppSimplified: React.FC = () => {
                 borderRadius: '8px',
                 padding: '15px'
               }}>
-                <h4 style={{ margin: '0 0 10px 0', color: '#ff4500' }}>Video Info</h4>
+                <h4 style={{ margin: '0 0 10px 0', color: '#22c55e' }}>Video Info</h4>
                 <p style={{ margin: '5px 0', fontSize: '14px' }}>Name: {video.name}</p>
                 <p style={{ margin: '5px 0', fontSize: '14px' }}>Size: {formatFileSize(video.size)}</p>
                 <p style={{ margin: '5px 0', fontSize: '14px' }}>Duration: {formatTime(video.duration)}</p>
@@ -540,7 +540,7 @@ const VideoEditorAppSimplified: React.FC = () => {
             flexDirection: 'column',
             padding: '20px'
           }}>
-            <h3 style={{ margin: '0 0 20px 0', color: '#ff4500' }}>Controls</h3>
+            <h3 style={{ margin: '0 0 20px 0', color: '#22c55e' }}>Controls</h3>
             
             {video && (
               <>
@@ -700,8 +700,8 @@ const VideoEditorAppSimplified: React.FC = () => {
                       left: `${timeToPixel(segment.startTime)}px`,
                       width: `${timeToPixel(segment.endTime - segment.startTime)}px`,
                       height: '100%',
-                      backgroundColor: 'rgba(255, 69, 0, 0.7)',
-                      border: '2px solid #ff4500',
+                      backgroundColor: 'rgba(34, 197, 94, 0.7)',
+                      border: '2px solid #22c55e',
                       borderRadius: '4px',
                       display: 'flex',
                       alignItems: 'center',

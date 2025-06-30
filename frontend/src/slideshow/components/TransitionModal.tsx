@@ -275,7 +275,7 @@ const TransitionModal: React.FC<TransitionModalProps> = ({
                 borderRadius: '4px',
                 border: '1px solid #2a2a2b'
               }}>
-                {transitionCategories.flatMap(cat => cat.transitions).find(t => t.type === selectedType)?.name}
+                {transitionCategories.flatMap(cat => cat.transitions).find((t: any) => t.type === selectedType)?.name}
               </div>
             </div>
             
