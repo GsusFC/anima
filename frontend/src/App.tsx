@@ -1,11 +1,11 @@
 import React from 'react';
+import { BrowserRouter as Router, Routes, Route, Link } from 'react-router-dom';
 import Header from './components/Header/Header';
-import ImageUpload from './components/ImageUpload/ImageUpload';
-import Preview from './components/Preview/Preview';
-import Timeline from './components/Timeline/Timeline';
-import ExportControls from './components/ExportControls/ExportControls';
+import SlideshowApp from './slideshow/SlideshowApp';
+import VideoEditorAppRestored from './video-editor/VideoEditorAppRestored';
 
-const App: React.FC = () => {
+// SlideShow App Component  
+const SlideShowApp: React.FC = () => {
   return (
     <div style={{
       height: '100vh',
@@ -19,63 +19,107 @@ const App: React.FC = () => {
       {/* Header */}
       <Header />
       
-      {/* Main Content */}
+      {/* Slideshow Content */}
+      <div style={{ flex: 1, minHeight: 0 }}>
+        <SlideshowApp />
+      </div>
+    </div>
+  );
+};
+
+// Mode Selector Component
+const ModeSelector: React.FC = () => {
+  return (
+    <div style={{
+      height: '100vh',
+      backgroundColor: '#0a0a0b',
+      color: 'white',
+      display: 'flex',
+      alignItems: 'center',
+      justifyContent: 'center',
+      fontFamily: '"Space Mono", monospace'
+    }}>
       <div style={{
-        flex: 1,
-        display: 'flex',
-        flexDirection: 'column',
-        minHeight: 0
+        textAlign: 'center',
+        maxWidth: '600px',
+        padding: '40px'
       }}>
-        {/* Top Section - Three Columns */}
-        <div style={{
-          flex: 1,
-          display: 'flex',
-          minHeight: 0
+        <h1 style={{
+          fontSize: '48px',
+          margin: '0 0 20px 0',
+          color: '#ff4500'
         }}>
-          {/* Left Sidebar - Image Upload */}
-          <div style={{
-            width: '320px',
-            borderRight: '1px solid #343536',
-            display: 'flex',
-            flexDirection: 'column',
-            minHeight: 0
-          }}>
-            <ImageUpload />
-          </div>
-          
-          {/* Center - Preview */}
-          <div style={{
-            flex: 1,
-            borderRight: '1px solid #343536',
-            display: 'flex',
-            flexDirection: 'column',
-            minHeight: 0
-          }}>
-            <Preview />
-          </div>
-          
-          {/* Right Sidebar - Export Controls */}
-          <div style={{
-            width: '320px',
-            display: 'flex',
-            flexDirection: 'column',
-            minHeight: 0
-          }}>
-            <ExportControls />
-          </div>
-        </div>
+          AnimaGen
+        </h1>
+        <p style={{
+          fontSize: '18px',
+          color: '#9ca3af',
+          margin: '0 0 40px 0'
+        }}>
+          Choose your editing mode
+        </p>
         
-        {/* Bottom Section - Timeline */}
         <div style={{
-          height: '240px',
-          borderTop: '1px solid #343536',
-          flexShrink: 0,
-          overflow: 'hidden'
+          display: 'flex',
+          gap: '30px',
+          justifyContent: 'center'
         }}>
-          <Timeline />
+          <Link 
+            to="/slideshow"
+            style={{
+              textDecoration: 'none',
+              padding: '30px',
+              backgroundColor: '#1a1a1b',
+              border: '2px solid #343536',
+              borderRadius: '12px',
+              color: 'white',
+              cursor: 'pointer',
+              transition: 'all 0.2s ease',
+              width: '200px'
+            }}
+          >
+            <div style={{ fontSize: '36px', marginBottom: '15px' }}>🖼️</div>
+            <h3 style={{ margin: '0 0 10px 0', color: '#22c55e' }}>SlideShow</h3>
+            <p style={{ margin: 0, fontSize: '12px', color: '#9ca3af' }}>
+              Create videos from images with transitions
+            </p>
+          </Link>
+
+          <Link 
+            to="/video-editor"
+            style={{
+              textDecoration: 'none',
+              padding: '30px',
+              backgroundColor: '#1a1a1b',
+              border: '2px solid #343536',
+              borderRadius: '12px',
+              color: 'white',
+              cursor: 'pointer',
+              transition: 'all 0.2s ease',
+              width: '200px'
+            }}
+          >
+            <div style={{ fontSize: '36px', marginBottom: '15px' }}>🎬</div>
+            <h3 style={{ margin: '0 0 10px 0', color: '#ff4500' }}>Video Editor</h3>
+            <p style={{ margin: 0, fontSize: '12px', color: '#9ca3af' }}>
+              Trim and edit video files
+            </p>
+          </Link>
         </div>
       </div>
     </div>
+  );
+};
+
+const App: React.FC = () => {
+  return (
+    <Router>
+      <Routes>
+        <Route path="/" element={<ModeSelector />} />
+        <Route path="/slideshow" element={<SlideShowApp />} />
+        <Route path="/video-editor" element={<VideoEditorAppRestored />} />
+      </Routes>
+    </Router>
   );
 };
 

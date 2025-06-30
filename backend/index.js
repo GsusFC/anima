@@ -28,6 +28,15 @@ const outputDir = path.join(__dirname, process.env.OUTPUT_DIR || 'output');
 const tempDir = path.join(__dirname, process.env.TEMP_DIR || 'temp');
 const compositionsDir = path.join(__dirname, 'compositions');
 
+// Serve uploaded videos and processed files
+app.use('/temp', express.static(tempDir));
+app.use('/output', (req, res, next) => {
+  // Force download headers for exported files
+  res.setHeader('Content-Disposition', `attachment; filename="${path.basename(req.path)}"`);
+  res.setHeader('Content-Type', 'application/octet-stream');
+  next();
+}, express.static(outputDir));
+
 if (!fs.existsSync(outputDir)) {
   fs.mkdirSync(outputDir, { recursive: true });
 }
@@ -63,6 +72,7 @@ const storage = multer.diskStorage({
   }
 });
 
+// Multer for images (slideshow)
 const upload = multer({ 
   storage: storage,
   limits: {
@@ -82,6 +92,27 @@ const upload = multer({
   }
 });
 
+// Multer for videos (video editor)
+const videoUpload = multer({
+  storage: storage,
+  limits: {
+    fileSize: 100 * 1024 * 1024, // 100MB limit for videos
+    files: 1 // Single video file
+  },
+  fileFilter: (req, file, cb) => {
+    const allowedVideoTypes = /mp4|mov|webm|avi|mkv/;
+    const extname = allowedVideoTypes.test(path.extname(file.originalname).toLowerCase());
+    const mimetype = /video\//.test(file.mimetype);
+    
+    // Accept if either extension OR mimetype matches (more flexible)
+    if (mimetype || extname) {
+      return cb(null, true);
+    } else {
+      cb(new Error('Only video files are allowed! Supported formats: MP4, MOV, WebM, AVI, MKV'));
+    }
+  }
+});
+
 // Quality presets for different output formats
 const qualityPresets = {
   web: { width: 720, height: 480, fps: parseInt(process.env.DEFAULT_FPS) || 24, bitrate: '1M', crf: 28 },
@@ -94,6 +125,7 @@ const qualityPresets = {
 // Transition effects mapping (using real FFmpeg xfade transitions)
 const transitionEffects = {
   none: 'none',
+  cut: 'none', // Handle cut transitions as no transition
   
   // Basic fades
   fade: 'fade',
@@ -235,6 +267,141 @@ app.post('/upload', upload.array('images', 50), (req, res) => {
   }
 });
 
+// Video Editor upload endpoint
+app.post('/video-editor/upload', videoUpload.single('video'), (req, res) => {
+  try {
+    if (!req.file) {
+      return res.status(400).json({ error: 'No video file uploaded' });
+    }
+
+    // Validate video file type
+    const videoMimeTypes = ['video/mp4', 'video/quicktime', 'video/webm', 'video/x-msvideo', 'video/x-matroska'];
+    if (!videoMimeTypes.includes(req.file.mimetype)) {
+      return res.status(400).json({ error: 'Invalid video file type' });
+    }
+
+    const videoFile = {
+      id: `video_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
+      filename: req.file.filename,
+      originalName: req.file.originalname,
+      path: req.file.path,
+      size: req.file.size,
+      mimetype: req.file.mimetype
+    };
+
+    res.json({
+      success: true,
+      video: videoFile,
+      message: 'Video uploaded successfully'
+    });
+
+  } catch (error) {
+    console.error('Video upload error:', error);
+    res.status(500).json({ error: 'Video upload failed', details: error.message });
+  }
+});
+
+// Video Editor: Trim video endpoint
+app.post('/video-editor/trim', (req, res) => {
+  try {
+    const { videoPath, startTime, endTime, outputName } = req.body;
+    
+    if (!videoPath || startTime === undefined || endTime === undefined) {
+      return res.status(400).json({ 
+        error: 'Missing required fields: videoPath, startTime, endTime' 
+      });
+    }
+
+    if (startTime >= endTime) {
+      return res.status(400).json({ 
+        error: 'Start time must be less than end time' 
+      });
+    }
+
+    const sessionId = req.body.sessionId || Date.now().toString();
+    const sessionDir = path.join(tempDir, sessionId);
+    const trimmedName = outputName || `trimmed_${Date.now()}.mp4`;
+    const outputPath = path.join(sessionDir, trimmedName);
+
+    // Ensure session directory exists
+    if (!fs.existsSync(sessionDir)) {
+      fs.mkdirSync(sessionDir, { recursive: true });
+    }
+
+    console.log(`🎬 Trimming video: ${videoPath}`);
+    console.log(`⏰ From ${startTime}s to ${endTime}s`);
+    console.log(`💾 Output: ${outputPath}`);
+
+    ffmpeg(videoPath)
+      .setStartTime(startTime)
+      .setDuration(endTime - startTime)
+      .output(outputPath)
+      .videoCodec('libx264')
+      .audioCodec('aac')
+      .on('start', (commandLine) => {
+        console.log('🚀 FFmpeg command:', commandLine);
+        io.emit('trim-progress', { 
+          sessionId, 
+          status: 'started',
+          message: 'Video trimming started...'
+        });
+      })
+      .on('progress', (progress) => {
+        console.log(`⏳ Trim progress: ${progress.percent}%`);
+        io.emit('trim-progress', { 
+          sessionId, 
+          status: 'processing', 
+          percent: progress.percent,
+          message: `Trimming video: ${Math.round(progress.percent || 0)}%`
+        });
+      })
+      .on('end', () => {
+        console.log('✅ Video trimmed successfully');
+        
+        // Get file stats
+        const stats = fs.statSync(outputPath);
+        
+        io.emit('trim-progress', { 
+          sessionId, 
+          status: 'completed',
+          message: 'Video trimmed successfully!'
+        });
+
+        res.json({
+          success: true,
+          trimmedVideo: {
+            path: outputPath,
+            filename: trimmedName,
+            size: stats.size,
+            duration: endTime - startTime
+          },
+          message: 'Video trimmed successfully'
+        });
+      })
+      .on('error', (err) => {
+        console.error('❌ Trim error:', err);
+        io.emit('trim-progress', { 
+          sessionId, 
+          status: 'error',
+          message: `Trim failed: ${err.message}`
+        });
+        
+        res.status(500).json({ 
+          error: 'Video trim failed', 
+          details: err.message 
+        });
+      })
+      .run();
+
+  } catch (error) {
+    console.error('❌ Trim endpoint error:', error);
+    res.status(500).json({ 
+      error: 'Video trim failed', 
+      details: error.message 
+    });
+  }
+});
+
 // HELPER FUNCTION: Calculate optimal input duration for export with transitions
 // CONSOLIDATED HELPER: Calculate optimal input durations for exports with transitions
 function calculateInputDurations(validImages, transitions, frameDurations, defaultDuration) {
@@ -244,29 +411,47 @@ function calculateInputDurations(validImages, transitions, frameDurations, defau
     maxTransitionDuration: 0
   };
   
-  // Calculate total duration needed and max transition duration
-  for (let i = 0; i < validImages.length; i++) {
-    const frameDuration = (frameDurations[i] || defaultDuration) / 1000;
-    results.totalDuration += frameDuration;
-    
-    if (i < transitions.length && transitions[i]) {
-      const transitionDuration = Math.min(transitions[i].duration / 1000, frameDuration * 0.9);
-      results.maxTransitionDuration = Math.max(results.maxTransitionDuration, transitionDuration);
-      // Add buffer for overlapping transitions - more precise calculation
-      results.totalDuration += transitionDuration * 0.3; // Reduced buffer, more accurate
+  // For slideshow with cuts/no transitions, use exact frame durations
+  // Only apply buffers when there are actual transitions
+  const hasRealTransitions = transitions && transitions.some(t => 
+    t && t.type && t.type !== 'cut' && t.type !== 'none'
+  );
+  
+  if (!hasRealTransitions) {
+    // Simple case: no transitions, use exact durations
+    for (let i = 0; i < validImages.length; i++) {
+      const frameDuration = (frameDurations[i] || defaultDuration) / 1000;
+      results.inputDurations.push(frameDuration);
+      results.totalDuration += frameDuration;
     }
-  }
-  
-  // Calculate individual input durations with sufficient buffer
-  const bufferMultiplier = 1.5 + (results.maxTransitionDuration / results.totalDuration); // Dynamic buffer
-  
-  for (let i = 0; i < validImages.length; i++) {
-    const baseDuration = (frameDurations[i] || defaultDuration) / 1000;
-    const inputDuration = Math.max(
-      baseDuration,
-      results.totalDuration / validImages.length * bufferMultiplier
-    );
-    results.inputDurations.push(inputDuration);
+    console.log('📏 Using exact durations (no transitions)');
+  } else {
+    // Complex case: has transitions, apply buffer logic
+    console.log('📏 Using buffered durations (has transitions)');
+    
+    // Calculate total duration needed and max transition duration
+    for (let i = 0; i < validImages.length; i++) {
+      const frameDuration = (frameDurations[i] || defaultDuration) / 1000;
+      results.totalDuration += frameDuration;
+      
+      if (i < transitions.length && transitions[i] && transitions[i].type !== 'cut' && transitions[i].type !== 'none') {
+        const transitionDuration = Math.min(transitions[i].duration / 1000, frameDuration * 0.9);
+        results.maxTransitionDuration = Math.max(results.maxTransitionDuration, transitionDuration);
+        results.totalDuration += transitionDuration * 0.3;
+      }
+    }
+    
+    // Calculate individual input durations with buffer for transitions
+    const bufferMultiplier = 1.5 + (results.maxTransitionDuration / results.totalDuration);
+    
+    for (let i = 0; i < validImages.length; i++) {
+      const baseDuration = (frameDurations[i] || defaultDuration) / 1000;
+      const inputDuration = Math.max(
+        baseDuration,
+        results.totalDuration / validImages.length * bufferMultiplier
+      );
+      results.inputDurations.push(inputDuration);
+    }
   }
   
   return results;
@@ -359,9 +544,14 @@ function buildUnifiedTransitionChain(validImages, transitions, frameDurations, d
     return '[v0]';
   }
 
-  if (!transitions || validImages.length < 2) {
-    // No transitions - use simple concat
-    console.log('No transitions, using concat');
+  // Check if all transitions are missing or are cut/none types
+  const hasAnyRealTransitions = transitions && transitions.some(t => 
+    t && t.type && t.type !== 'cut' && t.type !== 'none'
+  );
+
+  if (!transitions || validImages.length < 2 || !hasAnyRealTransitions) {
+    // No transitions or all are cut/none - use simple concat
+    console.log('No real transitions detected, using concat');
     let concatVideo = "";
     for(let i = 0; i < validImages.length; i++){
       concatVideo += `[v${i}]`;
@@ -409,12 +599,35 @@ function buildUnifiedTransitionChain(validImages, transitions, frameDurations, d
   return lastOutput;
 }
 
+// Helper function to detect image dimensions
+const getImageDimensions = (imagePath) => {
+  return new Promise((resolve, reject) => {
+    ffmpeg.ffprobe(imagePath, (err, metadata) => {
+      if (err) return reject(err);
+      const stream = metadata.streams.find(s => s.codec_type === 'video');
+      if (stream) {
+        resolve({ width: stream.width, height: stream.height });
+      } else {
+        reject(new Error('No video stream found'));
+      }
+    });
+  });
+};
+
 // PREVIEW ENDPOINT - Generate quick video preview with transitions
 app.post('/preview', async (req, res) => {
   try {
     const { images, transitions, sessionId } = req.body;
     const frameDurations = req.body.frameDurations || [];
-    const defaultDuration = 1500; // Reasonable duration for preview (1.5s per frame)
+    const defaultDuration = 1000; // Match frontend default (1s per frame)
+
+    console.log(`🔍 Preview request received:`, {
+      imagesCount: images?.length,
+      imageFilenames: images?.map(img => img.filename),
+      transitionsCount: transitions?.length,
+      frameDurationsCount: frameDurations?.length,
+      sessionId
+    });
 
     if (!images || !Array.isArray(images) || images.length === 0) {
       return res.status(400).json({ error: 'No images provided' });
@@ -423,10 +636,36 @@ app.post('/preview', async (req, res) => {
 
     const validImages = images.map(img => {
       const imagePath = path.join(tempDir, sessionId, img.filename);
-      return fs.existsSync(imagePath) ? { ...img, path: imagePath } : null;
+      const exists = fs.existsSync(imagePath);
+      console.log(`🔍 Checking image: ${img.filename} → ${imagePath} → ${exists ? 'EXISTS' : 'NOT FOUND'}`);
+      return exists ? { ...img, path: imagePath } : null;
     }).filter(Boolean);
 
     if (validImages.length === 0) return res.status(400).json({ error: 'No valid images found' });
+    
+    // Detect dimensions from first image
+    let previewSettings;
+    try {
+      const firstImageDims = await getImageDimensions(validImages[0].path);
+      // Use native dimensions for preview but scale down if too large
+      const maxWidth = 1280;
+      const maxHeight = 720;
+      
+      let { width, height } = firstImageDims;
+      
+      // Scale down if necessary while maintaining aspect ratio
+      if (width > maxWidth || height > maxHeight) {
+        const scaleRatio = Math.min(maxWidth / width, maxHeight / height);
+        width = Math.round(width * scaleRatio);
+        height = Math.round(height * scaleRatio);
+      }
+      
+      previewSettings = { width, height, fps: 30, bitrate: '2M', crf: 23 };
+      console.log(`Preview: Auto-detected dimensions ${firstImageDims.width}x${firstImageDims.height}, using ${width}x${height}`);
+    } catch (error) {
+      console.log('Preview: Could not detect dimensions, using default');
+      previewSettings = { width: 640, height: 480, fps: 30, bitrate: '1M', crf: 28 };
+    }
     
     console.log(`Preview: Processing ${validImages.length} images with transitions`);
     console.log(`Preview: Frame durations (ms):`, frameDurations);
@@ -445,9 +684,6 @@ app.post('/preview', async (req, res) => {
 
     const outputFilename = `preview_${sessionId}_${Date.now()}.mp4`;
     const outputPath = path.join(outputDir, outputFilename);
-    
-    // Use preview quality settings (smaller, faster)
-    const previewSettings = { width: 640, height: 480, fps: 30, bitrate: '1M', crf: 28 };
     
     let command = ffmpeg();
     let complexFilter = [];
@@ -509,11 +745,382 @@ app.post('/preview', async (req, res) => {
   }
 });
 
+// Debug endpoint to list output files
+app.get('/debug/output-files', (req, res) => {
+  try {
+    const files = fs.readdirSync(outputDir);
+    res.json({
+      outputDir,
+      files: files.map(file => ({
+        name: file,
+        path: path.join(outputDir, file),
+        url: `/output/${file}`,
+        size: fs.statSync(path.join(outputDir, file)).size
+      }))
+    });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
 // CORRECTED GIF EXPORT ENDPOINT
+// Video Editor Export Endpoints
+app.post('/export/mp4', async (req, res) => {
+  try {
+    const { videoPath, startTime, endTime, quality = 'standard', resolution, fps = 30 } = req.body;
+    
+    if (!videoPath) {
+      return res.status(400).json({ error: 'Video path is required' });
+    }
+
+    const inputPath = path.resolve(videoPath.startsWith('./') ? videoPath.slice(2) : videoPath);
+    
+    if (!fs.existsSync(inputPath)) {
+      return res.status(400).json({ error: 'Video file not found' });
+    }
+
+    console.log(`🎬 Exporting MP4: ${inputPath}`);
+    
+    const outputFilename = `exported_${Date.now()}.mp4`;
+    const outputPath = path.join(outputDir, outputFilename);
+    
+    // Quality settings
+    const qualityMap = {
+      web: { crf: 28, preset: 'fast', scale: '1280:720' },
+      standard: { crf: 23, preset: 'medium', scale: '1920:1080' },
+      high: { crf: 18, preset: 'slow', scale: '1920:1080' },
+      ultra: { crf: 15, preset: 'veryslow', scale: '3840:2160' }
+    };
+    
+    const settings = qualityMap[quality] || qualityMap.standard;
+    
+    let command = ffmpeg(inputPath);
+    
+    // Apply trimming if specified
+    if (typeof startTime === 'number' && typeof endTime === 'number') {
+      const duration = endTime - startTime;
+      console.log(`🎬 Trimming MP4: ${startTime.toFixed(3)}s to ${endTime.toFixed(3)}s (${duration.toFixed(3)}s duration)`);
+      command.seekInput(startTime).duration(duration);
+    }
+    
+    // Apply resolution if custom
+    if (resolution && resolution.width && resolution.height) {
+      command.size(`${resolution.width}x${resolution.height}`);
+    } else if (settings.scale) {
+      command.size(settings.scale);
+    }
+    
+    command
+      .fps(fps)
+      .videoCodec('libx264')
+      .audioCodec('aac')
+      .outputOptions([
+        '-preset', settings.preset,
+        '-crf', settings.crf.toString(),
+        '-pix_fmt', 'yuv420p',
+        '-movflags', '+faststart'
+      ])
+      .output(outputPath)
+      .on('start', (commandLine) => {
+        console.log('FFmpeg command:', commandLine);
+      })
+      .on('end', () => {
+        console.log('✅ MP4 export completed');
+        res.json({
+          success: true,
+          downloadUrl: `/output/${path.basename(outputPath)}`,
+          filename: outputFilename
+        });
+      })
+      .on('error', (err) => {
+        console.error('❌ MP4 export failed:', err);
+        res.status(500).json({ error: 'Export failed: ' + err.message });
+      })
+      .run();
+      
+  } catch (error) {
+    console.error('❌ MP4 export error:', error);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
+app.post('/export/webm', async (req, res) => {
+  try {
+    const { videoPath, startTime, endTime, quality = 'standard', resolution, fps = 30 } = req.body;
+    
+    if (!videoPath) {
+      return res.status(400).json({ error: 'Video path is required' });
+    }
+
+    const inputPath = path.resolve(videoPath.startsWith('./') ? videoPath.slice(2) : videoPath);
+    
+    if (!fs.existsSync(inputPath)) {
+      return res.status(400).json({ error: 'Video file not found' });
+    }
+
+    console.log(`🎬 Exporting WebM: ${inputPath}`);
+    
+    const outputFilename = `exported_${Date.now()}.webm`;
+    const outputPath = path.join(outputDir, outputFilename);
+    
+    // Quality settings for WebM
+    const qualityMap = {
+      web: { crf: 35, cpu: 5, scale: '1280:720' },
+      standard: { crf: 30, cpu: 3, scale: '1920:1080' },
+      high: { crf: 23, cpu: 2, scale: '1920:1080' },
+      ultra: { crf: 18, cpu: 1, scale: '3840:2160' }
+    };
+    
+    const settings = qualityMap[quality] || qualityMap.standard;
+    
+    let command = ffmpeg(inputPath);
+    
+    // Apply trimming if specified
+    if (typeof startTime === 'number' && typeof endTime === 'number') {
+      const duration = endTime - startTime;
+      console.log(`🎬 Trimming WebM: ${startTime.toFixed(3)}s to ${endTime.toFixed(3)}s (${duration.toFixed(3)}s duration)`);
+      command.seekInput(startTime).duration(duration);
+    }
+    
+    // Apply resolution if custom
+    if (resolution && resolution.width && resolution.height) {
+      command.size(`${resolution.width}x${resolution.height}`);
+    } else if (settings.scale) {
+      command.size(settings.scale);
+    }
+    
+    command
+      .fps(fps)
+      .videoCodec('libvpx-vp9')
+      .audioCodec('libopus')
+      .outputOptions([
+        '-cpu-used', settings.cpu.toString(),
+        '-crf', settings.crf.toString(),
+        '-b:v', '0', // Variable bitrate
+        '-pix_fmt', 'yuv420p',
+        '-row-mt', '1'
+      ])
+      .output(outputPath)
+      .on('start', (commandLine) => {
+        console.log('FFmpeg command:', commandLine);
+      })
+      .on('end', () => {
+        console.log('✅ WebM export completed');
+        res.json({
+          success: true,
+          downloadUrl: `/output/${path.basename(outputPath)}`,
+          filename: outputFilename
+        });
+      })
+      .on('error', (err) => {
+        console.error('❌ WebM export failed:', err);
+        res.status(500).json({ error: 'Export failed: ' + err.message });
+      })
+      .run();
+      
+  } catch (error) {
+    console.error('❌ WebM export error:', error);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
+app.post('/export/mov', async (req, res) => {
+  try {
+    const { videoPath, startTime, endTime, quality = 'standard', resolution, fps = 30 } = req.body;
+    
+    if (!videoPath) {
+      return res.status(400).json({ error: 'Video path is required' });
+    }
+
+    const inputPath = path.resolve(videoPath.startsWith('./') ? videoPath.slice(2) : videoPath);
+    
+    if (!fs.existsSync(inputPath)) {
+      return res.status(400).json({ error: 'Video file not found' });
+    }
+
+    console.log(`🎬 Exporting MOV: ${inputPath}`);
+    
+    const outputFilename = `exported_${Date.now()}.mov`;
+    const outputPath = path.join(outputDir, outputFilename);
+    
+    // Quality settings for MOV (similar to MP4 but with higher quality defaults)
+    const qualityMap = {
+      web: { crf: 25, preset: 'fast', scale: '1280:720' },
+      standard: { crf: 20, preset: 'medium', scale: '1920:1080' },
+      high: { crf: 15, preset: 'slow', scale: '1920:1080' },
+      ultra: { crf: 12, preset: 'veryslow', scale: '3840:2160' }
+    };
+    
+    const settings = qualityMap[quality] || qualityMap.standard;
+    
+    let command = ffmpeg(inputPath);
+    
+    // Apply trimming if specified
+    if (typeof startTime === 'number' && typeof endTime === 'number') {
+      const duration = endTime - startTime;
+      console.log(`🎬 Trimming MOV: ${startTime.toFixed(3)}s to ${endTime.toFixed(3)}s (${duration.toFixed(3)}s duration)`);
+      command.seekInput(startTime).duration(duration);
+    }
+    
+    // Apply resolution if custom
+    if (resolution && resolution.width && resolution.height) {
+      command.size(`${resolution.width}x${resolution.height}`);
+    } else if (settings.scale) {
+      command.size(settings.scale);
+    }
+    
+    command
+      .fps(fps)
+      .videoCodec('libx264')
+      .audioCodec('aac')
+      .outputOptions([
+        '-preset', settings.preset,
+        '-crf', settings.crf.toString(),
+        '-pix_fmt', 'yuv420p'
+      ])
+      .output(outputPath)
+      .on('start', (commandLine) => {
+        console.log('FFmpeg command:', commandLine);
+      })
+      .on('end', () => {
+        console.log('✅ MOV export completed');
+        res.json({
+          success: true,
+          downloadUrl: `/output/${path.basename(outputPath)}`,
+          filename: outputFilename
+        });
+      })
+      .on('error', (err) => {
+        console.error('❌ MOV export failed:', err);
+        res.status(500).json({ error: 'Export failed: ' + err.message });
+      })
+      .run();
+      
+  } catch (error) {
+    console.error('❌ MOV export error:', error);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
 app.post('/export/gif', async (req, res) => {
   try {
-    const { images, transitions, duration = 1, quality = 'standard', sessionId } = req.body;
+    // Check if this is a video editor export (has videoPath) or image-to-animation export (has images)
+    if (req.body.videoPath) {
+      // Video Editor GIF Export
+      const { videoPath, startTime, endTime, fps = 15, gif = {} } = req.body;
+      
+      if (!videoPath) {
+        return res.status(400).json({ error: 'Video path is required' });
+      }
+
+      const inputPath = path.resolve(videoPath.startsWith('./') ? videoPath.slice(2) : videoPath);
+      
+      if (!fs.existsSync(inputPath)) {
+        return res.status(400).json({ error: 'Video file not found' });
+      }
+
+      console.log(`🎨 Exporting GIF from video: ${inputPath}`);
+      
+      const outputFilename = `exported_${Date.now()}.gif`;
+      const outputPath = path.join(outputDir, outputFilename);
+      
+      const colors = gif.colors || 256;
+      const loopOption = gif.loop === 'infinite' ? '0' : (gif.loop || '0');
+      const dither = gif.dither !== false ? 'bayer:bayer_scale=5' : 'none';
+      
+      // GIF generation with proper two-pass process
+      const palettePath = path.join(outputDir, `palette_${Date.now()}.png`);
+      
+      // Step 1: Generate palette
+      let paletteCommand = ffmpeg(inputPath);
+      
+      // Apply trimming for palette generation
+      if (typeof startTime === 'number' && typeof endTime === 'number') {
+        const duration = endTime - startTime;
+        console.log(`🎨 Trimming GIF palette: ${startTime.toFixed(3)}s to ${endTime.toFixed(3)}s (${duration.toFixed(3)}s duration)`);
+        paletteCommand.seekInput(startTime).duration(duration);
+      }
+      
+      paletteCommand
+        .fps(fps)
+        .videoFilter(`scale=640:-1:flags=lanczos,palettegen=max_colors=${colors}`)
+        .output(palettePath)
+        .on('end', () => {
+          console.log('✅ Palette generated, creating GIF...');
+          
+          // Step 2: Create GIF using palette
+          let gifCommand = ffmpeg(inputPath);
+          
+          // Apply trimming for GIF generation
+          if (typeof startTime === 'number' && typeof endTime === 'number') {
+            const duration = endTime - startTime;
+            console.log(`🎨 Trimming GIF generation: ${startTime.toFixed(3)}s to ${endTime.toFixed(3)}s (${duration.toFixed(3)}s duration)`);
+            gifCommand.seekInput(startTime).duration(duration);
+          }
+          
+          gifCommand
+            .input(palettePath)
+            .fps(fps)
+            .complexFilter([
+              `[0:v]scale=640:-1:flags=lanczos[v]`,
+              `[v][1:v]paletteuse=dither=${dither}`
+            ])
+            .outputOptions([
+              `-loop ${loopOption}`
+            ])
+            .output(outputPath)
+            .on('start', (commandLine) => {
+              console.log('FFmpeg GIF command:', commandLine);
+            })
+            .on('end', () => {
+              // Cleanup palette file
+              try {
+                fs.unlinkSync(palettePath);
+              } catch (e) {
+                console.warn('Could not delete palette file:', e.message);
+              }
+              
+              console.log('✅ GIF export completed');
+              res.json({
+                success: true,
+                downloadUrl: `/output/${path.basename(outputPath)}`,
+                filename: outputFilename
+              });
+            })
+            .on('error', (err) => {
+              console.error('❌ GIF export failed:', err);
+              res.status(500).json({ error: 'Export failed: ' + err.message });
+            })
+            .run();
+        })
+        .on('error', (err) => {
+          console.error('❌ Palette generation failed:', err);
+          res.status(500).json({ error: 'Palette generation failed: ' + err.message });
+        })
+        .run();
+        
+      return;
+    }
+    
+    // Original Image-to-Animation GIF Export
+    const { images, transitions, duration = 1, sessionId, exportSettings: userExportSettings = {} } = req.body;
     const frameDurations = req.body.frameDurations || [];
+    
+    // Extract settings from exportSettings object or fallback to defaults
+    const quality = userExportSettings.quality || 'medium';
+    const fps = userExportSettings.fps || 30;
+    const preset = userExportSettings.preset || 'medium';
+    const bitrate = userExportSettings.bitrate;
+    const optimizeSize = userExportSettings.optimizeSize || false;
+    const fastStart = userExportSettings.fastStart || false;
+    const resolution = userExportSettings.resolution || { width: 1920, height: 1080 };
+    
+    // Build custom settings from advanced options
+    const customSettings = {};
+    if (bitrate) customSettings.bitrate = `${bitrate}M`;
+    if (optimizeSize) customSettings.crf = Math.min((customSettings.crf || 23) + 5, 51);
+    
+    const qualitySettings = { ...qualityPresets[quality] || qualityPresets.standard, ...customSettings };
 
     if (!images || !Array.isArray(images) || images.length === 0) return res.status(400).json({ error: 'No images provided' });
     if (!sessionId) return res.status(400).json({ error: 'Session ID is required' });
@@ -525,11 +1132,38 @@ app.post('/export/gif', async (req, res) => {
 
     if (validImages.length === 0) return res.status(400).json({ error: 'No valid images found' });
     
+    // Use user-specified resolution or auto-detect
+    let exportSettings;
+    if (resolution && resolution.width && resolution.height) {
+      exportSettings = {
+        width: resolution.width,
+        height: resolution.height,
+        fps: fps
+      };
+      console.log(`GIF Export: Using user resolution ${resolution.width}x${resolution.height}`);
+    } else {
+      try {
+        const firstImageDims = await getImageDimensions(validImages[0].path);
+        exportSettings = {
+          width: firstImageDims.width,
+          height: firstImageDims.height,
+          fps: fps
+        };
+        console.log(`GIF Export: Auto-detected dimensions ${firstImageDims.width}x${firstImageDims.height}`);
+      } catch (error) {
+        console.log('GIF Export: Could not detect dimensions, using defaults');
+        exportSettings = {
+          width: 1920,
+          height: 1080,
+          fps: fps
+        };
+      }
+    }
+    
     console.log(`GIF Export: Processing ${validImages.length} images with transitions. Durations: ${JSON.stringify(frameDurations)}`);
 
     const outputFilename = `animagen_${Date.now()}.gif`;
     const outputPath = path.join(outputDir, outputFilename);
-    const qualitySettings = qualityPresets[quality] || qualityPresets.standard;
     
     let command = ffmpeg();
     let complexFilter = [];
@@ -545,7 +1179,7 @@ app.post('/export/gif', async (req, res) => {
       
       console.log(`GIF Export: Image ${index + 1}/${validImages.length} - Base: ${baseDuration.toFixed(2)}s, Input: ${inputDuration.toFixed(2)}s`);
       command.input(image.path).inputOptions(['-loop', '1', '-t', String(inputDuration)]);
-      complexFilter.push(`[${index}:v]scale=${qualitySettings.width}:${qualitySettings.height}:force_original_aspect_ratio=decrease,pad=${qualitySettings.width}:${qualitySettings.height}:(ow-iw)/2:(oh-ih)/2,setpts=PTS-STARTPTS,fps=${qualitySettings.fps}[v${index}]`);
+      complexFilter.push(`[${index}:v]scale=${exportSettings.width}:${exportSettings.height}:force_original_aspect_ratio=decrease,pad=${exportSettings.width}:${exportSettings.height}:(ow-iw)/2:(oh-ih)/2,setpts=PTS-STARTPTS,fps=${fps}[v${index}]`);
     });
 
     // Use unified transition chain (convert duration to ms for consistency)
@@ -558,7 +1192,7 @@ app.post('/export/gif', async (req, res) => {
     command
       .complexFilter(complexFilter)
       .map('[gif]')
-      .outputOptions([`-r ${qualitySettings.fps}`])
+      .outputOptions([`-r ${fps}`])
       .output(outputPath)
       .on('start', cmd => console.log('FFmpeg started for GIF:', cmd))
       .on('end', async () => {
@@ -616,8 +1250,23 @@ app.post('/export/gif', async (req, res) => {
 // CORRECTED VIDEO EXPORT ENDPOINT
 app.post('/export/video', async (req, res) => {
   try {
-    const { images, transitions, duration = 1, quality = 'standard', format = 'mp4', sessionId, customSettings = {} } = req.body;
+    const { images, transitions, duration = 1, sessionId, exportSettings: userExportSettings = {} } = req.body;
     const frameDurations = req.body.frameDurations || [];
+    
+    // Extract settings from exportSettings object or fallback to defaults
+    const quality = userExportSettings.quality || 'medium';
+    const format = userExportSettings.format || 'mp4';
+    const fps = userExportSettings.fps || 30;
+    const preset = userExportSettings.preset || 'medium';
+    const bitrate = userExportSettings.bitrate;
+    const optimizeSize = userExportSettings.optimizeSize || false;
+    const fastStart = userExportSettings.fastStart || false;
+    const resolution = userExportSettings.resolution || { width: 1920, height: 1080 };
+    
+    // Build custom settings from advanced options
+    const customSettings = {};
+    if (bitrate) customSettings.bitrate = `${bitrate}M`;
+    if (optimizeSize) customSettings.crf = Math.min((customSettings.crf || 23) + 5, 51);
 
     if (!images || !Array.isArray(images) || images.length === 0) return res.status(400).json({ error: 'No images provided' });
     if (!sessionId) return res.status(400).json({ error: 'Session ID is required' });
@@ -649,7 +1298,7 @@ app.post('/export/video', async (req, res) => {
         
         console.log(`Video Export: Image ${index + 1}/${validImages.length} - Base: ${baseDuration.toFixed(2)}s, Input: ${inputDuration.toFixed(2)}s`);
         command.input(image.path).inputOptions(['-loop', '1', '-t', String(inputDuration)]);
-        complexFilter.push(`[${index}:v]scale=${qualitySettings.width}:${qualitySettings.height}:force_original_aspect_ratio=decrease,pad=${qualitySettings.width}:${qualitySettings.height}:(ow-iw)/2:(oh-ih)/2,setpts=PTS-STARTPTS,fps=${qualitySettings.fps}[v${index}]`);
+        complexFilter.push(`[${index}:v]scale=${resolution.width}:${resolution.height}:force_original_aspect_ratio=decrease,pad=${resolution.width}:${resolution.height}:(ow-iw)/2:(oh-ih)/2,setpts=PTS-STARTPTS,fps=${fps}[v${index}]`);
     });
 
     // Use unified transition chain (convert duration to ms for consistency)
