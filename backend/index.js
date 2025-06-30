@@ -23,6 +23,24 @@ app.use(cors());
 app.use(express.json());
 app.use(express.static('public'));
 
+// Health check endpoint for Railway (early registration)
+app.get('/api/health', (req, res) => {
+  console.log('🏥 Health check requested');
+  res.status(200).json({ 
+    status: 'ok', 
+    timestamp: new Date().toISOString(),
+    uptime: process.uptime(),
+    env: process.env.NODE_ENV || 'development',
+    port: process.env.PORT || 3001
+  });
+});
+
+// Root endpoint to serve frontend
+app.get('/', (req, res) => {
+  console.log('🏠 Root endpoint requested');
+  res.sendFile(path.join(__dirname, 'public', 'index.html'));
+});
+
 // Ensure output, temp, and compositions directories exist
 const outputDir = path.join(__dirname, process.env.OUTPUT_DIR || 'output');
 const tempDir = path.join(__dirname, process.env.TEMP_DIR || 'temp');
@@ -1639,8 +1657,9 @@ app.use((error, req, res, next) => {
 // Start server (only if not in test mode)
 if (process.env.NODE_ENV !== 'test') {
   const PORT = process.env.PORT || 3001;
-  server.listen(PORT, () => {
-    console.log(`Server listening at http://localhost:${PORT}`);
+  server.listen(PORT, '0.0.0.0', () => {
+    console.log(`🚀 Server listening on 0.0.0.0:${PORT}`);
+    console.log(`🏥 Health check available at http://0.0.0.0:${PORT}/api/health`);
     console.log('AnimaGen Backend Server is ready!');
     console.log('Supported formats: GIF, MP4, WebM');
     console.log('Quality presets:', Object.keys(qualityPresets).join(', '));
@@ -1678,14 +1697,7 @@ if (process.env.NODE_ENV === 'production') {
   });
 }
 
-// Health check endpoint for Railway
-app.get('/api/health', (req, res) => {
-  res.status(200).json({ 
-    status: 'ok', 
-    timestamp: new Date().toISOString(),
-    uptime: process.uptime()
-  });
-});
+// Health check endpoint moved to top of file
 
 // Export app for testing
 module.exports = app; 
