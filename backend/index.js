@@ -177,9 +177,12 @@ const storage = multer.diskStorage({
     cb(null, sessionDir);
   },
   filename: (req, file, cb) => {
-    // Keep original filename with timestamp prefix
+    // Keep original filename with timestamp prefix, sanitize for FFmpeg compatibility
     const timestamp = Date.now();
-    const originalName = file.originalname;
+    const originalName = file.originalname
+      .replace(/\s+/g, '_')  // Replace spaces with underscores
+      .replace(/[^\w\.-]/g, '') // Remove special characters except dots, dashes, underscores
+      .replace(/_+/g, '_'); // Replace multiple underscores with single
     cb(null, `${timestamp}_${originalName}`);
   }
 });
