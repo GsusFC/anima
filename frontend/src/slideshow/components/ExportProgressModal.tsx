@@ -69,7 +69,7 @@ const ExportProgressModal: React.FC<ExportProgressModalProps> = ({
   const getProgressColor = () => {
     if (error) return '#dc2626';
     if (progress >= 100) return '#22c55e';
-    return '#3b82f6';
+    return '#ec4899';
   };
 
   if (!isVisible) return null;

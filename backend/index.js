@@ -549,6 +549,10 @@ app.post('/video-editor/trim', (req, res) => {
 // HELPER FUNCTION: Calculate optimal input duration for export with transitions
 // CONSOLIDATED HELPER: Calculate optimal input durations for exports with transitions
 function calculateInputDurations(validImages, transitions, frameDurations, defaultDuration) {
+  // Ensure transitions is always an array to avoid runtime errors when no transitions are supplied
+  if (!Array.isArray(transitions)) {
+    transitions = [];
+  }
   const results = {
     totalDuration: 0,
     inputDurations: [],
@@ -1359,7 +1363,7 @@ app.post('/export/gif', async (req, res) => {
     }
     
     console.log(`GIF Export: Processing ${validImages.length} images with transitions. Durations: ${JSON.stringify(frameDurations)}`);
-    console.log(`🎨 GIF Options: Dither=${safeDither}, Colors=${maxColors}, Quality=${quality}`);
+    console.log(`🎨 GIF Options: Dither=${dither}, Colors=${maxColors}, Quality=${quality}`);
 
     const outputFilename = `animagen_${Date.now()}.gif`;
     const outputPath = path.join(outputDir, outputFilename);
@@ -1367,53 +1371,54 @@ app.post('/export/gif', async (req, res) => {
     let command = ffmpeg();
     let complexFilter = [];
 
-    // Calculate optimal input durations using consolidated helper
-    const durationCalc = calculateInputDurations(validImages, transitions, frameDurations, duration * 1000);
-    console.log(`GIF Export: Total duration: ${durationCalc.totalDuration.toFixed(2)}s, Max transition: ${durationCalc.maxTransitionDuration.toFixed(2)}s`);
-
-    // Add inputs and scale/normalize each frame with optimized durations
+    // Simple multi-image GIF export
+    console.log('🎨 Creating GIF with all images using simple approach');
+    
+    // Use user-specified resolution but limit for GIF performance
+    let gifWidth = exportSettings.width;
+    let gifHeight = exportSettings.height;
+    let gifFps = Math.min(fps, 15); // Limit FPS for GIF
+    
+    // For ultra quality, use full resolution; for others, scale down appropriately
+    if (quality === 'ultra') {
+      // Keep full resolution for ultra
+      console.log(`GIF Export (ULTRA): Using full resolution ${gifWidth}x${gifHeight}`);
+    } else if (quality === 'high' || quality === 'premium') {
+      // Scale down slightly for performance
+      gifWidth = Math.min(gifWidth, 1280);
+      gifHeight = Math.min(gifHeight, 720);
+      console.log(`GIF Export (${quality.toUpperCase()}): Using ${gifWidth}x${gifHeight}`);
+    } else {
+      // Standard/web quality - more aggressive scaling
+      gifWidth = Math.min(gifWidth, 640);
+      gifHeight = Math.min(gifHeight, 480);
+      console.log(`GIF Export (${quality.toUpperCase()}): Using ${gifWidth}x${gifHeight}`);
+    }
+    
+    console.log(`GIF Export: Final settings ${gifWidth}x${gifHeight} at ${gifFps}fps`);
+    
+    // Add all images as inputs with loop and duration
     validImages.forEach((image, index) => {
-      const inputDuration = durationCalc.inputDurations[index];
       const baseDuration = (frameDurations[index] || duration * 1000) / 1000;
-      
-      console.log(`GIF Export: Image ${index + 1}/${validImages.length} - Base: ${baseDuration.toFixed(2)}s, Input: ${inputDuration.toFixed(2)}s`);
-      command.input(image.path).inputOptions(['-loop', '1', '-t', String(inputDuration)]);
-      complexFilter.push(`[${index}:v]scale=${exportSettings.width}:${exportSettings.height}:force_original_aspect_ratio=decrease,pad=${exportSettings.width}:${exportSettings.height}:(ow-iw)/2:(oh-ih)/2,setpts=PTS-STARTPTS,fps=${fps}[v${index}]`);
+      console.log(`GIF Export: Adding image ${index + 1}/${validImages.length} - Duration: ${baseDuration.toFixed(2)}s`);
+      command.input(image.path).inputOptions(['-loop', '1', '-t', String(baseDuration)]);
     });
 
-    // Use unified transition chain (convert duration to ms for consistency)
-    const durationMs = duration * 1000;
-    const lastOutput = buildUnifiedTransitionChain(validImages, transitions, frameDurations, durationMs, complexFilter);
+    // Simple filter with just scaling and concat
+    const scaleFilters = validImages.map((_, i) => 
+      `[${i}:v]scale=${gifWidth}:${gifHeight}:force_original_aspect_ratio=decrease:force_divisible_by=2,fps=${gifFps}[v${i}]`
+    );
     
-    // Add GIF-specific palette generation and optimization with dithering
-    const paletteGenOptions = maxColors < 256 ? `max_colors=${maxColors}` : '';
-    // Map complex dither names to FFmpeg compatible ones
-    const ditherMap = {
-      'floyd_steinberg': 'floyd_steinberg',
-      'sierra2': 'sierra2',
-      'sierra2_4a': 'sierra2_4a',
-      'bayer': 'bayer',
-      'none': 'none'
-    };
-    const safeDither = ditherMap[dither] || 'bayer'; // Fallback to basic bayer
-    const paletteUseOptions = safeDither !== 'none' ? `dither=${safeDither}` : '';
+    const concatFilter = validImages.map((_, i) => `[v${i}]`).join('') + `concat=n=${validImages.length}:v=1:a=0[outv]`;
     
-    let paletteFilter = `${lastOutput}split[s0][s1];[s0]palettegen`;
-    if (paletteGenOptions) paletteFilter += `:${paletteGenOptions}`;
-    paletteFilter += `[p];[s1][p]paletteuse`;
-    if (paletteUseOptions) paletteFilter += `:${paletteUseOptions}`;
-    paletteFilter += `[gif]`;
-    
-    complexFilter.push(paletteFilter);
-    
-    console.log(`🎨 GIF Export: Using ${dither} dithering with ${maxColors} colors`);
+    const allFilters = [...scaleFilters, concatFilter];
 
     command
-      .complexFilter(complexFilter)
-      .map('[gif]')
-      .outputOptions([`-r ${fps}`])
+      .complexFilter(allFilters)
+      .map('[outv]')
+      .outputOptions(['-pix_fmt', 'rgb24']) // Better GIF compatibility
       .output(outputPath)
-      .on('start', cmd => console.log('FFmpeg started for GIF:', cmd))
+      .on('start', cmd => console.log('FFmpeg started for multi-image GIF:', cmd))
       .on('end', async () => {
         // Auto-save composition for future re-exports
         try {

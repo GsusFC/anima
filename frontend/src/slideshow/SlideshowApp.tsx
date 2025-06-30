@@ -8,7 +8,7 @@ import ExportControls from './components/ExportControls';
 const SlideshowApp: React.FC = () => {
   return (
     <SlideshowProvider>
-      <div style={{
+      <div className="slideshow-app" style={{
         height: '100vh',
         backgroundColor: '#0a0a0b',
         color: 'white',
@@ -74,6 +74,63 @@ const SlideshowApp: React.FC = () => {
           </div>
         </div>
       </div>
+
+      {/* Global Slideshow Styles */}
+      <style>{`
+        /* Reset margins and ensure full viewport usage */
+        body, html {
+          margin: 0 !important;
+          padding: 0 !important;
+          height: 100%;
+          overflow: hidden;
+        }
+
+        #root {
+          height: 100vh;
+          overflow: hidden;
+        }
+
+        .slideshow-app {
+          box-sizing: border-box;
+        }
+
+        /* Custom Scrollbar Styles for Slideshow App */
+        .slideshow-app ::-webkit-scrollbar {
+          width: 8px;
+          height: 8px;
+        }
+
+        .slideshow-app ::-webkit-scrollbar-track {
+          background: rgba(15, 15, 16, 0.5);
+          border-radius: 4px;
+        }
+
+        .slideshow-app ::-webkit-scrollbar-thumb {
+          background: linear-gradient(135deg, rgba(236, 72, 153, 0.7), rgba(190, 24, 93, 0.8));
+          border-radius: 4px;
+          border: 1px solid rgba(15, 15, 16, 0.2);
+          box-shadow: inset 0 1px 2px rgba(255, 255, 255, 0.1);
+        }
+
+        .slideshow-app ::-webkit-scrollbar-thumb:hover {
+          background: linear-gradient(135deg, rgba(236, 72, 153, 0.9), rgba(190, 24, 93, 1));
+          box-shadow: inset 0 1px 2px rgba(255, 255, 255, 0.2), 0 0 4px rgba(236, 72, 153, 0.3);
+        }
+
+        .slideshow-app ::-webkit-scrollbar-thumb:active {
+          background: linear-gradient(135deg, rgba(190, 24, 93, 1), rgba(157, 23, 77, 1));
+        }
+
+        .slideshow-app ::-webkit-scrollbar-corner {
+          background: rgba(15, 15, 16, 0.5);
+        }
+
+        /* Firefox Scrollbar Support */
+        .slideshow-app * {
+          scrollbar-width: thin;
+          scrollbar-color: rgba(236, 72, 153, 0.7) rgba(15, 15, 16, 0.5);
+        }
+      `}</style>
     </SlideshowProvider>
   );
 };

@@ -35,7 +35,7 @@ const Timeline: React.FC = () => {
         width: 16px;
         height: 16px;
         border-radius: 50%;
-        background: #3b82f6;
+        background: #ec4899;
         cursor: pointer;
         border: 2px solid #1a1a1b;
         box-shadow: 0 2px 6px rgba(0,0,0,0.3);
@@ -50,7 +50,7 @@ const Timeline: React.FC = () => {
         width: 16px;
         height: 16px;
         border-radius: 50%;
-        background: #3b82f6;
+        background: #ec4899;
         cursor: pointer;
         border: 2px solid #1a1a1b;
         box-shadow: 0 2px 6px rgba(0,0,0,0.3);
@@ -430,7 +430,7 @@ const Timeline: React.FC = () => {
                       width: '75px',
                       height: '70px',
                       backgroundColor: item.transition ? '#1a1a1b' : '#0f0f0f', // Darker for Add state
-                      border: item.transition ? '2px solid #3b82f6' : '2px dashed #6b7280', // Solid vs dashed border
+                      border: item.transition ? '2px solid #ec4899' : '2px dashed #6b7280', // Solid vs dashed border
                       borderRadius: item.transition ? '4px' : '6px', // Less rounded for Add state
                       display: 'flex',
                       flexDirection: 'column',
@@ -439,7 +439,7 @@ const Timeline: React.FC = () => {
                       marginBottom: '10px',
                       cursor: 'pointer',
                       boxShadow: item.transition 
-                        ? '0 3px 12px rgba(59, 130, 246, 0.4), inset 0 1px 3px rgba(255,255,255,0.1)'
+                        ? '0 3px 12px rgba(236, 72, 153, 0.4), inset 0 1px 3px rgba(255,255,255,0.1)'
                         : '0 2px 8px rgba(0,0,0,0.3), inset 0 1px 2px rgba(107,114,128,0.1)', // Subtler shadow for Add
                       transition: 'all 0.3s ease',
                       position: 'relative',
@@ -453,8 +453,8 @@ const Timeline: React.FC = () => {
                       onMouseEnter={(e) => {
                         e.currentTarget.style.transform = 'scale(1.05)';
                         if (item.transition) {
-                          e.currentTarget.style.boxShadow = '0 4px 12px rgba(59, 130, 246, 0.6)';
-                          e.currentTarget.style.borderColor = '#60a5fa';
+                          e.currentTarget.style.boxShadow = '0 4px 12px rgba(236, 72, 153, 0.6)';
+                          e.currentTarget.style.borderColor = '#f472b6';
                         } else {
                           e.currentTarget.style.boxShadow = '0 3px 10px rgba(107, 114, 128, 0.4)';
                           e.currentTarget.style.borderColor = '#9ca3af';
@@ -464,8 +464,8 @@ const Timeline: React.FC = () => {
                       onMouseLeave={(e) => {
                         e.currentTarget.style.transform = 'scale(1)';
                         if (item.transition) {
-                          e.currentTarget.style.boxShadow = '0 3px 12px rgba(59, 130, 246, 0.4), inset 0 1px 3px rgba(255,255,255,0.1)';
-                          e.currentTarget.style.borderColor = '#3b82f6';
+                          e.currentTarget.style.boxShadow = '0 3px 12px rgba(236, 72, 153, 0.4), inset 0 1px 3px rgba(255,255,255,0.1)';
+                          e.currentTarget.style.borderColor = '#ec4899';
                         } else {
                           e.currentTarget.style.boxShadow = '0 2px 8px rgba(0,0,0,0.3), inset 0 1px 2px rgba(107,114,128,0.1)';
                           e.currentTarget.style.borderColor = '#6b7280';
@@ -534,7 +534,7 @@ const Timeline: React.FC = () => {
                       {/* Transition Name */}
                       <div style={{
                       fontSize: '8px',
-                      color: !item.transition ? '#9ca3af' : '#3b82f6',
+                      color: !item.transition ? '#9ca3af' : '#ec4899',
                       fontWeight: 'bold',
                       fontFamily: '"Space Mono", monospace',
                       textTransform: 'uppercase'

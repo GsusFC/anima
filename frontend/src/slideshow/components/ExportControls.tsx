@@ -114,8 +114,15 @@ const ExportControls: React.FC = () => {
       backgroundColor: '#0a0a0b',
       display: 'flex',
       flexDirection: 'column',
-      padding: '12px' // Reduced padding
+      padding: '12px 12px 0 12px', // No padding bottom for sticky button
+      position: 'relative'
     }}>
+      {/* Scrollable content area */}
+      <div style={{
+        flex: 1,
+        overflow: 'auto',
+        paddingBottom: '120px' // Space for fixed export button
+      }}>
       {/* Format Selection */}
       <div style={{ marginBottom: '16px' }}>
         <label style={{
@@ -365,52 +372,63 @@ const ExportControls: React.FC = () => {
             </select>
           </div>
 
-          {/* Loop Settings (for GIF) */}
+          {/* GIF Specific Settings */}
           {exportSettings.format === 'gif' && (
-            <div style={{ marginBottom: '16px' }}>
-              <label style={{
-                display: 'block',
+            <div style={{
+              marginBottom: '16px',
+              padding: '12px',
+              backgroundColor: '#0f172a',
+              border: '1px solid #ec4899',
+              borderRadius: '6px'
+            }}>
+              <div style={{
                 fontSize: '11px',
-                color: '#9ca3af',
-                marginBottom: '8px',
-                fontFamily: '"Space Mono", monospace'
+                color: '#ec4899',
+                fontWeight: 'bold',
+                marginBottom: '12px',
+                fontFamily: '"Space Mono", monospace',
+                textTransform: 'uppercase'
               }}>
-                Loop Count
-              </label>
-              <div style={{ display: 'flex', gap: '8px' }}>
+                🎨 GIF Optimization
+              </div>
+              
+              {/* Loop Settings */}
+              <div style={{ marginBottom: '12px' }}>
+                <label style={{
+                  display: 'block',
+                  fontSize: '10px',
+                  color: '#9ca3af',
+                  marginBottom: '6px',
+                  fontFamily: '"Space Mono", monospace'
+                }}>
+                  Loop Behavior
+                </label>
                 <select
-                  value={exportSettings.loop ? 'true' : 'false'}
-                  onChange={(e) => updateExportSettings({ loop: e.target.value === 'true' })}
+                  value={exportSettings.loop ? 'infinite' : '1'}
+                  onChange={(e) => updateExportSettings({ loop: e.target.value === 'infinite' })}
                   style={{
-                    flex: 1,
+                    width: '100%',
                     padding: '6px',
                     backgroundColor: '#1f2937',
                     border: '1px solid #374151',
                     borderRadius: '4px',
                     color: 'white',
-                    fontSize: '11px',
+                    fontSize: '10px',
                     fontFamily: '"Space Mono", monospace'
                   }}
                 >
-                  <option value="infinite">Infinite Loop</option>
-                  <option value="1">Play Once</option>
-                  <option value="3">Loop 3 Times</option>
-                  <option value="5">Loop 5 Times</option>
-                  <option value="10">Loop 10 Times</option>
+                  <option value="infinite">🔄 Infinite Loop</option>
+                  <option value="1">⏹️ Play Once</option>
                 </select>
               </div>
-            </div>
-          )}
 
-          {/* GIF Dithering Options */}
-          {exportSettings.format === 'gif' && (
-            <>
-              <div style={{ marginBottom: '16px' }}>
+              {/* Dithering */}
+              <div style={{ marginBottom: '12px' }}>
                 <label style={{
                   display: 'block',
-                  fontSize: '11px',
+                  fontSize: '10px',
                   color: '#9ca3af',
-                  marginBottom: '8px',
+                  marginBottom: '6px',
                   fontFamily: '"Space Mono", monospace'
                 }}>
                   Dithering Algorithm
@@ -430,11 +448,11 @@ const ExportControls: React.FC = () => {
                     border: '1px solid #374151',
                     borderRadius: '4px',
                     color: 'white',
-                    fontSize: '11px',
+                    fontSize: '10px',
                     fontFamily: '"Space Mono", monospace'
                   }}
                 >
-                  <option value="floyd_steinberg">Floyd-Steinberg (Recommended)</option>
+                  <option value="floyd_steinberg">Floyd-Steinberg (Best Quality)</option>
                   <option value="bayer">Bayer (Fast)</option>
                   <option value="sierra2">Sierra2 (Balanced)</option>
                   <option value="sierra2_4a">Sierra2-4A (Smooth)</option>
@@ -442,12 +460,13 @@ const ExportControls: React.FC = () => {
                 </select>
               </div>
 
-              <div style={{ marginBottom: '16px' }}>
+              {/* Color Palette */}
+              <div style={{ marginBottom: '0' }}>
                 <label style={{
                   display: 'block',
-                  fontSize: '11px',
+                  fontSize: '10px',
                   color: '#9ca3af',
-                  marginBottom: '8px',
+                  marginBottom: '6px',
                   fontFamily: '"Space Mono", monospace'
                 }}>
                   Color Palette Size
@@ -467,19 +486,21 @@ const ExportControls: React.FC = () => {
                     border: '1px solid #374151',
                     borderRadius: '4px',
                     color: 'white',
-                    fontSize: '11px',
+                    fontSize: '10px',
                     fontFamily: '"Space Mono", monospace'
                   }}
                 >
-                  <option value={256}>256 Colors (Maximum Quality)</option>
+                  <option value={256}>256 Colors (Max Quality)</option>
                   <option value={128}>128 Colors (Balanced)</option>
                   <option value={64}>64 Colors (Smaller Size)</option>
                   <option value={32}>32 Colors (Small Size)</option>
                   <option value={16}>16 Colors (Minimal)</option>
                 </select>
               </div>
-            </>
+            </div>
           )}
+
+
 
           {/* Optimization */}
           <div style={{ marginBottom: '16px' }}>
@@ -560,169 +581,153 @@ const ExportControls: React.FC = () => {
         </div>
       )}
 
-      {/* Export Info */}
-      <div style={{
-        marginBottom: '20px',
-        padding: '12px',
-        backgroundColor: '#111827',
-        borderRadius: '4px',
-        border: '1px solid #1f2937'
-      }}>
-        <div style={{
-          fontSize: '11px',
-          color: '#9ca3af',
-          fontFamily: '"Space Mono", monospace',
-          display: 'flex',
-          justifyContent: 'space-between',
-          marginBottom: '4px'
-        }}>
-          <span>Frames:</span>
-          <span>{project.timeline.length}</span>
-        </div>
-        <div style={{
-          fontSize: '11px',
-          color: '#9ca3af',
-          fontFamily: '"Space Mono", monospace',
-          display: 'flex',
-          justifyContent: 'space-between',
-          marginBottom: '4px'
-        }}>
-          <span>Duration:</span>
-          <span>{(project.timeline.reduce((sum, item) => sum + item.duration, 0) / 1000).toFixed(1)}s</span>
-        </div>
-        <div style={{
-          fontSize: '11px',
-          color: '#9ca3af',
-          fontFamily: '"Space Mono", monospace',
-          display: 'flex',
-          justifyContent: 'space-between',
-          marginBottom: showAdvanced ? '4px' : '0'
-        }}>
-          <span>Est. Size:</span>
-          <span>{formatFileSize()}</span>
-        </div>
-        
-        {/* Additional info when advanced is shown */}
-        {showAdvanced && (
-          <>
-            <div style={{
-              fontSize: '11px',
-              color: '#9ca3af',
-              fontFamily: '"Space Mono", monospace',
-              display: 'flex',
-              justifyContent: 'space-between',
-              marginBottom: '4px'
-            }}>
-              <span>Resolution:</span>
-              <span>{exportSettings.resolution.width}×{exportSettings.resolution.height}</span>
-            </div>
-            <div style={{
-              fontSize: '11px',
-              color: '#9ca3af',
-              fontFamily: '"Space Mono", monospace',
-              display: 'flex',
-              justifyContent: 'space-between',
-              marginBottom: '4px'
-            }}>
-              <span>Bitrate:</span>
-              <span>{exportSettings.bitrate ? `${exportSettings.bitrate} Mbps` : 'Auto'}</span>
-            </div>
-            <div style={{
-              fontSize: '11px',
-              color: '#9ca3af',
-              fontFamily: '"Space Mono", monospace',
-              display: 'flex',
-              justifyContent: 'space-between'
-            }}>
-              <span>Preset:</span>
-              <span style={{ textTransform: 'capitalize' }}>{exportSettings.preset || 'medium'}</span>
-            </div>
-          </>
-        )}
+
       </div>
 
-      {/* Export Button */}
-      <button
-        onClick={exportSlideshow}
-        disabled={exportState.isExporting || !hasTimeline}
-        style={{
-          width: '100%',
-          padding: '12px',
-          backgroundColor: exportState.isExporting ? '#6b7280' : '#ec4899',
-          border: 'none',
-          borderRadius: '6px',
-          color: 'white',
-          fontSize: '12px',
-          fontWeight: 'bold',
-          cursor: exportState.isExporting ? 'not-allowed' : 'pointer',
-          fontFamily: '"Space Mono", monospace',
-          marginBottom: '12px'
-        }}
-      >
-        {exportState.isExporting ? (
-          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px' }}>
-            <div style={{
-              width: '16px',
-              height: '16px',
-              border: '2px solid transparent',
-              borderTop: '2px solid white',
-              borderRadius: '50%',
-              animation: 'spin 1s linear infinite'
-            }} />
-            EXPORTING...
-          </div>
-        ) : (
-          `🚀 EXPORT ${exportSettings.format.toUpperCase()}`
-        )}
-      </button>
-
-      {/* Export Progress */}
-      {exportState.progress > 0 && exportState.progress < 100 && (
-        <div style={{
-          width: '100%',
-          height: '4px',
-          backgroundColor: '#1f2937',
-          borderRadius: '2px',
-          overflow: 'hidden',
-          marginBottom: '12px'
-        }}>
+      {/* Fixed Export Area at Bottom */}
+      <div style={{
+        position: 'absolute',
+        bottom: 0,
+        left: 0,
+        right: 0,
+        backgroundColor: '#0a0a0b',
+        padding: '12px',
+        borderTop: '1px solid #343536'
+      }}>
+        {/* Export Progress */}
+        {exportState.progress > 0 && exportState.progress < 100 && (
           <div style={{
-            width: `${exportState.progress}%`,
-            height: '100%',
-            backgroundColor: '#ec4899',
-            transition: 'width 0.3s ease'
-          }} />
-        </div>
-      )}
+            width: '100%',
+            height: '4px',
+            backgroundColor: '#1f2937',
+            borderRadius: '2px',
+            overflow: 'hidden',
+            marginBottom: '8px'
+          }}>
+            <div style={{
+              width: `${exportState.progress}%`,
+              height: '100%',
+              backgroundColor: '#ec4899',
+              transition: 'width 0.3s ease'
+            }} />
+          </div>
+        )}
 
-      {/* Export Error */}
-      {exportState.error && (
-        <div style={{
-          padding: '8px',
-          backgroundColor: '#7f1d1d',
-          border: '1px solid #dc2626',
-          borderRadius: '4px',
-          color: '#fca5a5',
-          fontSize: '10px',
-          fontFamily: '"Space Mono", monospace'
-        }}>
-          Export Error: {exportState.error}
-        </div>
-      )}
+        {/* Export Error */}
+        {exportState.error && (
+          <div style={{
+            padding: '8px',
+            backgroundColor: '#7f1d1d',
+            border: '1px solid #dc2626',
+            borderRadius: '4px',
+            color: '#fca5a5',
+            fontSize: '10px',
+            fontFamily: '"Space Mono", monospace',
+            marginBottom: '8px'
+          }}>
+            Export Error: {exportState.error}
+          </div>
+        )}
+
+        {/* Export Button */}
+        <button
+          onClick={exportSlideshow}
+          disabled={exportState.isExporting || !hasTimeline}
+          style={{
+            width: '100%',
+            padding: '14px',
+            backgroundColor: exportState.isExporting ? '#6b7280' : '#ec4899',
+            border: 'none',
+            borderRadius: '6px',
+            color: 'white',
+            fontSize: '12px',
+            fontWeight: 'bold',
+            cursor: exportState.isExporting ? 'not-allowed' : 'pointer',
+            fontFamily: '"Space Mono", monospace',
+            boxShadow: '0 4px 12px rgba(236, 72, 153, 0.3)',
+            transition: 'all 0.2s ease'
+          }}
+          onMouseEnter={(e) => {
+            if (!exportState.isExporting && hasTimeline) {
+              e.currentTarget.style.backgroundColor = '#be185d';
+              e.currentTarget.style.transform = 'translateY(-1px)';
+              e.currentTarget.style.boxShadow = '0 6px 16px rgba(236, 72, 153, 0.4)';
+            }
+          }}
+          onMouseLeave={(e) => {
+            if (!exportState.isExporting && hasTimeline) {
+              e.currentTarget.style.backgroundColor = '#ec4899';
+              e.currentTarget.style.transform = 'translateY(0)';
+              e.currentTarget.style.boxShadow = '0 4px 12px rgba(236, 72, 153, 0.3)';
+            }
+          }}
+        >
+          {exportState.isExporting ? (
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px' }}>
+              <div style={{
+                width: '16px',
+                height: '16px',
+                border: '2px solid transparent',
+                borderTop: '2px solid white',
+                borderRadius: '50%',
+                animation: 'spin 1s linear infinite'
+              }} />
+              EXPORTING...
+            </div>
+          ) : (
+            `🚀 EXPORT ${exportSettings.format.toUpperCase()}`
+          )}
+        </button>
+      </div>
 
       {/* Export Progress Modal */}
       <ExportProgressModal
-      isVisible={exportState.isExporting}
-      format={exportSettings.format}
-      progress={exportState.progress}
+        isVisible={exportState.isExporting}
+        format={exportSettings.format}
+        progress={exportState.progress}
         error={exportState.error}
-          onCancel={handleCancelExport}
-          />
+        onCancel={handleCancelExport}
+      />
 
       <style>{`
         @keyframes spin {
           0% { transform: rotate(0deg); }
           100% { transform: rotate(360deg); }
+        }
+
+        /* Custom Scrollbar Styles for Slideshow */
+        ::-webkit-scrollbar {
+          width: 8px;
+          height: 8px;
+        }
+
+        ::-webkit-scrollbar-track {
+          background: rgba(26, 26, 27, 0.3);
+          border-radius: 4px;
+        }
+
+        ::-webkit-scrollbar-thumb {
+          background: rgba(236, 72, 153, 0.6);
+          border-radius: 4px;
+          border: 1px solid rgba(26, 26, 27, 0.8);
+        }
+
+        ::-webkit-scrollbar-thumb:hover {
+          background: rgba(236, 72, 153, 0.8);
+        }
+
+        ::-webkit-scrollbar-thumb:active {
+          background: rgba(190, 24, 93, 0.9);
+        }
+
+        ::-webkit-scrollbar-corner {
+          background: rgba(26, 26, 27, 0.3);
+        }
+
+        /* Firefox Scrollbar */
+        * {
+          scrollbar-width: thin;
+          scrollbar-color: rgba(236, 72, 153, 0.6) rgba(26, 26, 27, 0.3);
         }
       `}</style>
     </div>
