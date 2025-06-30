@@ -402,6 +402,85 @@ const ExportControls: React.FC = () => {
             </div>
           )}
 
+          {/* GIF Dithering Options */}
+          {exportSettings.format === 'gif' && (
+            <>
+              <div style={{ marginBottom: '16px' }}>
+                <label style={{
+                  display: 'block',
+                  fontSize: '11px',
+                  color: '#9ca3af',
+                  marginBottom: '8px',
+                  fontFamily: '"Space Mono", monospace'
+                }}>
+                  Dithering Algorithm
+                </label>
+                <select
+                  value={exportSettings.gif?.dither || 'floyd_steinberg'}
+                  onChange={(e) => updateExportSettings({ 
+                    gif: { 
+                      ...exportSettings.gif, 
+                      dither: e.target.value as 'none' | 'bayer' | 'floyd_steinberg' | 'sierra2' | 'sierra2_4a'
+                    } 
+                  })}
+                  style={{
+                    width: '100%',
+                    padding: '6px',
+                    backgroundColor: '#1f2937',
+                    border: '1px solid #374151',
+                    borderRadius: '4px',
+                    color: 'white',
+                    fontSize: '11px',
+                    fontFamily: '"Space Mono", monospace'
+                  }}
+                >
+                  <option value="floyd_steinberg">Floyd-Steinberg (Recommended)</option>
+                  <option value="bayer">Bayer (Fast)</option>
+                  <option value="sierra2">Sierra2 (Balanced)</option>
+                  <option value="sierra2_4a">Sierra2-4A (Smooth)</option>
+                  <option value="none">No Dithering</option>
+                </select>
+              </div>
+
+              <div style={{ marginBottom: '16px' }}>
+                <label style={{
+                  display: 'block',
+                  fontSize: '11px',
+                  color: '#9ca3af',
+                  marginBottom: '8px',
+                  fontFamily: '"Space Mono", monospace'
+                }}>
+                  Color Palette Size
+                </label>
+                <select
+                  value={exportSettings.gif?.colors || 256}
+                  onChange={(e) => updateExportSettings({ 
+                    gif: { 
+                      ...exportSettings.gif, 
+                      colors: parseInt(e.target.value) as 16 | 32 | 64 | 128 | 256
+                    } 
+                  })}
+                  style={{
+                    width: '100%',
+                    padding: '6px',
+                    backgroundColor: '#1f2937',
+                    border: '1px solid #374151',
+                    borderRadius: '4px',
+                    color: 'white',
+                    fontSize: '11px',
+                    fontFamily: '"Space Mono", monospace'
+                  }}
+                >
+                  <option value={256}>256 Colors (Maximum Quality)</option>
+                  <option value={128}>128 Colors (Balanced)</option>
+                  <option value={64}>64 Colors (Smaller Size)</option>
+                  <option value={32}>32 Colors (Small Size)</option>
+                  <option value={16}>16 Colors (Minimal)</option>
+                </select>
+              </div>
+            </>
+          )}
+
           {/* Optimization */}
           <div style={{ marginBottom: '16px' }}>
             <label style={{

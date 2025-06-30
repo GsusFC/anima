@@ -57,6 +57,10 @@ export interface ExportSettings {
   fastStart?: boolean;
   optimizeSize?: boolean;
   filename?: string;
+  gif?: {
+    dither?: 'none' | 'bayer' | 'floyd_steinberg' | 'sierra2' | 'sierra2_4a';
+    colors?: 16 | 32 | 64 | 128 | 256;
+  };
 }
 
 export interface PreviewState {

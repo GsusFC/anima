@@ -1133,6 +1133,11 @@ app.post('/export/gif', async (req, res) => {
     const fastStart = userExportSettings.fastStart || false;
     const resolution = userExportSettings.resolution || { width: 1920, height: 1080 };
     
+    // GIF-specific settings
+    const gifSettings = userExportSettings.gif || {};
+    const dither = gifSettings.dither || 'floyd_steinberg'; // Best quality by default
+    const maxColors = gifSettings.colors || 256; // Maximum colors by default
+    
     // Build custom settings from advanced options
     const customSettings = {};
     if (bitrate) customSettings.bitrate = `${bitrate}M`;
@@ -1204,8 +1209,19 @@ app.post('/export/gif', async (req, res) => {
     const durationMs = duration * 1000;
     const lastOutput = buildUnifiedTransitionChain(validImages, transitions, frameDurations, durationMs, complexFilter);
     
-    // Add GIF-specific palette generation and optimization
-    complexFilter.push(`${lastOutput}split[s0][s1];[s0]palettegen[p];[s1][p]paletteuse[gif]`);
+    // Add GIF-specific palette generation and optimization with dithering
+    const paletteGenOptions = maxColors < 256 ? `max_colors=${maxColors}` : '';
+    const paletteUseOptions = dither !== 'none' ? `dither=${dither}` : '';
+    
+    let paletteFilter = `${lastOutput}split[s0][s1];[s0]palettegen`;
+    if (paletteGenOptions) paletteFilter += `:${paletteGenOptions}`;
+    paletteFilter += `[p];[s1][p]paletteuse`;
+    if (paletteUseOptions) paletteFilter += `:${paletteUseOptions}`;
+    paletteFilter += `[gif]`;
+    
+    complexFilter.push(paletteFilter);
+    
+    console.log(`🎨 GIF Export: Using ${dither} dithering with ${maxColors} colors`);
 
     command
       .complexFilter(complexFilter)
