@@ -135,7 +135,7 @@ const ExportControls: React.FC = () => {
               style={{
                 flex: 1,
                 padding: '8px',
-                backgroundColor: exportSettings.format === format ? '#3b82f6' : '#374151',
+                backgroundColor: exportSettings.format === format ? '#ec4899' : '#374151',
                 border: 'none',
                 borderRadius: '4px',
                 color: 'white',
@@ -314,7 +314,7 @@ const ExportControls: React.FC = () => {
                 onClick={() => updateExportSettings({ bitrate: undefined })}
                 style={{
                   padding: '4px 8px',
-                  backgroundColor: exportSettings.bitrate ? '#1f2937' : '#3b82f6',
+                  backgroundColor: exportSettings.bitrate ? '#1f2937' : '#ec4899',
                   border: 'none',
                   borderRadius: '3px',
                   color: 'white',
@@ -648,7 +648,7 @@ const ExportControls: React.FC = () => {
         style={{
           width: '100%',
           padding: '12px',
-          backgroundColor: exportState.isExporting ? '#6b7280' : '#3b82f6',
+          backgroundColor: exportState.isExporting ? '#6b7280' : '#ec4899',
           border: 'none',
           borderRadius: '6px',
           color: 'white',
@@ -689,7 +689,7 @@ const ExportControls: React.FC = () => {
           <div style={{
             width: `${exportState.progress}%`,
             height: '100%',
-            backgroundColor: '#3b82f6',
+            backgroundColor: '#ec4899',
             transition: 'width 0.3s ease'
           }} />
         </div>

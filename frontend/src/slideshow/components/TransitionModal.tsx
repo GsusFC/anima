@@ -22,6 +22,7 @@ const TransitionModal: React.FC<TransitionModalProps> = ({
   const [duration, setDuration] = useState(
     currentTransition?.duration || 500
   );
+  const [expandedCategory, setExpandedCategory] = useState<string>('BÁSICAS');
 
   const transitionCategories = [
     {
@@ -91,18 +92,18 @@ const TransitionModal: React.FC<TransitionModalProps> = ({
       zIndex: 1000
     }}>
       <div style={{
-        backgroundColor: '#1a1a1b',
-        border: '1px solid #343536',
+        backgroundColor: '#0f0f0f',
+        border: '1px solid #2a2a2b',
         borderRadius: '8px',
-        width: '420px',
-        maxHeight: '90vh',
+        width: '600px',
+        maxHeight: '85vh',
         display: 'flex',
         flexDirection: 'column'
       }}>
         {/* Header */}
         <div style={{
-          padding: '12px 16px',
-          borderBottom: '1px solid #343536',
+          padding: '16px 20px',
+          borderBottom: '1px solid #2a2a2b',
           display: 'flex',
           justifyContent: 'space-between',
           alignItems: 'center',
@@ -110,7 +111,7 @@ const TransitionModal: React.FC<TransitionModalProps> = ({
         }}>
           <h3 style={{
             margin: 0,
-            fontSize: '16px',
+            fontSize: '18px',
             color: '#ffffff',
             fontWeight: 'bold',
             fontFamily: '"Space Mono", monospace'
@@ -134,122 +135,152 @@ const TransitionModal: React.FC<TransitionModalProps> = ({
         </div>
 
         {/* Content */}
-        <div style={{ padding: '12px 16px', flex: 1, overflow: 'auto' }}>
-          {/* Transition Selection */}
+        <div style={{ padding: '16px 20px', overflow: 'hidden' }}>
+          {/* Transition Selection - Accordion Style */}
           <div style={{
-            maxHeight: '350px',
-            overflowY: 'auto',
-            marginBottom: '16px',
-            paddingRight: '8px'
+            marginBottom: '20px'
           }}>
             {transitionCategories.map((category) => (
-              <div key={category.name} style={{ marginBottom: '20px' }}>
-                {/* Category Header */}
-                <div style={{
-                  borderBottom: '1px solid #374151',
-                  paddingBottom: '6px',
-                  marginBottom: '12px'
-                }}>
+              <div key={category.name} style={{ marginBottom: '8px' }}>
+                {/* Category Header - Clickable Accordion */}
+                <button
+                  onClick={() => setExpandedCategory(expandedCategory === category.name ? '' : category.name)}
+                  style={{
+                    width: '100%',
+                    backgroundColor: '#1a1a1b',
+                    border: '1px solid #2a2a2b',
+                    borderRadius: '6px',
+                    padding: '12px 16px',
+                    display: 'flex',
+                    justifyContent: 'space-between',
+                    alignItems: 'center',
+                    cursor: 'pointer',
+                    transition: 'all 0.2s ease'
+                  }}
+                  onMouseEnter={(e) => {
+                    e.currentTarget.style.backgroundColor = '#252526';
+                  }}
+                  onMouseLeave={(e) => {
+                    e.currentTarget.style.backgroundColor = '#1a1a1b';
+                  }}
+                >
                   <h3 style={{
-                    fontSize: '14px',
+                    fontSize: '15px',
                     fontWeight: 'bold',
-                    color: '#f3f4f6',
+                    color: '#ffffff',
                     margin: 0,
                     fontFamily: '"Space Mono", monospace',
                     letterSpacing: '0.5px'
                   }}>
                     {category.name}
                   </h3>
-                </div>
+                  <span style={{
+                    fontSize: '14px',
+                    color: '#9ca3af',
+                    transform: expandedCategory === category.name ? 'rotate(180deg)' : 'rotate(0deg)',
+                    transition: 'transform 0.2s ease'
+                  }}>
+                    ▼
+                  </span>
+                </button>
 
-                {/* Transitions Grid */}
-                <div style={{
-                  display: 'grid',
-                  gridTemplateColumns: '1fr 1fr',
-                  gap: '8px'
-                }}>
-                  {category.transitions.map((transition) => (
-                    <button
-                      key={transition.type}
-                      onClick={() => setSelectedType(transition.type)}
-                      style={{
-                        padding: '12px',
-                        backgroundColor: selectedType === transition.type ? '#3b82f6' : '#111827',
-                        border: selectedType === transition.type ? '2px solid #60a5fa' : '1px solid #374151',
-                        borderRadius: '6px',
-                        color: 'white',
-                        cursor: 'pointer',
-                        textAlign: 'left',
-                        transition: 'all 0.2s ease',
-                        fontFamily: '"Space Mono", monospace'
-                      }}
-                      onMouseEnter={(e) => {
-                        if (selectedType !== transition.type) {
-                          e.currentTarget.style.backgroundColor = '#1f2937';
-                          e.currentTarget.style.borderColor = '#4b5563';
-                        }
-                      }}
-                      onMouseLeave={(e) => {
-                        if (selectedType !== transition.type) {
-                          e.currentTarget.style.backgroundColor = '#111827';
-                          e.currentTarget.style.borderColor = '#374151';
-                        }
-                      }}
-                    >
-                      <div style={{ 
-                        fontSize: '13px', 
-                        fontWeight: 'bold',
-                        color: selectedType === transition.type ? 'white' : '#f3f4f6',
-                        marginBottom: '4px'
-                      }}>
-                        {transition.name}
-                      </div>
-                      <div style={{
-                        fontSize: '10px',
-                        color: selectedType === transition.type ? '#bfdbfe' : '#9ca3af',
-                        lineHeight: '1.3',
-                        marginBottom: '4px'
-                      }}>
-                        {transition.description}
-                      </div>
-                      <div style={{
-                        fontSize: '9px',
-                        color: selectedType === transition.type ? '#93c5fd' : '#6b7280',
-                        fontStyle: 'italic'
-                      }}>
-                        {transition.duration}
-                      </div>
-                    </button>
-                  ))}
-                </div>
+                {/* Transitions Grid - Collapsible */}
+                {expandedCategory === category.name && (
+                  <div style={{
+                    backgroundColor: '#0a0a0a',
+                    border: '1px solid #2a2a2b',
+                    borderTop: 'none',
+                    borderRadius: '0 0 6px 6px',
+                    padding: '16px',
+                    display: 'grid',
+                    gridTemplateColumns: 'repeat(3, 1fr)',
+                    gap: '10px'
+                  }}>
+                    {category.transitions.map((transition) => (
+                      <button
+                        key={transition.type}
+                        onClick={() => setSelectedType(transition.type)}
+                        style={{
+                          padding: '14px',
+                          backgroundColor: selectedType === transition.type ? '#ec4899' : '#1a1a1b',
+                          border: selectedType === transition.type ? '2px solid #be185d' : '1px solid #2a2a2b',
+                          borderRadius: '6px',
+                          color: 'white',
+                          cursor: 'pointer',
+                          textAlign: 'left',
+                          transition: 'all 0.2s ease',
+                          fontFamily: '"Space Mono", monospace'
+                        }}
+                        onMouseEnter={(e) => {
+                          if (selectedType !== transition.type) {
+                            e.currentTarget.style.backgroundColor = '#252526';
+                            e.currentTarget.style.borderColor = '#3a3a3b';
+                          }
+                        }}
+                        onMouseLeave={(e) => {
+                          if (selectedType !== transition.type) {
+                            e.currentTarget.style.backgroundColor = '#1a1a1b';
+                            e.currentTarget.style.borderColor = '#2a2a2b';
+                          }
+                        }}
+                      >
+                        <div style={{ 
+                          fontSize: '14px', 
+                          fontWeight: 'bold',
+                          color: selectedType === transition.type ? 'white' : '#ffffff',
+                          marginBottom: '6px'
+                        }}>
+                          {transition.name}
+                        </div>
+                        <div style={{
+                          fontSize: '11px',
+                          color: selectedType === transition.type ? '#fce7f3' : '#9ca3af',
+                          lineHeight: '1.4',
+                          marginBottom: '6px'
+                        }}>
+                          {transition.description}
+                        </div>
+                        <div style={{
+                          fontSize: '10px',
+                          color: selectedType === transition.type ? '#fbcfe8' : '#6b7280',
+                          fontStyle: 'italic'
+                        }}>
+                          {transition.duration}
+                        </div>
+                      </button>
+                    ))}
+                  </div>
+                )}
               </div>
             ))}
           </div>
 
           {/* Duration Control & Quick Presets */}
-          <div style={{ marginBottom: '16px' }}>
-            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '8px' }}>
+          <div style={{ marginBottom: '20px' }}>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '12px' }}>
               <label style={{
-                fontSize: '11px',
-                color: '#9ca3af',
-                fontFamily: '"Space Mono", monospace'
+                fontSize: '13px',
+                color: '#ffffff',
+                fontFamily: '"Space Mono", monospace',
+                fontWeight: 'bold'
               }}>
                 Duration: {(duration / 1000).toFixed(1)}s
               </label>
               <div style={{
-                fontSize: '10px',
-                color: '#ffffff',
+                fontSize: '12px',
+                color: '#ec4899',
                 fontFamily: '"Space Mono", monospace',
-                backgroundColor: '#0f0f0f',
-                padding: '2px 6px',
-                borderRadius: '3px'
+                backgroundColor: '#0a0a0a',
+                padding: '4px 8px',
+                borderRadius: '4px',
+                border: '1px solid #2a2a2b'
               }}>
                 {transitionCategories.flatMap(cat => cat.transitions).find(t => t.type === selectedType)?.name}
               </div>
             </div>
             
             {/* Quick Presets - Horizontal */}
-            <div style={{ display: 'flex', gap: '4px', marginBottom: '8px' }}>
+            <div style={{ display: 'flex', gap: '6px', marginBottom: '12px' }}>
               {[
                 { label: 'Fast', value: 300 },
                 { label: 'Normal', value: 500 },
@@ -261,12 +292,12 @@ const TransitionModal: React.FC<TransitionModalProps> = ({
                   onClick={() => setDuration(preset.value)}
                   style={{
                     flex: 1,
-                    padding: '4px',
-                    backgroundColor: duration === preset.value ? '#3b82f6' : '#374151',
-                    border: 'none',
-                    borderRadius: '3px',
+                    padding: '6px',
+                    backgroundColor: duration === preset.value ? '#ec4899' : '#1a1a1b',
+                    border: duration === preset.value ? '1px solid #be185d' : '1px solid #2a2a2b',
+                    borderRadius: '4px',
                     color: 'white',
-                    fontSize: '9px',
+                    fontSize: '11px',
                     fontWeight: 'bold',
                     cursor: 'pointer',
                     fontFamily: '"Space Mono", monospace'
@@ -285,29 +316,29 @@ const TransitionModal: React.FC<TransitionModalProps> = ({
               step="50"
               value={duration}
               onChange={(e) => setDuration(parseInt(e.target.value))}
-              style={{ width: '100%' }}
+              style={{ width: '100%', accentColor: '#ec4899' }}
             />
           </div>
         </div>
 
         {/* Footer */}
         <div style={{
-          padding: '12px 16px',
-          borderTop: '1px solid #343536',
+          padding: '16px 20px',
+          borderTop: '1px solid #2a2a2b',
           display: 'flex',
           justifyContent: 'flex-end',
-          gap: '8px',
+          gap: '12px',
           flexShrink: 0
         }}>
           <button
             onClick={onClose}
             style={{
-              padding: '8px 16px',
-              backgroundColor: '#374151',
-              border: 'none',
-              borderRadius: '4px',
-              color: 'white',
-              fontSize: '11px',
+              padding: '10px 20px',
+              backgroundColor: '#1a1a1b',
+              border: '1px solid #2a2a2b',
+              borderRadius: '6px',
+              color: '#ffffff',
+              fontSize: '12px',
               fontWeight: 'bold',
               cursor: 'pointer',
               fontFamily: '"Space Mono", monospace'
@@ -318,12 +349,12 @@ const TransitionModal: React.FC<TransitionModalProps> = ({
           <button
             onClick={handleSave}
             style={{
-              padding: '8px 16px',
-              backgroundColor: '#22c55e',
-              border: 'none',
-              borderRadius: '4px',
+              padding: '10px 20px',
+              backgroundColor: '#ec4899',
+              border: '1px solid #be185d',
+              borderRadius: '6px',
               color: 'white',
-              fontSize: '11px',
+              fontSize: '12px',
               fontWeight: 'bold',
               cursor: 'pointer',
               fontFamily: '"Space Mono", monospace'

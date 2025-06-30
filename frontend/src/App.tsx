@@ -47,7 +47,7 @@ const ModeSelector: React.FC = () => {
         <h1 style={{
           fontSize: '48px',
           margin: '0 0 20px 0',
-          color: '#ff4500'
+          color: '#ec4899'
         }}>
           AnimaGen
         </h1>
@@ -79,7 +79,7 @@ const ModeSelector: React.FC = () => {
             }}
           >
             <div style={{ fontSize: '36px', marginBottom: '15px' }}>🖼️</div>
-            <h3 style={{ margin: '0 0 10px 0', color: '#22c55e' }}>SlideShow</h3>
+            <h3 style={{ margin: '0 0 10px 0', color: '#ec4899' }}>SlideShow</h3>
             <p style={{ margin: 0, fontSize: '12px', color: '#9ca3af' }}>
               Create videos from images with transitions
             </p>
@@ -100,7 +100,7 @@ const ModeSelector: React.FC = () => {
             }}
           >
             <div style={{ fontSize: '36px', marginBottom: '15px' }}>🎬</div>
-            <h3 style={{ margin: '0 0 10px 0', color: '#ff4500' }}>Video Editor</h3>
+            <h3 style={{ margin: '0 0 10px 0', color: '#ec4899' }}>Video Editor</h3>
             <p style={{ margin: 0, fontSize: '12px', color: '#9ca3af' }}>
               Trim and edit video files
             </p>

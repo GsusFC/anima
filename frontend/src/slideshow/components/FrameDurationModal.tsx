@@ -168,7 +168,7 @@ const FrameDurationModal: React.FC<FrameDurationModalProps> = ({
                   }}
                   style={{
                     padding: '6px 4px',
-                    backgroundColor: duration === preset.value ? '#3b82f6' : '#374151',
+                    backgroundColor: duration === preset.value ? '#ec4899' : '#374151',
                     border: 'none',
                     borderRadius: '3px',
                     color: 'white',
@@ -249,7 +249,7 @@ const FrameDurationModal: React.FC<FrameDurationModalProps> = ({
             onClick={handleSave}
             style={{
               padding: '8px 16px',
-              backgroundColor: '#22c55e',
+              backgroundColor: '#ec4899',
               border: 'none',
               borderRadius: '4px',
               color: 'white',

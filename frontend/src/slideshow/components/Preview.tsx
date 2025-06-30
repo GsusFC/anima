@@ -117,7 +117,7 @@ const Preview: React.FC = () => {
               onClick={generatePreview}
               style={{
                 padding: '8px 16px',
-                backgroundColor: '#ff4500',
+                backgroundColor: '#ec4899',
                 border: 'none',
                 borderRadius: '4px',
                 color: 'white',
@@ -161,7 +161,7 @@ const Preview: React.FC = () => {
               onClick={generatePreview}
               style={{
                 padding: '8px 16px',
-                backgroundColor: '#3b82f6',
+                backgroundColor: '#ec4899',
                 border: 'none',
                 borderRadius: '4px',
                 color: 'white',

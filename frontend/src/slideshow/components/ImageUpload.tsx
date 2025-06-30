@@ -92,7 +92,7 @@ const ImageUpload: React.FC = () => {
             height: '60px',
             backgroundColor: dragActive ? '#1a1a1b' : '#0f0f0f',
             borderRadius: '2px',
-            border: `2px dashed ${dragActive ? '#ff4500' : '#343536'}`,
+            border: `2px dashed ${dragActive ? '#ec4899' : '#343536'}`,
             cursor: 'pointer',
             overflow: 'hidden',
             display: 'flex',
@@ -112,7 +112,7 @@ const ImageUpload: React.FC = () => {
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
           </svg>
           <span style={{ 
-            color: dragActive ? '#ff4500' : '#9ca3af', 
+            color: dragActive ? '#ec4899' : '#9ca3af', 
             fontSize: '12px', 
             fontFamily: '"Space Mono", monospace' 
           }}>
@@ -149,7 +149,7 @@ const ImageUpload: React.FC = () => {
               onClick={() => addToTimeline(image.id)}
               onMouseEnter={(e) => {
                 e.currentTarget.style.backgroundColor = '#2a2a2b';
-                e.currentTarget.style.borderColor = '#22c55e';
+                e.currentTarget.style.borderColor = '#ec4899';
                 e.currentTarget.style.transform = 'scale(1.02)';
                 const overlay = e.currentTarget.querySelector('.add-overlay') as HTMLElement;
                 if (overlay) overlay.style.opacity = '1';
@@ -204,7 +204,7 @@ const ImageUpload: React.FC = () => {
                   <div style={{
                     width: '32px',
                     height: '32px',
-                    backgroundColor: '#22c55e',
+                    backgroundColor: '#ec4899',
                     borderRadius: '50%',
                     display: 'flex',
                     alignItems: 'center',
@@ -276,7 +276,7 @@ const ImageUpload: React.FC = () => {
               style={{
                 flex: 1,
                 padding: '8px',
-                backgroundColor: '#22c55e',
+                backgroundColor: '#ec4899',
                 border: 'none',
                 borderRadius: '4px',
                 color: 'white',
