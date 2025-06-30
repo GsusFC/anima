@@ -42,8 +42,35 @@ app.get('/api/health', (req, res) => {
     timestamp: new Date().toISOString(),
     uptime: process.uptime(),
     env: process.env.NODE_ENV || 'development',
-    port: process.env.PORT || 3001
+    port: process.env.PORT || 3001,
+    directories: {
+      output: fs.existsSync(outputDir),
+      uploads: fs.existsSync(tempDir),
+      compositions: fs.existsSync(compositionsDir)
+    }
   });
+});
+
+// File validation endpoint for video editor
+app.get('/video-editor/validate/:sessionId/:filename', (req, res) => {
+  try {
+    const { sessionId, filename } = req.params;
+    const filePath = path.join(tempDir, sessionId, filename);
+    const exists = fs.existsSync(filePath);
+    
+    console.log(`🔍 File validation: ${filePath} exists: ${exists}`);
+    
+    res.json({
+      exists,
+      path: filePath,
+      sessionId,
+      filename,
+      tempDir
+    });
+  } catch (error) {
+    console.error('❌ File validation error:', error);
+    res.status(500).json({ error: 'Validation failed', details: error.message });
+  }
 });
 
 // Root endpoint to serve frontend
@@ -95,7 +122,7 @@ app.get('/debug', (req, res) => {
 
 // Ensure output, temp, and compositions directories exist
 const outputDir = path.join(__dirname, process.env.OUTPUT_DIR || 'output');
-const tempDir = path.join(__dirname, process.env.TEMP_DIR || 'temp');
+const tempDir = path.join(__dirname, process.env.TEMP_DIR || 'uploads'); // Changed from 'temp' to 'uploads' for persistence
 const compositionsDir = path.join(__dirname, 'compositions');
 
 // Serve uploaded videos and processed files
@@ -391,9 +418,26 @@ app.post('/video-editor/trim', (req, res) => {
   try {
     const { videoPath, startTime, endTime, outputName } = req.body;
     
+    console.log('🎬 Video trim request received');
+    console.log('Video path:', videoPath);
+    console.log('Temp dir:', tempDir);
+    
     if (!videoPath || startTime === undefined || endTime === undefined) {
       return res.status(400).json({ 
         error: 'Missing required fields: videoPath, startTime, endTime' 
+      });
+    }
+
+    // Check if video file exists
+    const fullVideoPath = path.resolve(videoPath.startsWith('./') ? videoPath.slice(2) : videoPath);
+    console.log('Checking video at:', fullVideoPath);
+    
+    if (!fs.existsSync(fullVideoPath)) {
+      console.error('❌ Video file not found:', fullVideoPath);
+      return res.status(400).json({ 
+        error: 'Original video path not available. Please re-upload video.',
+        videoPath: fullVideoPath,
+        exists: false
       });
     }
 
@@ -413,11 +457,11 @@ app.post('/video-editor/trim', (req, res) => {
       fs.mkdirSync(sessionDir, { recursive: true });
     }
 
-    console.log(`🎬 Trimming video: ${videoPath}`);
+    console.log(`🎬 Trimming video: ${fullVideoPath}`);
     console.log(`⏰ From ${startTime}s to ${endTime}s`);
     console.log(`💾 Output: ${outputPath}`);
 
-    ffmpeg(videoPath)
+    ffmpeg(fullVideoPath)
       .setStartTime(startTime)
       .setDuration(endTime - startTime)
       .output(outputPath)
