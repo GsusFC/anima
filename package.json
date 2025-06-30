@@ -5,17 +5,19 @@
   "main": "backend/index.js",
   "scripts": {
     "start": "node backend/index.js",
-    "build": "cd backend && npm install && cd ../frontend && npm install && npm run build && mkdir -p ../backend/public && cp -r dist/* ../backend/public/",
+    "build": "echo 'Building with Docker - see Dockerfile'",
+    "heroku-postbuild": "cd backend && npm install && cd ../frontend && npm install && npm run build && mkdir -p ../backend/public && cp -r dist/* ../backend/public/",
     "dev": "concurrently \"cd backend && npm run dev\" \"cd frontend && npm run dev\"",
-    "test": "cd backend && npm test",
-    "install": "cd backend && npm install && cd ../frontend && npm install"
+    "test": "cd backend && npm test"
   },
   "engines": {
-    "node": ">=18.0.0"
+    "node": "18.x"
   },
-  "dependencies": {
-    "concurrently": "^7.6.0"
-  },
+  "buildpacks": [
+    {
+      "url": "heroku/nodejs"
+    }
+  ],
   "author": "GsusFC",
   "license": "MIT"
 }
