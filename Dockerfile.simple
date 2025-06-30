@@ -1,0 +1,15 @@
+FROM node:20-bullseye
+
+WORKDIR /app
+
+# Copy only essential files for simple test
+COPY backend/package*.json ./
+RUN npm install express
+
+# Copy simple server
+COPY server-simple.js ./
+
+EXPOSE 3001
+ENV NODE_ENV=production
+
+CMD ["node", "server-simple.js"]

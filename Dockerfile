@@ -45,4 +45,7 @@ RUN apt-get remove -y python3 make g++ && apt-get autoremove -y
 EXPOSE 3001
 ENV NODE_ENV=production
 
-CMD ["node", "backend/index.js"]
+# Create startup script for debugging
+RUN echo '#!/bin/bash\necho "🚀 Starting AnimaGen..."\necho "Working dir: $(pwd)"\necho "Node version: $(node --version)"\necho "Files:"\nls -la\necho "Starting server..."\nexec node backend/index.js' > /app/start.sh && chmod +x /app/start.sh
+
+CMD ["/app/start.sh"]
