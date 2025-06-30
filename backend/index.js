@@ -216,10 +216,14 @@ const videoUpload = multer({
     const extname = allowedVideoTypes.test(path.extname(file.originalname).toLowerCase());
     const mimetype = /video\//.test(file.mimetype);
     
+    console.log(`🎥 Video filter check: file=${file.originalname}, mime=${file.mimetype}, ext=${path.extname(file.originalname)}, extOk=${extname}, mimeOk=${mimetype}`);
+    
     // Accept if either extension OR mimetype matches (more flexible)
     if (mimetype || extname) {
+      console.log('✅ Video file accepted');
       return cb(null, true);
     } else {
+      console.log('❌ Video file rejected');
       cb(new Error('Only video files are allowed! Supported formats: MP4, MOV, WebM, AVI, MKV'));
     }
   }
@@ -381,14 +385,20 @@ app.post('/upload', upload.array('images', 50), (req, res) => {
 
 // Video Editor upload endpoint
 app.post('/video-editor/upload', videoUpload.single('video'), (req, res) => {
+  console.log('🎬 VIDEO UPLOAD ENDPOINT HIT!');
   try {
     if (!req.file) {
+      console.log('❌ No file received');
       return res.status(400).json({ error: 'No video file uploaded' });
     }
+    console.log('📁 File received:', req.file.originalname, req.file.mimetype);
 
-    // Validate video file type
-    const videoMimeTypes = ['video/mp4', 'video/quicktime', 'video/webm', 'video/x-msvideo', 'video/x-matroska'];
-    if (!videoMimeTypes.includes(req.file.mimetype)) {
+    // Validate video file type - rely primarily on file extension since mimetype can be unreliable
+    const videoMimeTypes = ['video/mp4', 'video/quicktime', 'video/webm', 'video/x-msvideo', 'video/x-matroska', 'application/octet-stream'];
+    const videoExtensions = /\.(mp4|mov|webm|avi|mkv)$/i;
+    
+    if (!videoMimeTypes.includes(req.file.mimetype) && !videoExtensions.test(req.file.originalname)) {
+      console.log(`❌ Invalid video type: mime=${req.file.mimetype}, file=${req.file.originalname}`);
       return res.status(400).json({ error: 'Invalid video file type' });
     }
 
@@ -429,7 +439,9 @@ app.post('/video-editor/trim', (req, res) => {
     }
 
     // Check if video file exists
-    const fullVideoPath = path.resolve(videoPath.startsWith('./') ? videoPath.slice(2) : videoPath);
+    const fullVideoPath = path.isAbsolute(videoPath) 
+      ? videoPath 
+      : path.join(__dirname, videoPath);
     console.log('Checking video at:', fullVideoPath);
     
     if (!fs.existsSync(fullVideoPath)) {
@@ -908,7 +920,9 @@ app.post('/export/mp4', async (req, res) => {
       return res.status(400).json({ error: 'Video path is required' });
     }
 
-    const inputPath = path.resolve(videoPath.startsWith('./') ? videoPath.slice(2) : videoPath);
+    const inputPath = path.isAbsolute(videoPath) 
+      ? videoPath 
+      : path.join(__dirname, videoPath);
     console.log('Checking video at:', inputPath);
     
     if (!fs.existsSync(inputPath)) {
@@ -997,7 +1011,9 @@ app.post('/export/webm', async (req, res) => {
       return res.status(400).json({ error: 'Video path is required' });
     }
 
-    const inputPath = path.resolve(videoPath.startsWith('./') ? videoPath.slice(2) : videoPath);
+    const inputPath = path.isAbsolute(videoPath) 
+      ? videoPath 
+      : path.join(__dirname, videoPath);
     console.log('Checking video at:', inputPath);
     
     if (!fs.existsSync(inputPath)) {
@@ -1086,7 +1102,9 @@ app.post('/export/mov', async (req, res) => {
       return res.status(400).json({ error: 'Video path is required' });
     }
 
-    const inputPath = path.resolve(videoPath.startsWith('./') ? videoPath.slice(2) : videoPath);
+    const inputPath = path.isAbsolute(videoPath) 
+      ? videoPath 
+      : path.join(__dirname, videoPath);
     console.log('Checking video at:', inputPath);
     
     if (!fs.existsSync(inputPath)) {
@@ -1177,7 +1195,9 @@ app.post('/export/gif', async (req, res) => {
         return res.status(400).json({ error: 'Video path is required' });
       }
 
-      const inputPath = path.resolve(videoPath.startsWith('./') ? videoPath.slice(2) : videoPath);
+      const inputPath = path.isAbsolute(videoPath) 
+      ? videoPath 
+      : path.join(__dirname, videoPath);
       console.log('Checking video at:', inputPath);
       
       if (!fs.existsSync(inputPath)) {

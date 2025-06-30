@@ -11,6 +11,7 @@ export interface VideoFile {
   size: number;
   thumbnails: string[];
   uploadedInfo?: UploadedVideoInfo;
+  sessionId?: string;     // Session ID for backend file tracking
   addedAt: Date;          // When added to library
 }
 

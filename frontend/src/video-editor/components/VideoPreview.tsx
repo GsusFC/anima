@@ -2,15 +2,15 @@ import React, { useRef, useEffect, useCallback, useMemo } from 'react';
 import { useVideoEditorContext } from '../context/VideoEditorContext';
 
 const VideoPreview: React.FC = () => {
-  const { project, hasVideo } = useVideoEditorContext();
+  const { project, hasVideo, setVideoRef } = useVideoEditorContext();
   const localVideoRef = useRef<HTMLVideoElement>(null);
 
-  // Register video ref with context when component mounts - DISABLED to avoid conflicts
-  // useEffect(() => {
-  //   if (localVideoRef.current) {
-  //     setVideoRef(localVideoRef);
-  //   }
-  // }, [hasVideo, setVideoRef]);
+  // Register video ref with context when component mounts
+  useEffect(() => {
+    if (localVideoRef.current) {
+      setVideoRef(localVideoRef);
+    }
+  }, [hasVideo, setVideoRef]);
 
   const handleVideoLoaded = useCallback(() => {
     // Video loaded successfully
@@ -126,16 +126,7 @@ const VideoPreview: React.FC = () => {
         borderRadius: '6px',
         border: '1px solid #343536'
       }}>
-        <div style={{
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'space-between',
-          fontSize: '11px',
-          color: '#9ca3af'
-        }}>
-          <span>Preview shows trimmed segment</span>
-          <span>Use timeline controls to play/pause</span>
-        </div>
+
       </div>
     </div>
   );

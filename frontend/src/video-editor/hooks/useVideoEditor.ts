@@ -2,7 +2,7 @@ import { useState, useCallback } from 'react';
 import { LegacyVideoProject, VideoFile, VideoSegment } from '../types/video-editor.types';
 
 // Video-specific API functions
-const uploadVideoFile = async (file: File): Promise<any> => {
+const uploadVideoFile = async (file: File, sessionId?: string): Promise<any> => {
   const formData = new FormData();
   formData.append('video', file);
   
@@ -10,7 +10,10 @@ const uploadVideoFile = async (file: File): Promise<any> => {
     ? 'http://localhost:3001' 
     : window.location.origin;
 
-  const response = await fetch(`${API_BASE_URL}/video-editor/upload`, {
+  // Generate sessionId if not provided
+  const currentSessionId = sessionId || `session_${Date.now()}`;
+  
+  const response = await fetch(`${API_BASE_URL}/video-editor/upload?sessionId=${currentSessionId}`, {
     method: 'POST',
     body: formData,
   });
@@ -185,9 +188,11 @@ export const useVideoEditor = () => {
       // Upload to backend (when endpoint is ready)
       console.log('🌐 Uploading to backend...');
       try {
-        const uploadResult = await uploadVideoFile(file);
+        const sessionId = `session_${Date.now()}`;
+        const uploadResult = await uploadVideoFile(file, sessionId);
         console.log('✅ Backend upload successful!', uploadResult);
-        videoMetadata.uploadedInfo = uploadResult;
+        videoMetadata.uploadedInfo = uploadResult.video; // Extract video object
+        videoMetadata.sessionId = sessionId; // Store sessionId for later use
         // Server path is now stored in uploadedInfo.path
       } catch (uploadError) {
         console.warn('⚠️ Backend upload failed, continuing with local file:', uploadError);
