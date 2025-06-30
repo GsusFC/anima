@@ -1,5 +1,16 @@
 require('dotenv').config();
 
+// Global error handling
+process.on('uncaughtException', (error) => {
+  console.error('❌ Uncaught Exception:', error);
+  process.exit(1);
+});
+
+process.on('unhandledRejection', (reason, promise) => {
+  console.error('❌ Unhandled Rejection at:', promise, 'reason:', reason);
+  process.exit(1);
+});
+
 const express = require('express');
 const multer = require('multer');
 const path = require('path');
@@ -38,7 +49,48 @@ app.get('/api/health', (req, res) => {
 // Root endpoint to serve frontend
 app.get('/', (req, res) => {
   console.log('🏠 Root endpoint requested');
-  res.sendFile(path.join(__dirname, 'public', 'index.html'));
+  try {
+    const indexPath = path.join(__dirname, 'public', 'index.html');
+    if (fs.existsSync(indexPath)) {
+      res.sendFile(indexPath);
+    } else {
+      console.log('❌ index.html not found, serving basic response');
+      res.send(`
+        <html>
+          <body>
+            <h1>AnimaGen Server</h1>
+            <p>Status: Running</p>
+            <p>Time: ${new Date().toISOString()}</p>
+            <p><a href="/api/health">Health Check</a></p>
+          </body>
+        </html>
+      `);
+    }
+  } catch (error) {
+    console.error('❌ Error serving root:', error);
+    res.status(500).send('Server Error');
+  }
+});
+
+// Debug endpoint
+app.get('/debug', (req, res) => {
+  console.log('🔍 Debug endpoint requested');
+  res.json({
+    status: 'running',
+    timestamp: new Date().toISOString(),
+    uptime: process.uptime(),
+    env: process.env.NODE_ENV,
+    port: process.env.PORT,
+    platform: process.platform,
+    nodeVersion: process.version,
+    memoryUsage: process.memoryUsage(),
+    directories: {
+      output: fs.existsSync(outputDir),
+      temp: fs.existsSync(tempDir),
+      compositions: fs.existsSync(compositionsDir),
+      public: fs.existsSync(path.join(__dirname, 'public'))
+    }
+  });
 });
 
 // Ensure output, temp, and compositions directories exist
@@ -55,16 +107,31 @@ app.use('/output', (req, res, next) => {
   next();
 }, express.static(outputDir));
 
-if (!fs.existsSync(outputDir)) {
-  fs.mkdirSync(outputDir, { recursive: true });
-}
+console.log('🔧 Setting up directories...');
+console.log('🔧 Output dir:', outputDir);
+console.log('🔧 Temp dir:', tempDir);
+console.log('🔧 Compositions dir:', compositionsDir);
 
-if (!fs.existsSync(tempDir)) {
-  fs.mkdirSync(tempDir, { recursive: true });
-}
+try {
+  if (!fs.existsSync(outputDir)) {
+    fs.mkdirSync(outputDir, { recursive: true });
+    console.log('✅ Created output directory');
+  }
 
-if (!fs.existsSync(compositionsDir)) {
-  fs.mkdirSync(compositionsDir, { recursive: true });
+  if (!fs.existsSync(tempDir)) {
+    fs.mkdirSync(tempDir, { recursive: true });
+    console.log('✅ Created temp directory');
+  }
+
+  if (!fs.existsSync(compositionsDir)) {
+    fs.mkdirSync(compositionsDir, { recursive: true });
+    console.log('✅ Created compositions directory');
+  }
+  
+  console.log('✅ All directories ready');
+} catch (error) {
+  console.error('❌ Failed to create directories:', error);
+  process.exit(1);
 }
 
 // Multer configuration for file uploads
@@ -1673,9 +1740,21 @@ app.use((error, req, res, next) => {
 // Start server (only if not in test mode)
 if (process.env.NODE_ENV !== 'test') {
   const PORT = process.env.PORT || 3001;
-  server.listen(PORT, '0.0.0.0', () => {
+  
+  console.log('🔧 Starting server...');
+  console.log('🔧 Environment:', process.env.NODE_ENV);
+  console.log('🔧 Port:', PORT);
+  console.log('🔧 FFmpeg path:', ffmpeg.getAvailableFormats ? 'Available' : 'Not detected');
+  
+  server.listen(PORT, '0.0.0.0', (err) => {
+    if (err) {
+      console.error('❌ Failed to start server:', err);
+      process.exit(1);
+    }
+    
     console.log(`🚀 Server listening on 0.0.0.0:${PORT}`);
     console.log(`🏥 Health check available at http://0.0.0.0:${PORT}/api/health`);
+    console.log(`🌐 Public URL: ${process.env.RAILWAY_PUBLIC_DOMAIN ? `https://${process.env.RAILWAY_PUBLIC_DOMAIN}` : 'Not set'}`);
     console.log('AnimaGen Backend Server is ready!');
     console.log('Supported formats: GIF, MP4, WebM');
     console.log('Quality presets:', Object.keys(qualityPresets).join(', '));
