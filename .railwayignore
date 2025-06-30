@@ -1,0 +1,14 @@
+# Ignore everything except what we need for Docker build
+*
+
+# But include necessary files for Docker build
+!Dockerfile
+!railway.toml
+!backend/
+!frontend/
+!package.json
+!.dockerignore
+
+# Don't ignore these subdirectories
+!backend/**
+!frontend/**

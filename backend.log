@@ -1,72 +1,231 @@
+
+> animagen-backend@1.0.0 start
+> node index.js
+
 Server listening at http://localhost:3001
-Processing export request with recipe: [
-  {
-    "id": "4178d9b5-6ac7-4e25-a504-1f079c409a52",
-    "duration": 2000,
-    "fileName": "WAIRE - SYSTEM IN OPERATION.jpg",
-    "transitionType": "none",
-    "transitionDuration": 500
-  },
-  {
-    "id": "6ebbb650-30c0-4ee6-94c6-eee603764270",
-    "duration": 2000,
-    "fileName": "PAID - CREATIVITY H3.jpg",
-    "transitionType": "slide_right",
-    "transitionDuration": 500
-  },
-  {
-    "id": "110f7a5a-c624-485b-833c-a6b56d4d8841",
-    "duration": 2000,
-    "fileName": "WAIRE - CREATIVITY H1.jpg",
-    "transitionType": "slide_up",
-    "transitionDuration": 500
-  },
-  {
-    "id": "30810c8d-5bd3-4fd9-8482-d42e676a35d2",
-    "duration": 2000,
-    "fileName": "PAID - POSTER MOCKUP.jpg",
-    "transitionType": "zoom_in",
-    "transitionDuration": 500
-  },
-  {
-    "id": "0da3e902-214a-4a95-9435-7b8c49a36bc5",
-    "duration": 2000,
-    "fileName": "PAID - SOCIAL.jpg",
-    "transitionType": "zoom_out",
-    "transitionDuration": 1000
-  }
+AnimaGen Backend Server is ready!
+Supported formats: GIF, MP4, WebM
+Quality presets: web, standard, high, premium, ultra
+Transition effects: none, fade, fadeblack, fadewhite, dissolve, slideleft, slideright, slideup, slidedown, wipeleft, wiperight, wipeup, wipedown, wipetl, wipetr, wipebl, wipebr, smoothleft, smoothright, smoothup, smoothdown, circlecrop, rectcrop, circleopen, circleclose, horzopen, horzclose, vertopen, vertclose, diagbl, diagbr, diagtl, diagtr, radial, pixelize, distance, squeezev, squeezeh, zoomin, coverleft, coverright, coverup, coverdown, revealleft, revealright, revealup, revealdown, hlwind, hrwind, vuwind, vdwind, hlslice, hrslice, vuslice, vdslice, fadegrays, hblur
+🎨 Exporting GIF from video: /Users/gsus/CascadeProjects/AnimaGen/backend/temp/1751209574750/trimmed_1751209574758.mp4
+✅ Palette generated, creating GIF...
+FFmpeg GIF command: ffmpeg -i /Users/gsus/CascadeProjects/AnimaGen/backend/temp/1751209574750/trimmed_1751209574758.mp4 -i /Users/gsus/CascadeProjects/AnimaGen/backend/output/palette_1751222991762.png -y -filter_complex [0:v]scale=640:-1:flags=lanczos[v];[v][1:v]paletteuse=dither=bayer:bayer_scale=5 -r 15 -loop 0 /Users/gsus/CascadeProjects/AnimaGen/backend/output/exported_1751222991762.gif
+✅ GIF export completed
+🎬 Trimming video: /Users/gsus/CascadeProjects/AnimaGen/backend/temp/1751223046648/1751223046649_animagen_1751059631380.mp4
+⏰ From 2.635444320556903s to 3.779215244306903s
+💾 Output: /Users/gsus/CascadeProjects/AnimaGen/backend/temp/1751223060335/trimmed_1751223060340.mp4
+🚀 FFmpeg command: ffmpeg -ss 2.635444320556903 -i /Users/gsus/CascadeProjects/AnimaGen/backend/temp/1751223046648/1751223046649_animagen_1751059631380.mp4 -y -acodec aac -vcodec libx264 -t 1.14377092375 /Users/gsus/CascadeProjects/AnimaGen/backend/temp/1751223060335/trimmed_1751223060340.mp4
+⏳ Trim progress: NaN%
+⏳ Trim progress: NaN%
+⏳ Trim progress: 2.6086954459529292%
+⏳ Trim progress: 20.158101173272634%
+⏳ Trim progress: 26.324108590979563%
+✅ Video trimmed successfully
+🎨 Exporting GIF from video: /Users/gsus/CascadeProjects/AnimaGen/backend/temp/1751223060335/trimmed_1751223060340.mp4
+✅ Palette generated, creating GIF...
+FFmpeg GIF command: ffmpeg -i /Users/gsus/CascadeProjects/AnimaGen/backend/temp/1751223060335/trimmed_1751223060340.mp4 -i /Users/gsus/CascadeProjects/AnimaGen/backend/output/palette_1751223064087.png -y -filter_complex [0:v]scale=640:-1:flags=lanczos[v];[v][1:v]paletteuse=dither=bayer:bayer_scale=5 -r 30 -loop 0 /Users/gsus/CascadeProjects/AnimaGen/backend/output/exported_1751223064087.gif
+✅ GIF export completed
+Preview: Processing 1 images with transitions
+Preview: Frame durations (ms): [ 1000, 1000, 1000, 1000, 1000, 1000 ]
+Preview: Transitions: [
+  'fade:500ms',
+  'fade:500ms',
+  'fade:500ms',
+  'fade:500ms',
+  'fade:500ms'
 ]
-Quality setting: custom
-Custom settings: {
-  fps: 30,
-  scale: 1440,
-  maxColors: 64,
-  dither: 'bayer:bayer_scale=2',
-  statsMode: 'diff'
-}
-Using quality settings: {
-  fps: 30,
-  scale: 1440,
-  maxColors: 64,
-  dither: 'bayer:bayer_scale=2',
-  statsMode: 'diff'
-}
-Adding input: /Users/gsus/CascadeProjects/AnimaGen/backend/temp/1750891041756/WAIRE - SYSTEM IN OPERATION.jpg (duration: 2000ms)
-Adding input: /Users/gsus/CascadeProjects/AnimaGen/backend/temp/1750891041756/PAID - CREATIVITY H3.jpg (duration: 2000ms)
-Adding input: /Users/gsus/CascadeProjects/AnimaGen/backend/temp/1750891041756/WAIRE - CREATIVITY H1.jpg (duration: 2000ms)
-Adding input: /Users/gsus/CascadeProjects/AnimaGen/backend/temp/1750891041756/PAID - POSTER MOCKUP.jpg (duration: 2000ms)
-Adding input: /Users/gsus/CascadeProjects/AnimaGen/backend/temp/1750891041756/PAID - SOCIAL.jpg (duration: 2000ms)
-Building filter complex...
-Multi-frame filter parts: [
-  '[0:v][1:v]xfade=transition=slideright:duration=0.500:offset=1.500[v1]',
-  '[v1][2:v]xfade=transition=slideup:duration=0.500:offset=3.000[v2]',
-  '[v2][3:v]xfade=transition=zoomin:duration=0.500:offset=4.500[v3]',
-  '[v3][4:v]xfade=transition=fade:duration=1.000:offset=5.500[v_chain_end]'
+Preview: Default duration (ms): 1500
+Preview: Total duration: 1.15s, Max transition: 0.50s
+Preview: Image 1/1 - Base: 1.00s, Input: 2.23s
+buildUnifiedTransitionChain: 1 images, 5 transitions
+Single image, returning [v0]
+FFmpeg started for Preview: ffmpeg -loop 1 -t 2.225 -i /Users/gsus/CascadeProjects/AnimaGen/backend/temp/1751229050707/1751229050707_WAIRE - SYMBOL MOVING.jpg -y -filter_complex [0:v]scale=640:480:force_original_aspect_ratio=decrease,pad=640:480:(ow-iw)/2:(oh-ih)/2,setpts=PTS-STARTPTS,fps=30[v0] -c:v libx264 -preset ultrafast -profile:v baseline -crf 28 -b:v 1M -pix_fmt yuv420p -movflags +faststart -map [v0] /Users/gsus/CascadeProjects/AnimaGen/backend/output/preview_1751229050707_1751229053959.mp4
+Preview: Processing 2 images with transitions
+Preview: Frame durations (ms): [
+  1000, 1000, 1000,
+  1000, 1000, 1000,
+  1000, 1000, 1000,
+  1000, 1000, 1000
 ]
-Complete base filter: [0:v][1:v]xfade=transition=slideright:duration=0.500:offset=1.500[v1];[v1][2:v]xfade=transition=slideup:duration=0.500:offset=3.000[v2];[v2][3:v]xfade=transition=zoomin:duration=0.500:offset=4.500[v3];[v3][4:v]xfade=transition=fade:duration=1.000:offset=5.500[v_chain_end];[v_chain_end]fps=30,scale=1440:-1:flags=lanczos[v_out]
-Final complete filter: [0:v][1:v]xfade=transition=slideright:duration=0.500:offset=1.500[v1];[v1][2:v]xfade=transition=slideup:duration=0.500:offset=3.000[v2];[v2][3:v]xfade=transition=zoomin:duration=0.500:offset=4.500[v3];[v3][4:v]xfade=transition=fade:duration=1.000:offset=5.500[v_chain_end];[v_chain_end]fps=30,scale=1440:-1:flags=lanczos[v_out];[v_out]split[gif1][gif2];[gif1]palettegen=max_colors=64:reserve_transparent=0:stats_mode=diff[pal];[gif2][pal]paletteuse=dither=bayer:bayer_scale=2:diff_mode=rectangle
-Temp directory: /Users/gsus/CascadeProjects/AnimaGen/backend/temp/1750891041756
-Output GIF path: /Users/gsus/CascadeProjects/AnimaGen/backend/output/animagen_1750891041756.gif
-Directory exists: true
-GIF generation command: ffmpeg -loop 1 -t 2 -i /Users/gsus/CascadeProjects/AnimaGen/backend/temp/1750891041756/WAIRE - SYSTEM IN OPERATION.jpg -loop 1 -t 2 -i /Users/gsus/CascadeProjects/AnimaGen/backend/temp/1750891041756/PAID - CREATIVITY H3.jpg -loop 1 -t 2 -i /Users/gsus/CascadeProjects/AnimaGen/backend/temp/1750891041756/WAIRE - CREATIVITY H1.jpg -loop 1 -t 2 -i /Users/gsus/CascadeProjects/AnimaGen/backend/temp/1750891041756/PAID - POSTER MOCKUP.jpg -loop 1 -t 2 -i /Users/gsus/CascadeProjects/AnimaGen/backend/temp/1750891041756/PAID - SOCIAL.jpg -y -filter_complex [0:v][1:v]xfade=transition=slideright:duration=0.500:offset=1.500[v1];[v1][2:v]xfade=transition=slideup:duration=0.500:offset=3.000[v2];[v2][3:v]xfade=transition=zoomin:duration=0.500:offset=4.500[v3];[v3][4:v]xfade=transition=fade:duration=1.000:offset=5.500[v_chain_end];[v_chain_end]fps=30,scale=1440:-1:flags=lanczos[v_out];[v_out]split[gif1][gif2];[gif1]palettegen=max_colors=64:reserve_transparent=0:stats_mode=diff[pal];[gif2][pal]paletteuse=dither=bayer:bayer_scale=2:diff_mode=rectangle -loop 0 -preset veryslow /Users/gsus/CascadeProjects/AnimaGen/backend/output/animagen_1750891041756.gif
-GIF created successfully
+Preview: Transitions: [
+  'fade:500ms', 'fade:500ms',
+  'fade:500ms', 'fade:500ms',
+  'fade:500ms', 'fade:500ms',
+  'fade:500ms', 'fade:500ms',
+  'fade:500ms', 'fade:500ms',
+  'fade:500ms'
+]
+Preview: Default duration (ms): 1500
+Preview: Total duration: 2.30s, Max transition: 0.50s
+Preview: Image 1/2 - Base: 1.00s, Input: 1.97s
+Preview: Image 2/2 - Base: 1.00s, Input: 1.97s
+buildUnifiedTransitionChain: 2 images, 11 transitions
+Using xfade transition chain
+Frame 0->1: duration=1s, offset=0.5s, transition=0.5s
+XFade filter: [v0][v1]xfade=transition=fade:duration=0.5:offset=0.5[outv]
+Total xfade transitions processed: 1, final output: [outv]
+FFmpeg started for Preview: ffmpeg -loop 1 -t 1.9749999999999999 -i /Users/gsus/CascadeProjects/AnimaGen/backend/temp/1751229050707/1751229050707_WAIRE - SYMBOL MOVING.jpg -loop 1 -t 1.9749999999999999 -i /Users/gsus/CascadeProjects/AnimaGen/backend/temp/1751229050707/1751229050707_WAIRE - SYMBOL MOVING.jpg -y -filter_complex [0:v]scale=640:480:force_original_aspect_ratio=decrease,pad=640:480:(ow-iw)/2:(oh-ih)/2,setpts=PTS-STARTPTS,fps=30[v0];[1:v]scale=640:480:force_original_aspect_ratio=decrease,pad=640:480:(ow-iw)/2:(oh-ih)/2,setpts=PTS-STARTPTS,fps=30[v1];[v0][v1]xfade=transition=fade:duration=0.5:offset=0.5[outv] -c:v libx264 -preset ultrafast -profile:v baseline -crf 28 -b:v 1M -pix_fmt yuv420p -movflags +faststart -map [outv] /Users/gsus/CascadeProjects/AnimaGen/backend/output/preview_1751229050707_1751229068068.mp4
+Preview: Processing 2 images with transitions
+Preview: Frame durations (ms): [
+  1000, 1000, 1000,
+  1000, 1000, 1000,
+  1000, 1000, 1000,
+  1000, 1000
+]
+Preview: Transitions: [
+  'fade:500ms', 'fade:500ms',
+  'fade:500ms', 'fade:500ms',
+  'fade:500ms', 'fade:500ms',
+  'fade:500ms', 'fade:500ms',
+  'fade:500ms', 'fade:500ms'
+]
+Preview: Default duration (ms): 1500
+Preview: Total duration: 2.30s, Max transition: 0.50s
+Preview: Image 1/2 - Base: 1.00s, Input: 1.97s
+Preview: Image 2/2 - Base: 1.00s, Input: 1.97s
+buildUnifiedTransitionChain: 2 images, 10 transitions
+Using xfade transition chain
+Frame 0->1: duration=1s, offset=0.5s, transition=0.5s
+XFade filter: [v0][v1]xfade=transition=fade:duration=0.5:offset=0.5[outv]
+Total xfade transitions processed: 1, final output: [outv]
+FFmpeg started for Preview: ffmpeg -loop 1 -t 1.9749999999999999 -i /Users/gsus/CascadeProjects/AnimaGen/backend/temp/1751229050707/1751229050707_WAIRE - SYMBOL MOVING.jpg -loop 1 -t 1.9749999999999999 -i /Users/gsus/CascadeProjects/AnimaGen/backend/temp/1751229050707/1751229050707_WAIRE - SYMBOL MOVING.jpg -y -filter_complex [0:v]scale=640:480:force_original_aspect_ratio=decrease,pad=640:480:(ow-iw)/2:(oh-ih)/2,setpts=PTS-STARTPTS,fps=30[v0];[1:v]scale=640:480:force_original_aspect_ratio=decrease,pad=640:480:(ow-iw)/2:(oh-ih)/2,setpts=PTS-STARTPTS,fps=30[v1];[v0][v1]xfade=transition=fade:duration=0.5:offset=0.5[outv] -c:v libx264 -preset ultrafast -profile:v baseline -crf 28 -b:v 1M -pix_fmt yuv420p -movflags +faststart -map [outv] /Users/gsus/CascadeProjects/AnimaGen/backend/output/preview_1751229050707_1751229386887.mp4
+Preview: Processing 2 images with transitions
+Preview: Frame durations (ms): [
+  1000, 1000, 1000,
+  1000, 1000, 1000,
+  1000, 1000, 1000,
+  1000
+]
+Preview: Transitions: [
+  'fade:500ms',
+  'fade:500ms',
+  'fade:500ms',
+  'fade:500ms',
+  'fade:500ms',
+  'fade:500ms',
+  'fade:500ms',
+  'fade:500ms',
+  'fade:500ms'
+]
+Preview: Default duration (ms): 1500
+Preview: Total duration: 2.30s, Max transition: 0.50s
+Preview: Image 1/2 - Base: 1.00s, Input: 1.97s
+Preview: Image 2/2 - Base: 1.00s, Input: 1.97s
+buildUnifiedTransitionChain: 2 images, 9 transitions
+Using xfade transition chain
+Frame 0->1: duration=1s, offset=0.5s, transition=0.5s
+XFade filter: [v0][v1]xfade=transition=fade:duration=0.5:offset=0.5[outv]
+Total xfade transitions processed: 1, final output: [outv]
+FFmpeg started for Preview: ffmpeg -loop 1 -t 1.9749999999999999 -i /Users/gsus/CascadeProjects/AnimaGen/backend/temp/1751229050707/1751229050707_WAIRE - SYMBOL MOVING.jpg -loop 1 -t 1.9749999999999999 -i /Users/gsus/CascadeProjects/AnimaGen/backend/temp/1751229050707/1751229050707_WAIRE - SYMBOL MOVING.jpg -y -filter_complex [0:v]scale=640:480:force_original_aspect_ratio=decrease,pad=640:480:(ow-iw)/2:(oh-ih)/2,setpts=PTS-STARTPTS,fps=30[v0];[1:v]scale=640:480:force_original_aspect_ratio=decrease,pad=640:480:(ow-iw)/2:(oh-ih)/2,setpts=PTS-STARTPTS,fps=30[v1];[v0][v1]xfade=transition=fade:duration=0.5:offset=0.5[outv] -c:v libx264 -preset ultrafast -profile:v baseline -crf 28 -b:v 1M -pix_fmt yuv420p -movflags +faststart -map [outv] /Users/gsus/CascadeProjects/AnimaGen/backend/output/preview_1751229050707_1751229387625.mp4
+Preview: Processing 2 images with transitions
+Preview: Frame durations (ms): [
+  1000, 1000, 1000,
+  1000, 1000, 1000,
+  1000, 1000, 1000,
+  1000
+]
+Preview: Transitions: [
+  'fade:500ms',
+  'fade:500ms',
+  'fade:500ms',
+  'fade:500ms',
+  'fade:500ms',
+  'fade:500ms',
+  'fade:500ms',
+  'fade:500ms',
+  'fade:500ms'
+]
+Preview: Default duration (ms): 1500
+Preview: Total duration: 2.30s, Max transition: 0.50s
+Preview: Image 1/2 - Base: 1.00s, Input: 1.97s
+Preview: Image 2/2 - Base: 1.00s, Input: 1.97s
+buildUnifiedTransitionChain: 2 images, 9 transitions
+Using xfade transition chain
+Frame 0->1: duration=1s, offset=0.5s, transition=0.5s
+XFade filter: [v0][v1]xfade=transition=fade:duration=0.5:offset=0.5[outv]
+Total xfade transitions processed: 1, final output: [outv]
+FFmpeg started for Preview: ffmpeg -loop 1 -t 1.9749999999999999 -i /Users/gsus/CascadeProjects/AnimaGen/backend/temp/1751229050707/1751229050707_WAIRE - SYMBOL MOVING.jpg -loop 1 -t 1.9749999999999999 -i /Users/gsus/CascadeProjects/AnimaGen/backend/temp/1751229050707/1751229050707_WAIRE - SYMBOL MOVING.jpg -y -filter_complex [0:v]scale=640:480:force_original_aspect_ratio=decrease,pad=640:480:(ow-iw)/2:(oh-ih)/2,setpts=PTS-STARTPTS,fps=30[v0];[1:v]scale=640:480:force_original_aspect_ratio=decrease,pad=640:480:(ow-iw)/2:(oh-ih)/2,setpts=PTS-STARTPTS,fps=30[v1];[v0][v1]xfade=transition=fade:duration=0.5:offset=0.5[outv] -c:v libx264 -preset ultrafast -profile:v baseline -crf 28 -b:v 1M -pix_fmt yuv420p -movflags +faststart -map [outv] /Users/gsus/CascadeProjects/AnimaGen/backend/output/preview_1751229050707_1751230195047.mp4
+Preview: Processing 1 images with transitions
+Preview: Frame durations (ms): [ 1000, 1000, 1000, 1000, 1000 ]
+Preview: Transitions: [ 'fade:500ms', 'fade:500ms', 'fade:500ms', 'fade:500ms' ]
+Preview: Default duration (ms): 1500
+Preview: Total duration: 1.15s, Max transition: 0.50s
+Preview: Image 1/1 - Base: 1.00s, Input: 2.23s
+buildUnifiedTransitionChain: 1 images, 4 transitions
+Single image, returning [v0]
+FFmpeg started for Preview: ffmpeg -loop 1 -t 2.225 -i /Users/gsus/CascadeProjects/AnimaGen/backend/temp/1751231220341/1751231220342_WAIRE - SYMBOL VERSIONS.jpg -y -filter_complex [0:v]scale=640:480:force_original_aspect_ratio=decrease,pad=640:480:(ow-iw)/2:(oh-ih)/2,setpts=PTS-STARTPTS,fps=30[v0] -c:v libx264 -preset ultrafast -profile:v baseline -crf 28 -b:v 1M -pix_fmt yuv420p -movflags +faststart -map [v0] /Users/gsus/CascadeProjects/AnimaGen/backend/output/preview_1751231220341_1751231222422.mp4
+Preview: Processing 1 images with transitions
+Preview: Frame durations (ms): [ 1000, 1000, 1000 ]
+Preview: Transitions: [ 'fade:500ms', 'fade:500ms' ]
+Preview: Default duration (ms): 1500
+Preview: Total duration: 1.15s, Max transition: 0.50s
+Preview: Image 1/1 - Base: 1.00s, Input: 2.23s
+buildUnifiedTransitionChain: 1 images, 2 transitions
+Single image, returning [v0]
+FFmpeg started for Preview: ffmpeg -loop 1 -t 2.225 -i /Users/gsus/CascadeProjects/AnimaGen/backend/temp/1751232012402/1751232012402_WAIRE - WORDMARK VERSIONS.jpg -y -filter_complex [0:v]scale=640:480:force_original_aspect_ratio=decrease,pad=640:480:(ow-iw)/2:(oh-ih)/2,setpts=PTS-STARTPTS,fps=30[v0] -c:v libx264 -preset ultrafast -profile:v baseline -crf 28 -b:v 1M -pix_fmt yuv420p -movflags +faststart -map [v0] /Users/gsus/CascadeProjects/AnimaGen/backend/output/preview_1751232012402_1751232024326.mp4
+Preview: Processing 1 images with transitions
+Preview: Frame durations (ms): [ 1000, 1000, 1000 ]
+Preview: Transitions: [ 'fade:500ms', 'fade:500ms' ]
+Preview: Default duration (ms): 1500
+Preview: Total duration: 1.15s, Max transition: 0.50s
+Preview: Image 1/1 - Base: 1.00s, Input: 2.23s
+buildUnifiedTransitionChain: 1 images, 2 transitions
+Single image, returning [v0]
+FFmpeg started for Preview: ffmpeg -loop 1 -t 2.225 -i /Users/gsus/CascadeProjects/AnimaGen/backend/temp/1751232012402/1751232012402_WAIRE - WORDMARK VERSIONS.jpg -y -filter_complex [0:v]scale=640:480:force_original_aspect_ratio=decrease,pad=640:480:(ow-iw)/2:(oh-ih)/2,setpts=PTS-STARTPTS,fps=30[v0] -c:v libx264 -preset ultrafast -profile:v baseline -crf 28 -b:v 1M -pix_fmt yuv420p -movflags +faststart -map [v0] /Users/gsus/CascadeProjects/AnimaGen/backend/output/preview_1751232012402_1751232061206.mp4
+Preview: Processing 1 images with transitions
+Preview: Frame durations (ms): [ 1000, 1000, 1000 ]
+Preview: Transitions: [ 'fade:500ms', 'zoom:500ms' ]
+Preview: Default duration (ms): 1500
+Preview: Total duration: 1.15s, Max transition: 0.50s
+Preview: Image 1/1 - Base: 1.00s, Input: 2.23s
+buildUnifiedTransitionChain: 1 images, 2 transitions
+Single image, returning [v0]
+FFmpeg started for Preview: ffmpeg -loop 1 -t 2.225 -i /Users/gsus/CascadeProjects/AnimaGen/backend/temp/1751232012402/1751232012402_WAIRE - WORDMARK VERSIONS.jpg -y -filter_complex [0:v]scale=640:480:force_original_aspect_ratio=decrease,pad=640:480:(ow-iw)/2:(oh-ih)/2,setpts=PTS-STARTPTS,fps=30[v0] -c:v libx264 -preset ultrafast -profile:v baseline -crf 28 -b:v 1M -pix_fmt yuv420p -movflags +faststart -map [v0] /Users/gsus/CascadeProjects/AnimaGen/backend/output/preview_1751232012402_1751232066733.mp4
+Preview: Processing 1 images with transitions
+Preview: Frame durations (ms): [ 1000, 1000, 1000 ]
+Preview: Transitions: [ 'fade:500ms', 'zoom:500ms' ]
+Preview: Default duration (ms): 1500
+Preview: Total duration: 1.15s, Max transition: 0.50s
+Preview: Image 1/1 - Base: 1.00s, Input: 2.23s
+buildUnifiedTransitionChain: 1 images, 2 transitions
+Single image, returning [v0]
+FFmpeg started for Preview: ffmpeg -loop 1 -t 2.225 -i /Users/gsus/CascadeProjects/AnimaGen/backend/temp/1751232012402/1751232012402_WAIRE - WORDMARK VERSIONS.jpg -y -filter_complex [0:v]scale=640:480:force_original_aspect_ratio=decrease,pad=640:480:(ow-iw)/2:(oh-ih)/2,setpts=PTS-STARTPTS,fps=30[v0] -c:v libx264 -preset ultrafast -profile:v baseline -crf 28 -b:v 1M -pix_fmt yuv420p -movflags +faststart -map [v0] /Users/gsus/CascadeProjects/AnimaGen/backend/output/preview_1751232012402_1751232078109.mp4
+Preview: Processing 1 images with transitions
+Preview: Frame durations (ms): [ 1000, 1000, 1000 ]
+Preview: Transitions: [ 'fade:500ms', 'fade:500ms' ]
+Preview: Default duration (ms): 1500
+Preview: Total duration: 1.15s, Max transition: 0.50s
+Preview: Image 1/1 - Base: 1.00s, Input: 2.23s
+buildUnifiedTransitionChain: 1 images, 2 transitions
+Single image, returning [v0]
+FFmpeg started for Preview: ffmpeg -loop 1 -t 2.225 -i /Users/gsus/CascadeProjects/AnimaGen/backend/temp/1751232264322/1751232264322_WAIRE - SYMBOL VERSIONS.jpg -y -filter_complex [0:v]scale=640:480:force_original_aspect_ratio=decrease,pad=640:480:(ow-iw)/2:(oh-ih)/2,setpts=PTS-STARTPTS,fps=30[v0] -c:v libx264 -preset ultrafast -profile:v baseline -crf 28 -b:v 1M -pix_fmt yuv420p -movflags +faststart -map [v0] /Users/gsus/CascadeProjects/AnimaGen/backend/output/preview_1751232264322_1751232265416.mp4
+Preview: Processing 1 images with transitions
+Preview: Frame durations (ms): [ 1000, 1000, 1000 ]
+Preview: Transitions: [ 'fade:500ms', 'fade:500ms' ]
+Preview: Default duration (ms): 1500
+Preview: Total duration: 1.15s, Max transition: 0.50s
+Preview: Image 1/1 - Base: 1.00s, Input: 2.23s
+buildUnifiedTransitionChain: 1 images, 2 transitions
+Single image, returning [v0]
+FFmpeg started for Preview: ffmpeg -loop 1 -t 2.225 -i /Users/gsus/CascadeProjects/AnimaGen/backend/temp/1751232264322/1751232264322_WAIRE - SYMBOL VERSIONS.jpg -y -filter_complex [0:v]scale=640:480:force_original_aspect_ratio=decrease,pad=640:480:(ow-iw)/2:(oh-ih)/2,setpts=PTS-STARTPTS,fps=30[v0] -c:v libx264 -preset ultrafast -profile:v baseline -crf 28 -b:v 1M -pix_fmt yuv420p -movflags +faststart -map [v0] /Users/gsus/CascadeProjects/AnimaGen/backend/output/preview_1751232264322_1751232274282.mp4
+Preview: Processing 1 images with transitions
+Preview: Frame durations (ms): [ 1000, 1000, 1000 ]
+Preview: Transitions: [ 'fade:500ms', 'fade:500ms' ]
+Preview: Default duration (ms): 1500
+Preview: Total duration: 1.15s, Max transition: 0.50s
+Preview: Image 1/1 - Base: 1.00s, Input: 2.23s
+buildUnifiedTransitionChain: 1 images, 2 transitions
+Single image, returning [v0]
+FFmpeg started for Preview: ffmpeg -loop 1 -t 2.225 -i /Users/gsus/CascadeProjects/AnimaGen/backend/temp/1751232264322/1751232264322_WAIRE - SYMBOL VERSIONS.jpg -y -filter_complex [0:v]scale=640:480:force_original_aspect_ratio=decrease,pad=640:480:(ow-iw)/2:(oh-ih)/2,setpts=PTS-STARTPTS,fps=30[v0] -c:v libx264 -preset ultrafast -profile:v baseline -crf 28 -b:v 1M -pix_fmt yuv420p -movflags +faststart -map [v0] /Users/gsus/CascadeProjects/AnimaGen/backend/output/preview_1751232264322_1751232278892.mp4
+Preview: Processing 1 images with transitions
+Preview: Frame durations (ms): [ 1000, 1000, 1000, 1000 ]
+Preview: Transitions: [ 'fade:500ms', 'fade:500ms', 'fade:500ms' ]
+Preview: Default duration (ms): 1500
+Preview: Total duration: 1.15s, Max transition: 0.50s
+Preview: Image 1/1 - Base: 1.00s, Input: 2.23s
+buildUnifiedTransitionChain: 1 images, 3 transitions
+Single image, returning [v0]
+FFmpeg started for Preview: ffmpeg -loop 1 -t 2.225 -i /Users/gsus/CascadeProjects/AnimaGen/backend/temp/1751258235261/1751258235261_WAIRE - SYMBOL CONCEPT.jpg -y -filter_complex [0:v]scale=640:480:force_original_aspect_ratio=decrease,pad=640:480:(ow-iw)/2:(oh-ih)/2,setpts=PTS-STARTPTS,fps=30[v0] -c:v libx264 -preset ultrafast -profile:v baseline -crf 28 -b:v 1M -pix_fmt yuv420p -movflags +faststart -map [v0] /Users/gsus/CascadeProjects/AnimaGen/backend/output/preview_1751258235261_1751258263292.mp4
+
+📉  Shutting down HTTP server...
+✅  HTTP server closed. Bye!

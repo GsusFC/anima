@@ -3,12 +3,13 @@ import React from 'react';
 const Header: React.FC = () => {
   return (
     <header style={{
-      height: '64px',
+      height: '50px', // Reduced from 64px to save space
       backgroundColor: '#1a1a1b',
       borderBottom: '1px solid #343536',
       display: 'flex',
       alignItems: 'center',
-      padding: '0 24px'
+      padding: '0 20px', // Reduced padding
+      flexShrink: 0
     }}>
       <div style={{
         display: 'flex',
@@ -16,8 +17,8 @@ const Header: React.FC = () => {
         gap: '12px'
       }}>
         <div style={{
-          width: '32px',
-          height: '32px',
+          width: '28px', // Slightly smaller
+          height: '28px',
           backgroundColor: 'rgba(255, 69, 0, 0.15)',
           border: '1px solid #ff4500',
           borderRadius: '2px',
@@ -25,7 +26,7 @@ const Header: React.FC = () => {
           alignItems: 'center',
           justifyContent: 'center'
         }}>
-          <svg style={{ width: '20px', height: '20px', color: '#ff4500' }} fill="currentColor" viewBox="0 0 24 24">
+          <svg style={{ width: '16px', height: '16px', color: '#ff4500' }} fill="currentColor" viewBox="0 0 24 24">
             <path d="M8 5v14l11-7z"/>
           </svg>
         </div>
