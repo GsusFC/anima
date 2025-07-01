@@ -5,12 +5,13 @@ const Preview: React.FC = () => {
   const { preview, hasTimeline, generatePreview } = useSlideshowContext();
   const videoRef = useRef<HTMLVideoElement>(null);
 
-  // Auto-generate preview when timeline changes
+  // Auto-generate preview when timeline changes (but not on errors)
   useEffect(() => {
-    if (hasTimeline && !preview.isGenerating && !preview.url) {
+    if (hasTimeline && !preview.isGenerating && !preview.url && !preview.error) {
+      // Only generate if timeline actually changed (not just on re-renders)
       generatePreview();
     }
-  }, [hasTimeline, preview.isGenerating, preview.url, generatePreview]);
+  }, [hasTimeline, preview.isGenerating, preview.url]);
 
   if (!hasTimeline) {
     return (

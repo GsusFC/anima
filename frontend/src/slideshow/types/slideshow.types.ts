@@ -52,7 +52,7 @@ export interface SlideshowProject {
 }
 
 export interface ExportSettings {
-  format: 'gif' | 'mp4' | 'webm';
+  format: 'gif' | 'mp4' | 'webm' | 'mov';
   preset: 'web' | 'quality' | 'size' | 'social' | 'custom';
   quality: 'low' | 'medium' | 'high' | 'ultra';
   fps: number;

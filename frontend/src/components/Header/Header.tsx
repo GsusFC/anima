@@ -19,15 +19,15 @@ const Header: React.FC = () => {
         <div style={{
           width: '28px', // Slightly smaller
           height: '28px',
-          backgroundColor: 'rgba(255, 69, 0, 0.15)',
-          border: '1px solid #ff4500',
+          backgroundColor: 'rgba(236, 72, 153, 0.15)',
+          border: '1px solid #ec4899',
           borderRadius: '2px',
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'center'
         }}>
-          <svg style={{ width: '16px', height: '16px', color: '#ff4500' }} fill="currentColor" viewBox="0 0 24 24">
-            <path d="M8 5v14l11-7z"/>
+          <svg style={{ width: '16px', height: '16px', color: '#ec4899' }} fill="currentColor" viewBox="0 0 24 24">
+            <path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"/>
           </svg>
         </div>
         <div>
@@ -59,7 +59,7 @@ const Header: React.FC = () => {
       }}>
         <div style={{
           fontSize: '18px',
-          color: '#ff4500',
+          color: '#ec4899',
           fontFamily: '"Space Mono", monospace',
           fontWeight: 'bold',
           letterSpacing: '1px'

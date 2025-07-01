@@ -19,6 +19,7 @@ const ffmpeg = require('fluent-ffmpeg');
 const cors = require('cors');
 const { Server } = require('socket.io');
 const http = require('http');
+const { FilterGraph } = require('./FilterGraph');
 
 const app = express();
 const server = http.createServer(app);
@@ -1316,6 +1317,7 @@ app.post('/export/gif', async (req, res) => {
     const gifSettings = userExportSettings.gif || {};
     const dither = gifSettings.dither || 'bayer'; // Use basic bayer instead of floyd_steinberg for compatibility
     const maxColors = gifSettings.colors || 256; // Maximum colors by default
+    const loop = userExportSettings.loop !== undefined ? userExportSettings.loop : true; // Default to infinite loop
     
     // Build custom settings from advanced options
     const customSettings = {};
@@ -1397,26 +1399,41 @@ app.post('/export/gif', async (req, res) => {
     
     console.log(`GIF Export: Final settings ${gifWidth}x${gifHeight} at ${gifFps}fps`);
     
-    // Add all images as inputs with loop and duration
-    validImages.forEach((image, index) => {
-      const baseDuration = (frameDurations[index] || duration * 1000) / 1000;
-      console.log(`GIF Export: Adding image ${index + 1}/${validImages.length} - Duration: ${baseDuration.toFixed(2)}s`);
-      command.input(image.path).inputOptions(['-loop', '1', '-t', String(baseDuration)]);
-    });
-
-    // Simple filter with just scaling and concat
-    const scaleFilters = validImages.map((_, i) => 
-      `[${i}:v]scale=${gifWidth}:${gifHeight}:force_original_aspect_ratio=decrease:force_divisible_by=2,fps=${gifFps}[v${i}]`
+    // Use new FilterGraph system for scalable filter generation
+    console.log(`🎨 GIF Settings: Dither=${dither}, Colors=${maxColors}, Quality=${quality}`);
+    
+    // Create FilterGraph from current images and transitions
+    const filterGraph = FilterGraph.fromLegacyImages(
+      validImages, 
+      transitions || [], 
+      frameDurations, 
+      duration * 1000
     );
     
-    const concatFilter = validImages.map((_, i) => `[v${i}]`).join('') + `concat=n=${validImages.length}:v=1:a=0[outv]`;
+    // Configure target output settings
+    filterGraph.targetWidth = gifWidth;
+    filterGraph.targetHeight = gifHeight;
+    filterGraph.targetFps = gifFps;
     
-    const allFilters = [...scaleFilters, concatFilter];
+    // Generate optimized filter chain
+    const filterChain = filterGraph.generateFilterChain();
+    console.log(`📊 FilterGraph Debug:`, filterGraph.getDebugInfo());
+    
+    // Add images as inputs using FilterGraph information
+    const ffmpegComponents = filterGraph.getFFmpegComponents();
+    command = ffmpeg(); // Reset command
+    
+    ffmpegComponents.inputs.forEach((input, index) => {
+      command.input(input.path).inputOptions(input.options);
+    });
 
     command
-      .complexFilter(allFilters)
+      .complexFilter(filterChain)
       .map('[outv]')
-      .outputOptions(['-pix_fmt', 'rgb24']) // Better GIF compatibility
+      .outputOptions([
+        '-pix_fmt', 'rgb24', // Standard RGB for compatibility
+        '-loop', loop ? '0' : '-1' // 0 = infinite loop, -1 = play once
+      ])
       .output(outputPath)
       .on('start', cmd => console.log('FFmpeg started for multi-image GIF:', cmd))
       .on('end', async () => {
