@@ -35,6 +35,15 @@ const io = new Server(server, {
   }
 });
 
+// NEW: helper to forward progress updates to clients
+const emitExportProgress = (type, status, progress, message, extra = {}) => {
+  try {
+    io.emit('export:progress', { type, status, progress, message, ...extra });
+  } catch (e) {
+    console.warn('Progress emit failed:', e.message);
+  }
+};
+
 // Middleware
 app.use(cors());
 app.use(express.json());
@@ -130,6 +139,7 @@ app.get('/debug', (req, res) => {
 const outputDir = path.join(__dirname, process.env.OUTPUT_DIR || 'output');
 const tempDir = path.join(__dirname, process.env.TEMP_DIR || 'uploads'); // Changed from 'temp' to 'uploads' for persistence
 const compositionsDir = path.join(__dirname, 'compositions');
+const logsDir = path.join(__dirname, 'logs');
 
 // Serve uploaded videos and processed files
 app.use('/temp', express.static(tempDir));
@@ -140,10 +150,14 @@ app.use('/output', (req, res, next) => {
   next();
 }, express.static(outputDir));
 
+// Serve logs directory read-only
+app.use('/logs', express.static(logsDir));
+
 console.log('🔧 Setting up directories...');
 console.log('🔧 Output dir:', outputDir);
 console.log('🔧 Temp dir:', tempDir);
 console.log('🔧 Compositions dir:', compositionsDir);
+console.log('🔧 Logs dir:', logsDir);
 
 try {
   if (!fs.existsSync(outputDir)) {
@@ -159,6 +173,11 @@ try {
   if (!fs.existsSync(compositionsDir)) {
     fs.mkdirSync(compositionsDir, { recursive: true });
     console.log('✅ Created compositions directory');
+  }
+  
+  if (!fs.existsSync(logsDir)) {
+    fs.mkdirSync(logsDir, { recursive: true });
+    console.log('✅ Created logs directory');
   }
   
   console.log('✅ All directories ready');
@@ -190,10 +209,38 @@ async function initializeJobQueue() {
   }
 }
 
+// If job queue is enabled, forward BullMQ events to Socket.IO
+const { QueueEvents } = require('bullmq');
+let queueEvents;
+function setupQueueEventForwarding() {
+  try {
+    const { createRedisConnection } = require('./utils/redis');
+    const connection = createRedisConnection();
+    queueEvents = new QueueEvents('video-processing', { connection });
+
+    queueEvents.on('progress', ({ jobId, data }) => {
+      emitExportProgress('job', 'processing', typeof data === 'number' ? data : 0, 'Job progress', { jobId });
+    });
+
+    queueEvents.on('completed', ({ jobId, returnvalue }) => {
+      emitExportProgress('job', 'completed', 100, 'Job completed', { jobId, ...returnvalue });
+    });
+
+    queueEvents.on('failed', ({ jobId, failedReason }) => {
+      emitExportProgress('job', 'error', 100, 'Job failed', { jobId, error: failedReason });
+    });
+
+    console.log('✅ QueueEvents forwarding to Socket.IO enabled');
+  } catch (e) {
+    console.warn('⚠️ Could not set up QueueEvents forwarding:', e.message);
+  }
+}
+
 // Initialize job queue (non-blocking)
 let jobQueueEnabled = false;
 initializeJobQueue().then(enabled => {
   jobQueueEnabled = enabled;
+  if (enabled) setupQueueEventForwarding();
 }).catch(error => {
   console.error('❌ Job queue initialization error:', error);
   jobQueueEnabled = false;
@@ -403,7 +450,7 @@ app.get('/api/status', (req, res) => {
 // Mount the new job queue export routes
 app.use('/api/export', exportRoutes);
 
-// File upload endpoint
+// File upload endpoint (preferred)
 app.post('/upload', upload.array('images', 50), (req, res) => {
   try {
     if (!req.files || req.files.length === 0) {
@@ -428,6 +475,37 @@ app.post('/upload', upload.array('images', 50), (req, res) => {
       message: `${uploadedFiles.length} files uploaded successfully`
     });
 
+  } catch (error) {
+    console.error('Upload error:', error);
+    res.status(500).json({ error: 'Upload failed', details: error.message });
+  }
+});
+
+// Legacy endpoint for compatibility with old plugin bundles
+app.post('/api/upload', upload.array('images', 50), (req, res) => {
+  // Reuse the same logic by calling the primary handler's body.
+  // Instead of duplicating, wrap logic in inline function.
+  try {
+    if (!req.files || req.files.length === 0) {
+      return res.status(400).json({ error: 'No files uploaded' });
+    }
+
+    const sessionId = req.sessionId || Date.now().toString();
+    const uploadedFiles = req.files.map(file => ({
+      id: `${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
+      filename: file.filename,
+      originalName: file.originalname,
+      path: file.path,
+      size: file.size,
+      mimetype: file.mimetype
+    }));
+
+    res.json({
+      success: true,
+      sessionId,
+      files: uploadedFiles,
+      message: `${uploadedFiles.length} files uploaded successfully`
+    });
   } catch (error) {
     console.error('Upload error:', error);
     res.status(500).json({ error: 'Upload failed', details: error.message });
@@ -830,10 +908,32 @@ app.post('/preview', async (req, res) => {
     }
     if (!sessionId) return res.status(400).json({ error: 'Session ID is required' });
 
+    // Debug: List all files in session directory
+    const sessionDir = path.join(tempDir, sessionId);
+    console.log(`🔍 Session directory: ${sessionDir}`);
+    if (fs.existsSync(sessionDir)) {
+      const filesInDir = fs.readdirSync(sessionDir);
+      console.log(`🔍 Files in session directory:`, filesInDir);
+    } else {
+      console.log(`❌ Session directory does not exist: ${sessionDir}`);
+    }
+
     const validImages = images.map(img => {
       const imagePath = path.join(tempDir, sessionId, img.filename);
       const exists = fs.existsSync(imagePath);
       console.log(`🔍 Checking image: ${img.filename} → ${imagePath} → ${exists ? 'EXISTS' : 'NOT FOUND'}`);
+      
+      // If exact filename doesn't exist, try to find a match with timestamp prefix
+      if (!exists && fs.existsSync(sessionDir)) {
+        const filesInDir = fs.readdirSync(sessionDir);
+        const matchingFile = filesInDir.find(file => file.includes(img.filename) || file.endsWith(img.filename));
+        if (matchingFile) {
+          const matchingPath = path.join(sessionDir, matchingFile);
+          console.log(`🔍 Found matching file: ${img.filename} → ${matchingFile}`);
+          return { ...img, path: matchingPath, filename: matchingFile };
+        }
+      }
+      
       return exists ? { ...img, path: imagePath } : null;
     }).filter(Boolean);
 
@@ -1316,6 +1416,11 @@ app.post('/export/gif', async (req, res) => {
             .output(outputPath)
             .on('start', (commandLine) => {
               console.log('FFmpeg GIF command:', commandLine);
+              emitExportProgress('gif', 'started', 0, 'GIF export started');
+            })
+            .on('progress', prog => {
+              const percent = Math.min((prog.percent || 0), 99);
+              emitExportProgress('gif', 'processing', percent, 'Exporting GIF...');
             })
             .on('end', () => {
               // Cleanup palette file
@@ -1331,9 +1436,11 @@ app.post('/export/gif', async (req, res) => {
                 downloadUrl: `/output/${path.basename(outputPath)}`,
                 filename: outputFilename
               });
+              emitExportProgress('gif', 'completed', 100, 'GIF export completed', { filename: outputFilename });
             })
             .on('error', (err) => {
               console.error('❌ GIF export failed:', err);
+              emitExportProgress('gif', 'error', 100, 'GIF export failed', { error: err.message });
               res.status(500).json({ error: 'Export failed: ' + err.message });
             })
             .run();
@@ -1482,7 +1589,14 @@ app.post('/export/gif', async (req, res) => {
         '-loop', loop ? '0' : '-1' // 0 = infinite loop, -1 = play once
       ])
       .output(outputPath)
-      .on('start', cmd => console.log('FFmpeg started for multi-image GIF:', cmd))
+      .on('start', cmd => {
+        console.log('FFmpeg started for multi-image GIF:', cmd);
+        emitExportProgress('gif', 'started', 0, 'GIF export started');
+      })
+      .on('progress', prog => {
+        const percent = Math.min((prog.percent || 0), 99);
+        emitExportProgress('gif', 'processing', percent, 'Exporting GIF...');
+      })
       .on('end', async () => {
         // Auto-save composition for future re-exports
         try {
@@ -1602,7 +1716,15 @@ app.post('/export/video', async (req, res) => {
       .outputOptions(outputOptions)
       .map(lastOutput)
       .output(outputPath)
-      .on('start', cmd => console.log('FFmpeg started for Video:', cmd))
+      .on('start', cmd => {
+        console.log('FFmpeg started for Video:', cmd);
+        emitExportProgress('video', 'started', 0, 'Video export started');
+      })
+      // Emit real-time progress
+      .on('progress', prog => {
+        const percent = Math.min((prog.percent || 0), 99);
+        emitExportProgress('video', 'processing', percent, 'Exporting video...');
+      })
       .on('end', async () => {
         // Auto-save composition for future re-exports
         try {
@@ -1633,6 +1755,7 @@ app.post('/export/video', async (req, res) => {
             message: `${format.toUpperCase()} generated successfully`,
             compositionId // Include composition ID for re-exports
           });
+          emitExportProgress('video', 'completed', 100, 'Video export completed', { filename: outputFilename });
         } catch (autoSaveError) {
           console.error('Auto-save failed:', autoSaveError.message);
           // Still return success for the video generation, even if auto-save fails
@@ -1646,6 +1769,7 @@ app.post('/export/video', async (req, res) => {
       })
       .on('error', (err) => {
         console.error('Video Generation Error:', err.message);
+        emitExportProgress('video', 'error', 100, 'Video export failed', { error: err.message });
         if (!res.headersSent) res.status(500).json({ error: `${format.toUpperCase()} generation failed`, details: err.message });
       })
       .run();
