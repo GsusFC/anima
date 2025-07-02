@@ -14,4 +14,4 @@ export const API_BASE_URL: string =
     ? process.env.API_BASE_URL
     : window.location.hostname === 'localhost'
     ? 'http://localhost:3001'
-    : 'https://api.animagen.com'; 
+    : 'https://anima-production-4d10.up.railway.app'; 
