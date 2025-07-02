@@ -1940,6 +1940,7 @@ if (process.env.NODE_ENV !== 'test') {
     }
     
     console.log(`🚀 Server listening on 0.0.0.0:${PORT}`);
+console.log('🔧 Redis URL configured:', process.env.REDIS_URL ? 'Yes' : 'No');
     console.log(`🏥 Health check available at http://0.0.0.0:${PORT}/api/health`);
     console.log(`🌐 Public URL: ${process.env.RAILWAY_PUBLIC_DOMAIN ? `https://${process.env.RAILWAY_PUBLIC_DOMAIN}` : 'Not set'}`);
     if (jobQueueEnabled) {
