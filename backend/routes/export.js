@@ -134,7 +134,15 @@ router.post('/slideshow', async (req, res) => {
         
         const filterComplex = `${concatList.join(';')};${concatInputs}concat=n=${images.length}:v=1:a=0[out]`;
         
-        const ffmpegCmd = `ffmpeg ${inputFlags.join(' ')} -filter_complex "${filterComplex}" -map "[out]" -c:v libx264 -preset fast -crf 23 -pix_fmt yuv420p -y "${outputFile}"`;
+        // Set codec and options based on format
+        let codecOptions;
+        if (format === 'webm') {
+          codecOptions = '-c:v libvpx-vp9 -crf 30 -b:v 0 -pix_fmt yuv420p';
+        } else {
+          codecOptions = '-c:v libx264 -preset fast -crf 23 -pix_fmt yuv420p';
+        }
+        
+        const ffmpegCmd = `ffmpeg ${inputFlags.join(' ')} -filter_complex "${filterComplex}" -map "[out]" ${codecOptions} -y "${outputFile}"`;
         
         console.log('🎬 Direct FFmpeg processing:', ffmpegCmd);
         
