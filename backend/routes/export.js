@@ -373,9 +373,72 @@ router.post('/gif', async (req, res) => {
       });
     }
 
-    if (!checkQueueAvailable(res)) return;
+    // Force direct processing fallback in production environment
+    const forceDirectProcessing = process.env.NODE_ENV === 'production' || process.env.FORCE_DIRECT_PROCESSING === 'true';
+    
+    if (forceDirectProcessing || !checkQueueAvailable(res, true)) {
+      console.log(forceDirectProcessing ? 
+        '🚀 Using direct GIF processing mode (production)' : 
+        '⚠️ Redis not available for GIF, using direct processing fallback');
+      
+      // Direct processing fallback without Redis for GIF
+      const { exec } = require('child_process');
+      const util = require('util');
+      const execAsync = util.promisify(exec);
+      
+      try {
+        // Generate unique output filename
+        const outputDir = path.join(__dirname, '../output');
+        if (!fs.existsSync(outputDir)) {
+          fs.mkdirSync(outputDir, { recursive: true });
+        }
+        
+        const jobId = `fallback_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+        const outputFile = path.join(outputDir, `gif_${jobId}.gif`);
+        
+        // Build FFmpeg command for GIF with proper timing
+        const inputFlags = [];
+        
+        images.forEach((img, index) => {
+          const imagePath = path.join(__dirname, '../uploads', sessionId, img.filename);
+          const duration = (frameDurations[index] || 1000) / 1000; // Convert to seconds  
+          inputFlags.push(`-loop 1 -t ${duration} -i "${imagePath}"`);
+        });
+        
+        // Simple concatenation for GIF
+        const concatList = images.map((_, index) => `[${index}:v]scale=800:600:force_original_aspect_ratio=decrease,pad=800:600:(ow-iw)/2:(oh-ih)/2[v${index}]`);
+        const concatInputs = images.map((_, index) => `[v${index}]`).join('');
+        
+        const filterComplex = `${concatList.join(';')};${concatInputs}concat=n=${images.length}:v=1:a=0[out]`;
+        
+        const ffmpegCmd = `ffmpeg ${inputFlags.join(' ')} -filter_complex "${filterComplex}" -map "[out]" -r ${fps} -y "${outputFile}"`;
+        
+        console.log('🎬 Direct GIF FFmpeg processing:', ffmpegCmd);
+        
+        // Execute FFmpeg
+        await execAsync(ffmpegCmd);
+        
+        // Return immediate success with download URL
+        return res.json({
+          success: true,
+          jobId: jobId,
+          status: 'completed',
+          message: 'GIF created successfully (direct processing)',
+          downloadUrl: `/api/export/download/${jobId}`,
+          isDirect: true
+        });
+        
+      } catch (ffmpegError) {
+        console.error('❌ Direct GIF FFmpeg processing failed:', ffmpegError);
+        return res.status(500).json({
+          success: false,
+          error: 'Direct GIF processing failed',
+          details: ffmpegError.message
+        });
+      }
+    }
 
-    // Add job to queue
+    // Normal Redis queue processing
     const job = await queueFunctions.addJob(JobTypes.GIF_EXPORT, {
       images,
       transitions,
