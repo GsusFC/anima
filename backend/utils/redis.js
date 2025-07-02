@@ -1,19 +1,27 @@
 const Redis = require('ioredis');
 
 // Redis connection configuration
-const redisConfig = {
-  host: process.env.REDIS_HOST || 'localhost',
-  port: process.env.REDIS_PORT || 6379,
-  password: process.env.REDIS_PASSWORD || undefined,
-  db: process.env.REDIS_DB || 0,
-  retryDelayOnFailover: 100,
-  enableReadyCheck: false,
-  maxRetriesPerRequest: 3,
-  lazyConnect: true,
-  keepAlive: 30000,
-  connectTimeout: 10000,
-  commandTimeout: 5000
-};
+let redisConfig;
+
+if (process.env.REDIS_URL) {
+  // Railway/cloud Redis URL format: redis://user:pass@host:port
+  redisConfig = process.env.REDIS_URL;
+} else {
+  // Local Redis configuration
+  redisConfig = {
+    host: process.env.REDIS_HOST || 'localhost',
+    port: process.env.REDIS_PORT || 6379,
+    password: process.env.REDIS_PASSWORD || undefined,
+    db: process.env.REDIS_DB || 0,
+    retryDelayOnFailover: 100,
+    enableReadyCheck: false,
+    maxRetriesPerRequest: null, // Fix BullMQ deprecation warning
+    lazyConnect: true,
+    keepAlive: 30000,
+    connectTimeout: 10000,
+    commandTimeout: 5000
+  };
+}
 
 // Create Redis connection for BullMQ
 const createRedisConnection = () => {
@@ -21,10 +29,16 @@ const createRedisConnection = () => {
   
   redis.on('connect', () => {
     console.log('✅ Redis connected');
+    if (process.env.NODE_ENV === 'production') {
+      console.log('🌐 Redis connection established in production');
+    }
   });
   
   redis.on('error', (err) => {
     console.error('❌ Redis connection error:', err.message);
+    if (process.env.NODE_ENV === 'production') {
+      console.error('🚨 Production Redis error - job queue may be disabled');
+    }
   });
   
   redis.on('close', () => {
