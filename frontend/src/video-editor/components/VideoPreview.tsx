@@ -37,22 +37,12 @@ const VideoPreview: React.FC = () => {
 
   if (!hasVideo) {
     return (
-      <div style={{
-        height: '100%',
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'center',
-        backgroundColor: '#0f0f0f'
-      }}>
-        <div style={{
-          textAlign: 'center',
-          color: '#6b7280'
-        }}>
-
-          <p style={{ margin: 0, fontSize: '16px', fontFamily: '"Space Mono", monospace' }}>
+      <div className="h-full flex items-center justify-center bg-dark-850">
+        <div className="text-center text-dark-500">
+          <p className="m-0 text-xl font-mono">
             No Video Loaded
           </p>
-          <p style={{ margin: '8px 0 0 0', fontSize: '12px' }}>
+          <p className="mt-2 text-sm">
             Upload a video to see preview
           </p>
         </div>
@@ -61,72 +51,28 @@ const VideoPreview: React.FC = () => {
   }
 
   return (
-    <div style={{
-      height: '100%',
-      display: 'flex',
-      flexDirection: 'column',
-      padding: '20px'
-    }}>
-
-
+    <div className="h-full flex flex-col p-5">
       {/* Video Preview Area */}
-      <div style={{
-        flex: 1,
-        backgroundColor: '#1a1a1b',
-        borderRadius: '8px',
-        border: '1px solid #343536',
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'center',
-        position: 'relative',
-        minHeight: '500px',
-        overflow: 'hidden'
-      }}>
+      <div className="panel flex-1 flex items-center justify-center relative min-h-[500px] overflow-hidden">
         <video
           ref={localVideoRef}
           src={videoSrc}
           controls
           preload="metadata"
-          style={{
-            width: '100%',
-            height: 'auto',
-            maxHeight: '90%',
-            objectFit: 'contain',
-            borderRadius: '4px'
-          }}
+          className="w-full h-auto max-h-[90%] object-contain rounded"
           onLoadedMetadata={handleVideoLoaded}
           onError={handleVideoError}
         />
 
         {/* Video Info Overlay */}
-        <div style={{
-          position: 'absolute',
-          top: '10px',
-          left: '10px',
-          backgroundColor: 'rgba(0, 0, 0, 0.8)',
-          padding: '8px 12px',
-          borderRadius: '4px',
-          fontSize: '11px',
-          fontFamily: '"Space Mono", monospace'
-        }}>
-          <div style={{ color: '#22c55e', marginBottom: '2px' }}>
+        <div className="absolute top-2.5 left-2.5 bg-black/80 px-3 py-2 rounded text-xs font-mono">
+          <div className="text-accent-green mb-0.5">
             {project.video!.width} × {project.video!.height}
           </div>
-          <div style={{ color: '#9ca3af' }}>
+          <div className="text-dark-400">
             {project.video!.duration.toFixed(1)}s • {(project.video!.file.size / 1024 / 1024).toFixed(1)}MB
           </div>
         </div>
-      </div>
-
-      {/* Preview Info */}
-      <div style={{
-        marginTop: '15px',
-        padding: '15px',
-        backgroundColor: '#1a1a1b',
-        borderRadius: '6px',
-        border: '1px solid #343536'
-      }}>
-
       </div>
     </div>
   );

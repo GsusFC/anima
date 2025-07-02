@@ -1,5 +1,6 @@
 import React, { createContext, useContext, ReactNode } from 'react';
 import { useVideoEditor } from '../hooks/useVideoEditor';
+import { VideoSegment, VideoSegmentUpdate } from '../types/video-editor.types';
 
 // Create context with the same interface as the hook + video controls
 interface VideoEditorContextType {
@@ -8,15 +9,17 @@ interface VideoEditorContextType {
   error: string | null;
   hasVideo: boolean;
   uploadVideo: (file: File) => Promise<void>;
-  addSegment: (startTime: number, endTime: number) => void;
-  updateSegment: (segmentId: string, updates: any) => void;
+  addSegment: (startTime: number, endTime: number) => VideoSegment | null;
+  updateSegment: (segmentId: string, updates: VideoSegmentUpdate) => void;
   removeSegment: (segmentId: string) => void;
-  trimVideo: (segmentId: string, startTime: number, endTime: number) => Promise<any>;
+  trimVideo: (startTime: number, endTime: number) => VideoSegment | null;
   clearProject: () => void;
+  generateThumbnails: (videoElement: HTMLVideoElement, count?: number) => Promise<string[]>;
   // Video playback controls
   videoRef: React.RefObject<HTMLVideoElement> | null;
   videoElement: HTMLVideoElement | null; // Direct access to video element
   currentTime: number;
+  videoDuration: number;
   isPlaying: boolean;
   setCurrentTime: (time: number) => void;
   togglePlayback: () => void;
@@ -26,6 +29,7 @@ interface VideoEditorContextType {
   stepForward: () => void;
   jumpBackward: () => void;
   jumpForward: () => void;
+  seekTo: (time: number) => void;
 }
 
 const VideoEditorContext = createContext<VideoEditorContextType | null>(null);
@@ -110,6 +114,14 @@ export const VideoEditorProvider: React.FC<VideoEditorProviderProps> = ({ childr
     }
   }, [videoRef, videoEditorState.hasVideo, videoEditorState.project.video?.duration, currentTime, setTimeAndSync]);
 
+  const seekTo = React.useCallback((time: number) => {
+    if (videoRef?.current && videoEditorState.hasVideo) {
+      const duration = videoEditorState.project.video?.duration || 0;
+      const clampedTime = Math.max(0, Math.min(time, duration));
+      setTimeAndSync(clampedTime);
+    }
+  }, [videoRef, videoEditorState.hasVideo, videoEditorState.project.video?.duration, setTimeAndSync]);
+
   // Listen to video time updates
   React.useEffect(() => {
     if (videoRef?.current) {
@@ -145,6 +157,7 @@ export const VideoEditorProvider: React.FC<VideoEditorProviderProps> = ({ childr
     videoRef,
     videoElement: videoRef?.current || null,
     currentTime,
+    videoDuration: videoEditorState.hasVideo ? videoEditorState.project.video!.duration : 0,
     isPlaying,
     setCurrentTime: setTimeAndSync,
     togglePlayback,
@@ -152,8 +165,9 @@ export const VideoEditorProvider: React.FC<VideoEditorProviderProps> = ({ childr
     stepBackward,
     stepForward,
     jumpBackward,
-    jumpForward
-  }), [videoEditorState, videoRef, currentTime, isPlaying, setTimeAndSync, togglePlayback, setVideoRef, stepBackward, stepForward, jumpBackward, jumpForward]);
+    jumpForward,
+    seekTo
+  }), [videoEditorState, videoRef, currentTime, isPlaying, setTimeAndSync, togglePlayback, setVideoRef, stepBackward, stepForward, jumpBackward, jumpForward, seekTo]);
 
   return (
     <VideoEditorContext.Provider value={contextValue}>

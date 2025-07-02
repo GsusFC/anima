@@ -21,6 +21,11 @@ const { Server } = require('socket.io');
 const http = require('http');
 const { FilterGraph } = require('./FilterGraph');
 
+// Job Queue System imports
+const workerManager = require('./workers/workerManager');
+const exportRoutes = require('./routes/export');
+const { testRedisConnection } = require('./utils/redis');
+
 const app = express();
 const server = http.createServer(app);
 const io = new Server(server, {
@@ -161,6 +166,38 @@ try {
   console.error('❌ Failed to create directories:', error);
   process.exit(1);
 }
+
+// Initialize Job Queue System
+async function initializeJobQueue() {
+  try {
+    console.log('🔧 Initializing job queue system...');
+    
+    // Test Redis connection
+    const redisConnected = await testRedisConnection();
+    if (!redisConnected) {
+      console.log('⚠️ Redis not available - job queue disabled. Install and start Redis for async processing.');
+      return false;
+    }
+
+    // Start worker manager
+    await workerManager.start();
+    console.log('✅ Job queue system initialized');
+    return true;
+  } catch (error) {
+    console.error('❌ Failed to initialize job queue:', error.message);
+    console.log('⚠️ Continuing without job queue - using synchronous processing');
+    return false;
+  }
+}
+
+// Initialize job queue (non-blocking)
+let jobQueueEnabled = false;
+initializeJobQueue().then(enabled => {
+  jobQueueEnabled = enabled;
+}).catch(error => {
+  console.error('❌ Job queue initialization error:', error);
+  jobQueueEnabled = false;
+});
 
 // Multer configuration for file uploads
 const storage = multer.diskStorage({
@@ -346,15 +383,25 @@ app.get('/api/status', (req, res) => {
     message: 'AnimaGen Backend Server',
     status: 'running',
     version: '1.0.0',
+    jobQueue: {
+      enabled: jobQueueEnabled,
+      status: jobQueueEnabled ? workerManager.getStatus() : 'disabled'
+    },
     endpoints: {
       upload: 'POST /upload',
       preview: 'POST /preview',
       exportGif: 'POST /export/gif',
       exportVideo: 'POST /export/video',
-      download: 'GET /download/:filename'
+      download: 'GET /download/:filename',
+      queuedExport: 'POST /api/export/{slideshow|video|gif|trim|convert}',
+      jobStatus: 'GET /api/export/status/:jobId',
+      jobDownload: 'GET /api/export/download/:jobId'
     }
   });
 });
+
+// Mount the new job queue export routes
+app.use('/api/export', exportRoutes);
 
 // File upload endpoint
 app.post('/upload', upload.array('images', 50), (req, res) => {
@@ -1895,6 +1942,11 @@ if (process.env.NODE_ENV !== 'test') {
     console.log(`🚀 Server listening on 0.0.0.0:${PORT}`);
     console.log(`🏥 Health check available at http://0.0.0.0:${PORT}/api/health`);
     console.log(`🌐 Public URL: ${process.env.RAILWAY_PUBLIC_DOMAIN ? `https://${process.env.RAILWAY_PUBLIC_DOMAIN}` : 'Not set'}`);
+    if (jobQueueEnabled) {
+      console.log(`🔄 Job queue: Enabled with Redis`);
+    } else {
+      console.log(`⚠️ Job queue: Disabled (Redis not available)`);
+    }
     console.log('AnimaGen Backend Server is ready!');
     console.log('Supported formats: GIF, MP4, WebM');
     console.log('Quality presets:', Object.keys(qualityPresets).join(', '));
@@ -1933,6 +1985,32 @@ if (process.env.NODE_ENV === 'production') {
 }
 
 // Health check endpoint moved to top of file
+
+// Graceful shutdown handling
+async function gracefulShutdown(signal) {
+  console.log(`📡 Received ${signal}, shutting down gracefully...`);
+  
+  try {
+    // Stop accepting new connections
+    server.close(() => {
+      console.log('✅ HTTP server closed');
+    });
+
+    // Stop job queue workers if enabled
+    if (jobQueueEnabled) {
+      await workerManager.stop();
+    }
+
+    console.log('✅ Graceful shutdown completed');
+    process.exit(0);
+  } catch (error) {
+    console.error('❌ Error during shutdown:', error);
+    process.exit(1);
+  }
+}
+
+process.on('SIGTERM', () => gracefulShutdown('SIGTERM'));
+process.on('SIGINT', () => gracefulShutdown('SIGINT'));
 
 // Export app for testing
 module.exports = app; 

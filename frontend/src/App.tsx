@@ -2,7 +2,7 @@ import React from 'react';
 import { BrowserRouter as Router, Routes, Route, Link } from 'react-router-dom';
 import Header from './components/Header/Header';
 import SlideshowApp from './slideshow/SlideshowApp';
-import VideoEditorAppRestored from './video-editor/VideoEditorAppRestored';
+import VideoEditorApp from './video-editor/VideoEditorApp';
 
 // SlideShow App Component  
 const SlideShowApp: React.FC = () => {
@@ -117,7 +117,7 @@ const App: React.FC = () => {
       <Routes>
         <Route path="/" element={<ModeSelector />} />
         <Route path="/slideshow" element={<SlideShowApp />} />
-        <Route path="/video-editor" element={<VideoEditorAppRestored />} />
+        <Route path="/video-editor" element={<VideoEditorApp />} />
       </Routes>
     </Router>
   );

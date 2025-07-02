@@ -62,67 +62,32 @@ const VideoUploader: React.FC = () => {
   };
 
   return (
-    <div style={{
-      height: '100%',
-      display: 'flex',
-      flexDirection: 'column',
-      padding: '20px'
-    }}>
-
-
+    <div className="h-full flex flex-col p-5">
       {/* Upload Area */}
       {!project.video ? (
         <div
-          style={{
-            flex: 1,
-            border: `2px dashed ${dragActive ? '#22c55e' : '#343536'}`,
-            borderRadius: '8px',
-            display: 'flex',
-            flexDirection: 'column',
-            alignItems: 'center',
-            justifyContent: 'center',
-            cursor: 'pointer',
-            transition: 'all 0.2s ease',
-            backgroundColor: dragActive ? 'rgba(34, 197, 94, 0.1)' : '#1a1a1b',
-            minHeight: '200px'
-          }}
+          className={`flex-1 border-2 border-dashed rounded-lg flex flex-col items-center justify-center cursor-pointer transition-all min-h-[200px] ${
+            dragActive 
+              ? 'border-accent-green bg-accent-green/10' 
+              : 'border-dark-700 bg-dark-900'
+          }`}
           onDrop={handleDrop}
           onDragOver={handleDragOver}
           onDragLeave={handleDragLeave}
           onClick={() => fileInputRef.current?.click()}
         >
-          <div style={{
-            display: 'flex',
-            flexDirection: 'column',
-            alignItems: 'center',
-            gap: '15px'
-          }}>
-
-
-            <div style={{ textAlign: 'center' }}>
-              <p style={{
-                margin: 0,
-                fontSize: '14px',
-                color: dragActive ? '#22c55e' : '#d1d5db',
-                fontWeight: 'bold',
-                marginBottom: '5px'
-              }}>
+          <div className="flex flex-col items-center gap-4">
+            <div className="text-center">
+              <p className={`m-0 text-lg font-bold mb-1 font-mono ${
+                dragActive ? 'text-accent-green' : 'text-dark-300'
+              }`}>
                 {isUploading ? 'UPLOADING...' : 
                  dragActive ? 'DROP VIDEO HERE' : 'UPLOAD VIDEO'}
               </p>
-              <p style={{
-                margin: 0,
-                fontSize: '12px',
-                color: '#9ca3af'
-              }}>
+              <p className="m-0 text-sm text-dark-400 font-mono">
                 Drag & drop or click to select
               </p>
-              <p style={{
-                margin: 0,
-                fontSize: '11px',
-                color: '#6b7280',
-                marginTop: '8px'
-              }}>
+              <p className="m-0 text-xs text-dark-500 mt-2 font-mono">
                 Supports: MP4, MOV, WebM, AVI, MKV
               </p>
             </div>
@@ -133,40 +98,19 @@ const VideoUploader: React.FC = () => {
             type="file"
             accept={ACCEPTED_VIDEO_TYPES}
             onChange={handleFileInput}
-            style={{ display: 'none' }}
+            className="hidden"
             disabled={isUploading}
           />
         </div>
       ) : (
         /* Video Info Display */
-        <div style={{
-          padding: '20px',
-          backgroundColor: '#1a1a1b',
-          borderRadius: '8px',
-          border: '1px solid #343536'
-        }}>
-          <div style={{
-            display: 'flex',
-            alignItems: 'center',
-            gap: '10px',
-            marginBottom: '15px'
-          }}>
-
-            <div style={{ flex: 1 }}>
-              <p style={{
-                margin: 0,
-                fontSize: '12px',
-                color: '#d1d5db',
-                fontWeight: 'bold',
-                marginBottom: '2px'
-              }}>
+        <div className="panel p-5">
+          <div className="flex items-center gap-2.5 mb-4">
+            <div className="flex-1">
+              <p className="m-0 text-sm text-dark-300 font-bold mb-0.5 font-mono">
                 {project.video.file.name}
               </p>
-              <p style={{
-                margin: 0,
-                fontSize: '11px',
-                color: '#9ca3af'
-              }}>
+              <p className="m-0 text-xs text-dark-400 font-mono">
                 {project.video.duration.toFixed(1)}s • {project.video.width}×{project.video.height}
               </p>
             </div>
@@ -174,18 +118,7 @@ const VideoUploader: React.FC = () => {
 
           <button
             onClick={() => fileInputRef.current?.click()}
-            style={{
-              width: '100%',
-              padding: '8px 12px',
-              fontSize: '11px',
-              backgroundColor: 'rgba(34, 197, 94, 0.1)',
-              color: '#22c55e',
-              border: '1px solid #22c55e',
-              borderRadius: '4px',
-              cursor: 'pointer',
-              fontFamily: '"Space Mono", monospace',
-              fontWeight: 'bold'
-            }}
+            className="w-full py-2 px-3 text-xs bg-accent-green/10 text-accent-green border border-accent-green rounded cursor-pointer font-mono font-bold hover:bg-accent-green/20 transition-colors"
           >
             REPLACE VIDEO
           </button>
@@ -195,7 +128,7 @@ const VideoUploader: React.FC = () => {
             type="file"
             accept={ACCEPTED_VIDEO_TYPES}
             onChange={handleFileInput}
-            style={{ display: 'none' }}
+            className="hidden"
             disabled={isUploading}
           />
         </div>

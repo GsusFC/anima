@@ -177,10 +177,12 @@ const VideoTimeline: React.FC = () => {
   }
 
   // Handle trim action (now instant UI feedback)
-  const handleTrimSegment = async (segmentId: string, startTime: number, endTime: number) => {
+  const handleTrimSegment = async (_segmentId: string, startTime: number, endTime: number) => {
     try {
-      await trimVideo(segmentId, startTime, endTime);
-      console.log('✅ Segment trimmed successfully (UI-only)');
+      // Note: segmentId is ignored in new trimVideo implementation
+      // It creates a new trim segment based on start/end times
+      const segment = trimVideo(startTime, endTime);
+      console.log('✅ Segment trimmed successfully (UI-only):', segment);
       showToast('Segment trimmed! Will be processed during export.', 'success');
     } catch (error) {
       console.error('❌ Trim failed:', error);

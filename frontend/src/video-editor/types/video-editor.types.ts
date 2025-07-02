@@ -5,7 +5,7 @@ export interface VideoFile {
   id: string;
   name: string;           // Display name
   duration: number;
-  fps: number;
+  fps?: number;
   width: number;
   height: number;
   size: number;
@@ -13,6 +13,7 @@ export interface VideoFile {
   uploadedInfo?: UploadedVideoInfo;
   sessionId?: string;     // Session ID for backend file tracking
   addedAt: Date;          // When added to library
+  videoUrl?: string;      // Local or remote video URL
 }
 
 export interface UploadedVideoInfo {
@@ -81,19 +82,31 @@ export interface VideoEffect {
 
 export type TransitionType = 'cut' | 'fade' | 'slide' | 'zoom' | 'wipe' | 'dissolve';
 
+// Type for quality settings values
+export type QualityValue = 'web' | 'standard' | 'high' | 'max';
+
+// Type for resolution preset values  
+export type ResolutionPreset = 'original' | 'large' | 'medium' | 'small' | 'custom';
+
+// Type for GIF loop settings
+export type GIFLoopValue = 'infinite' | 'once' | '3' | '5';
+
+// Type for GIF color palette settings
+export type GIFColorValue = 256 | 128 | 64 | 32;
+
 export interface VideoExportSettings {
   format: 'mp4' | 'webm' | 'mov' | 'gif';
-  quality: 'web' | 'standard' | 'high' | 'ultra' | 'custom';
+  quality: QualityValue;
   resolution: {
     width: number;
     height: number;
-    preset: 'original' | '480p' | '720p' | '1080p' | '4k' | 'custom';
+    preset: ResolutionPreset;
   };
   fps: number;
   bitrate?: string;
   gif?: {
-    loop: number | 'infinite';
-    colors: 256 | 128 | 64 | 32;
+    loop: GIFLoopValue;
+    colors: GIFColorValue;
     dither: boolean;
   };
 }
@@ -118,17 +131,23 @@ export interface VideoSegment {
   id: string;
   startTime: number;
   endTime: number;
-  originalStart: number;
-  originalEnd: number;
+  originalStart?: number;
+  originalEnd?: number;
+  videoId?: string;
+  createdAt?: Date;
   // Note: No more trimmedPath - segments are now UI-only until export
 }
+
+// Type for partial updates to video segments
+export type VideoSegmentUpdate = Partial<Pick<VideoSegment, 'startTime' | 'endTime' | 'originalStart' | 'originalEnd'>>;
 
 export interface LegacyVideoProject {
   id: string;
   video: VideoFile | null;
   segments: VideoSegment[];
-  effects: VideoEffect[];
-  exportSettings: Partial<VideoExportSettings>;
+  effects?: VideoEffect[];
+  exportSettings?: Partial<VideoExportSettings>;
+  sessionId?: string;
 }
 
 
