@@ -96,9 +96,13 @@ router.post('/slideshow', async (req, res) => {
       });
     }
 
-    // Check if queue is available, otherwise use direct processing fallback
-    if (!checkQueueAvailable(res, true)) {
-      console.log('⚠️ Redis not available, using direct processing fallback');
+    // Force direct processing fallback in production environment
+    const forceDirectProcessing = process.env.NODE_ENV === 'production' || process.env.FORCE_DIRECT_PROCESSING === 'true';
+    
+    if (forceDirectProcessing || !checkQueueAvailable(res, true)) {
+      console.log(forceDirectProcessing ? 
+        '🚀 Using direct processing mode (production)' : 
+        '⚠️ Redis not available, using direct processing fallback');
       
       // Direct processing fallback without Redis
       const { exec } = require('child_process');
@@ -115,22 +119,22 @@ router.post('/slideshow', async (req, res) => {
         const jobId = `fallback_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
         const outputFile = path.join(outputDir, `slideshow_${jobId}.${format}`);
         
-        // Build FFmpeg command for slideshow
+        // Build FFmpeg command for slideshow with proper durations
         const inputFlags = [];
-        const filterComplex = [];
+        const filterParts = [];
         
         images.forEach((img, index) => {
           const imagePath = path.join(__dirname, '../uploads', sessionId, img.filename);
-          inputFlags.push(`-i "${imagePath}"`);
-          const duration = (frameDurations[index] || 2000) / 1000; // Convert to seconds
-          filterComplex.push(`[${index}:v]scale=1920:1080:force_original_aspect_ratio=decrease,pad=1920:1080:(ow-iw)/2:(oh-ih)/2,setpts=PTS-STARTPTS,fps=${30}[v${index}]`);
+          inputFlags.push(`-loop 1 -t ${(frameDurations[index] || 2000) / 1000} -i "${imagePath}"`);
         });
         
-        // Create simple concatenation
+        // Simple concatenation for slideshow
+        const concatList = images.map((_, index) => `[${index}:v]scale=1920:1080:force_original_aspect_ratio=decrease,pad=1920:1080:(ow-iw)/2:(oh-ih)/2[v${index}]`);
         const concatInputs = images.map((_, index) => `[v${index}]`).join('');
-        filterComplex.push(`${concatInputs}concat=n=${images.length}:v=1:a=0[out]`);
         
-        const ffmpegCmd = `ffmpeg ${inputFlags.join(' ')} -filter_complex "${filterComplex.join(';')}" -map "[out]" -c:v libx264 -preset fast -crf 23 -y "${outputFile}"`;
+        const filterComplex = `${concatList.join(';')};${concatInputs}concat=n=${images.length}:v=1:a=0[out]`;
+        
+        const ffmpegCmd = `ffmpeg ${inputFlags.join(' ')} -filter_complex "${filterComplex}" -map "[out]" -c:v libx264 -preset fast -crf 23 -pix_fmt yuv420p -y "${outputFile}"`;
         
         console.log('🎬 Direct FFmpeg processing:', ffmpegCmd);
         
