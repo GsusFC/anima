@@ -44,64 +44,29 @@ const TimelineHoverPreview: React.FC<TimelineHoverPreviewProps> = ({
 
   return (
     <div
+      className="fixed z-50 bg-dark-900 border border-dark-700 rounded-md p-2 shadow-lg pointer-events-none"
       style={{
-        position: 'fixed',
         left: mousePosition.x + 10,
         top: mousePosition.y - 120,
-        zIndex: 9999,
-        backgroundColor: '#1a1a1b',
-        border: '1px solid #343536',
-        borderRadius: '6px',
-        padding: '8px',
-        boxShadow: '0 4px 12px rgba(0, 0, 0, 0.4)',
-        pointerEvents: 'none'
       }}
     >
       {/* Thumbnail */}
-      <div
-        style={{
-          width: '150px',
-          height: '100px',
-          backgroundColor: '#0f0f0f',
-          borderRadius: '4px',
-          overflow: 'hidden',
-          marginBottom: '6px',
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center'
-        }}
-      >
+      <div className="w-40 h-24 bg-dark-950 rounded overflow-hidden mb-1.5 flex items-center justify-center">
         {thumbnailData ? (
           <img
             src={thumbnailData}
             alt="Frame preview"
-            style={{
-              width: '100%',
-              height: '100%',
-              objectFit: 'cover'
-            }}
+            className="w-full h-full object-cover"
           />
         ) : (
-          <div style={{
-            color: '#6b7280',
-            fontSize: '11px',
-            fontFamily: '"Space Mono", monospace'
-          }}>
+          <div className="text-dark-500 text-sm font-mono">
             Loading...
           </div>
         )}
       </div>
       
       {/* Timestamp */}
-      <div
-        style={{
-          textAlign: 'center',
-          fontSize: '11px',
-          color: '#22c55e',
-          fontWeight: 'bold',
-          fontFamily: '"Space Mono", monospace'
-        }}
-      >
+      <div className="text-center text-sm text-accent-green font-bold font-mono">
         {formatTimestamp(timestamp)}
       </div>
     </div>

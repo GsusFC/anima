@@ -20,36 +20,19 @@ const Toast: React.FC<ToastProps> = ({ message, onRemove }) => {
     return () => clearTimeout(timer);
   }, [message.id, onRemove]);
 
-  const getToastStyles = () => {
-    const baseStyles = {
-      position: 'fixed' as const,
-      top: '20px',
-      right: '20px',
-      padding: '12px 16px',
-      borderRadius: '6px',
-      color: 'white',
-      fontSize: '14px',
-      fontFamily: '"Space Mono", monospace',
-      zIndex: 9999,
-      maxWidth: '400px',
-      wordWrap: 'break-word' as const,
-      boxShadow: '0 4px 12px rgba(0, 0, 0, 0.3)',
-      cursor: 'pointer'
-    };
-
+  const getTypeStyles = () => {
     const typeStyles = {
-      success: { backgroundColor: '#22c55e' },
-      error: { backgroundColor: '#ef4444' },
-      warning: { backgroundColor: '#f59e0b' },
-      info: { backgroundColor: '#3b82f6' }
+      success: 'bg-accent-green',
+      error: 'bg-accent-red',
+      warning: 'bg-orange-500',
+      info: 'bg-accent-blue'
     };
-
-    return { ...baseStyles, ...typeStyles[message.type] };
+    return typeStyles[message.type];
   };
 
   return (
     <div 
-      style={getToastStyles()}
+      className={`fixed top-5 right-5 px-4 py-3 rounded-md text-white text-lg font-mono max-w-sm break-words shadow-lg cursor-pointer z-50 ${getTypeStyles()}`}
       onClick={() => onRemove(message.id)}
     >
       {message.message}
@@ -72,13 +55,13 @@ const ToastContainer: React.FC = () => {
 
   // Expose addToast globally
   useEffect(() => {
-    (window as any).showToast = addToast;
+    window.showToast = addToast;
   }, []);
 
   return (
     <>
       {toasts.map((toast, index) => (
-        <div key={toast.id} style={{ top: `${20 + index * 60}px`, position: 'fixed', right: '20px', zIndex: 9999 }}>
+        <div key={toast.id} className="fixed right-5 z-50" style={{ top: `${20 + index * 60}px` }}>
           <Toast message={toast} onRemove={removeToast} />
         </div>
       ))}
@@ -88,10 +71,17 @@ const ToastContainer: React.FC = () => {
 
 export default ToastContainer;
 
+// Declare global window interface extension
+declare global {
+  interface Window {
+    showToast?: (message: string, type: 'success' | 'error' | 'warning' | 'info') => void;
+  }
+}
+
 // Helper function for easy usage
 export const showToast = (message: string, type: 'success' | 'error' | 'warning' | 'info' = 'info') => {
-  if ((window as any).showToast) {
-    (window as any).showToast(message, type);
+  if (window.showToast) {
+    window.showToast(message, type);
   } else {
     // Fallback to alert if toast system not initialized
     alert(message);

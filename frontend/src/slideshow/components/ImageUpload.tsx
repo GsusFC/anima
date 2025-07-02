@@ -61,199 +61,72 @@ const ImageUpload: React.FC = () => {
   };
 
   return (
-    <div style={{
-      height: '100%',
-      backgroundColor: '#0a0a0b',
-      display: 'flex',
-      flexDirection: 'column',
-      padding: '12px' // Reduced padding
-    }}>
+    <div className="h-full bg-dark-950 flex flex-col p-3">
       <input
         ref={fileInputRef}
         type="file"
         multiple
         accept="image/*"
         onChange={handleFileInput}
-        style={{ display: 'none' }}
+        className="hidden"
       />
 
       {/* File List */}
-      <div style={{
-        flex: 1,
-        display: 'flex',
-        flexDirection: 'column',
-        minHeight: 0
-      }}>
+      <div className="flex-1 flex flex-col min-h-0">
         {/* Add Image Card - Always visible at top */}
         <div 
-          style={{
-            position: 'relative',
-            width: '100%',
-            height: '60px',
-            backgroundColor: dragActive ? '#1a1a1b' : '#0f0f0f',
-            borderRadius: '2px',
-            border: `2px dashed ${dragActive ? '#ec4899' : '#343536'}`,
-            cursor: 'pointer',
-            overflow: 'hidden',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            transition: 'all 0.2s ease',
-            marginBottom: '8px',
-            flexShrink: 0
-          }}
+          className={`drop-zone h-15 cursor-pointer flex items-center justify-center mb-2 flex-shrink-0 ${
+            dragActive ? 'active' : ''
+          }`}
           onDragEnter={handleDrag}
           onDragLeave={handleDrag}
           onDragOver={handleDrag}
           onDrop={handleDrop}
           onClick={() => fileInputRef.current?.click()}
         >
-          <svg style={{ width: '24px', height: '24px', color: '#6b7280', marginRight: '8px' }} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <svg className="w-6 h-6 text-dark-500 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
           </svg>
-          <span style={{ 
-            color: dragActive ? '#ec4899' : '#9ca3af', 
-            fontSize: '12px', 
-            fontFamily: '"Space Mono", monospace' 
-          }}>
+          <span className={`text-sm font-mono ${
+            dragActive ? 'text-accent-pink' : 'text-dark-400'
+          }`}>
             {isUploading ? 'Uploading...' : 'Add Images'}
           </span>
         </div>
 
         {/* Uploaded Files */}
-        <div style={{
-          flex: 1,
-          overflowY: 'auto',
-          display: 'flex',
-          flexDirection: 'column',
-          gap: '8px'
-        }}>
+        <div className="flex-1 overflow-y-auto flex flex-col gap-2 custom-scrollbar">
           {project.images.map((image) => (
             <div
               key={image.id}
-              style={{
-                position: 'relative',
-                width: '100%',
-                height: '80px',
-                backgroundColor: '#1a1a1b',
-                borderRadius: '6px',
-                border: '1px solid #343536',
-                overflow: 'hidden',
-                display: 'flex',
-                alignItems: 'center',
-                padding: '8px',
-                gap: '12px',
-                transition: 'all 0.2s ease',
-                cursor: 'pointer'
-              }}
+              className="timeline-item group relative w-full h-20 p-2 gap-3"
               onClick={() => addToTimeline(image.id)}
-              onMouseEnter={(e) => {
-                e.currentTarget.style.backgroundColor = '#2a2a2b';
-                e.currentTarget.style.borderColor = '#ec4899';
-                e.currentTarget.style.transform = 'scale(1.02)';
-                const overlay = e.currentTarget.querySelector('.add-overlay') as HTMLElement;
-                if (overlay) overlay.style.opacity = '1';
-              }}
-              onMouseLeave={(e) => {
-                e.currentTarget.style.backgroundColor = '#1a1a1b';
-                e.currentTarget.style.borderColor = '#343536';
-                e.currentTarget.style.transform = 'scale(1)';
-                const overlay = e.currentTarget.querySelector('.add-overlay') as HTMLElement;
-                if (overlay) overlay.style.opacity = '0';
-              }}
               title="Click to add to timeline"
             >
               {/* Professional Thumbnail - 2:1 Aspect Ratio */}
-              <div style={{
-                width: '128px',
-                height: '64px',
-                position: 'relative',
-                borderRadius: '4px',
-                overflow: 'hidden',
-                border: '1px solid #4b5563',
-                flexShrink: 0,
-                boxShadow: '0 2px 8px rgba(0, 0, 0, 0.3)'
-              }}>
+              <div className="timeline-thumbnail shadow-lg">
                 <img
                   src={image.preview}
                   alt="Media"
-                  style={{
-                    width: '100%',
-                    height: '100%',
-                    objectFit: 'cover'
-                  }}
+                  className="w-full h-full object-cover"
                 />
                 
                 {/* Add Overlay on Hover */}
-                <div 
-                  className="add-overlay"
-                  style={{
-                    position: 'absolute',
-                    top: 0,
-                    left: 0,
-                    right: 0,
-                    bottom: 0,
-                    backgroundColor: 'rgba(34, 197, 94, 0.1)',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    opacity: 0,
-                    transition: 'opacity 0.2s ease',
-                    pointerEvents: 'none'
-                  }}>
-                  <div style={{
-                    width: '32px',
-                    height: '32px',
-                    backgroundColor: '#ec4899',
-                    borderRadius: '50%',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    color: 'white',
-                    fontSize: '18px',
-                    fontWeight: 'bold',
-                    boxShadow: '0 2px 8px rgba(0,0,0,0.3)'
-                  }}>
+                <div className="add-overlay absolute inset-0 bg-green-500/10 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none">
+                  <div className="w-8 h-8 bg-accent-pink rounded-full flex items-center justify-center text-white text-lg font-bold shadow-lg">
                     +
                   </div>
                 </div>
               </div>
               
               {/* Only Remove Button */}
-              <div style={{ 
-                marginLeft: 'auto',
-                display: 'flex', 
-                gap: '4px',
-                alignItems: 'center'
-              }}>
+              <div className="ml-auto flex gap-1 items-center">
                 <button
                   onClick={(e) => {
                     e.stopPropagation();
                     removeImage(image.id);
                   }}
-                  style={{
-                    width: '18px',
-                    height: '18px',
-                    backgroundColor: 'rgba(239, 68, 68, 0.8)',
-                    border: 'none',
-                    borderRadius: '3px',
-                    color: 'white',
-                    fontSize: '10px',
-                    cursor: 'pointer',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    transition: 'all 0.2s ease',
-                    opacity: 0.6
-                  }}
-                  onMouseEnter={(e) => {
-                    e.currentTarget.style.opacity = '1';
-                    e.currentTarget.style.backgroundColor = '#ef4444';
-                  }}
-                  onMouseLeave={(e) => {
-                    e.currentTarget.style.opacity = '0.6';
-                    e.currentTarget.style.backgroundColor = 'rgba(239, 68, 68, 0.8)';
-                  }}
+                  className="w-4 h-4 bg-accent-red/80 hover:bg-accent-red text-white text-xs rounded flex items-center justify-center transition-all duration-200 opacity-60 hover:opacity-100"
                   title="Remove image"
                 >
                   ×
@@ -265,26 +138,10 @@ const ImageUpload: React.FC = () => {
 
         {/* Quick Actions */}
         {project.images.length > 0 && (
-          <div style={{
-            marginTop: '8px',
-            display: 'flex',
-            gap: '8px',
-            flexShrink: 0
-          }}>
+          <div className="mt-2 flex gap-2 flex-shrink-0">
             <button
               onClick={() => project.images.forEach(img => addToTimeline(img.id))}
-              style={{
-                flex: 1,
-                padding: '8px',
-                backgroundColor: '#ec4899',
-                border: 'none',
-                borderRadius: '4px',
-                color: 'white',
-                fontSize: '11px',
-                fontWeight: 'bold',
-                cursor: 'pointer',
-                fontFamily: '"Space Mono", monospace'
-              }}
+              className="btn-pink flex-1 text-xs py-2"
             >
               + ALL TO TIMELINE
             </button>
