@@ -17,8 +17,11 @@ try {
 }
 
 // Helper function to check if queue is available
-function checkQueueAvailable(res) {
+function checkQueueAvailable(res, allowFallback = false) {
   if (!queueFunctions || !JobTypes) {
+    if (allowFallback) {
+      return false; // Caller will handle fallback
+    }
     res.status(503).json({
       success: false,
       error: 'Job queue not available - Redis not connected',
@@ -93,9 +96,68 @@ router.post('/slideshow', async (req, res) => {
       });
     }
 
-    if (!checkQueueAvailable(res)) return;
+    // Check if queue is available, otherwise use direct processing fallback
+    if (!checkQueueAvailable(res, true)) {
+      console.log('⚠️ Redis not available, using direct processing fallback');
+      
+      // Direct processing fallback without Redis
+      const { exec } = require('child_process');
+      const util = require('util');
+      const execAsync = util.promisify(exec);
+      
+      try {
+        // Generate unique output filename
+        const outputDir = path.join(__dirname, '../output');
+        if (!fs.existsSync(outputDir)) {
+          fs.mkdirSync(outputDir, { recursive: true });
+        }
+        
+        const jobId = `fallback_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+        const outputFile = path.join(outputDir, `slideshow_${jobId}.${format}`);
+        
+        // Build FFmpeg command for slideshow
+        const inputFlags = [];
+        const filterComplex = [];
+        
+        images.forEach((img, index) => {
+          const imagePath = path.join(__dirname, '../uploads', sessionId, img.filename);
+          inputFlags.push(`-i "${imagePath}"`);
+          const duration = (frameDurations[index] || 2000) / 1000; // Convert to seconds
+          filterComplex.push(`[${index}:v]scale=1920:1080:force_original_aspect_ratio=decrease,pad=1920:1080:(ow-iw)/2:(oh-ih)/2,setpts=PTS-STARTPTS,fps=${30}[v${index}]`);
+        });
+        
+        // Create simple concatenation
+        const concatInputs = images.map((_, index) => `[v${index}]`).join('');
+        filterComplex.push(`${concatInputs}concat=n=${images.length}:v=1:a=0[out]`);
+        
+        const ffmpegCmd = `ffmpeg ${inputFlags.join(' ')} -filter_complex "${filterComplex.join(';')}" -map "[out]" -c:v libx264 -preset fast -crf 23 -y "${outputFile}"`;
+        
+        console.log('🎬 Direct FFmpeg processing:', ffmpegCmd);
+        
+        // Execute FFmpeg
+        await execAsync(ffmpegCmd);
+        
+        // Return immediate success with download URL
+        return res.json({
+          success: true,
+          jobId: jobId,
+          status: 'completed',
+          message: 'Slideshow created successfully (direct processing)',
+          downloadUrl: `/api/export/download/${jobId}`,
+          isDirect: true
+        });
+        
+      } catch (ffmpegError) {
+        console.error('❌ Direct FFmpeg processing failed:', ffmpegError);
+        return res.status(500).json({
+          success: false,
+          error: 'Direct processing failed',
+          details: ffmpegError.message
+        });
+      }
+    }
 
-    // Add job to queue
+    // Normal Redis queue processing
     const job = await queueFunctions.addJob(JobTypes.SLIDESHOW_EXPORT, {
       images,
       transitions,
@@ -406,6 +468,34 @@ router.get('/status/:jobId', async (req, res) => {
   try {
     const { jobId } = req.params;
     
+    // Check if this is a direct fallback job
+    if (jobId.startsWith('fallback_')) {
+      const outputDir = path.join(__dirname, '../output');
+      const files = fs.readdirSync(outputDir).filter(f => f.includes(jobId));
+      
+      if (files.length > 0) {
+        return res.json({
+          success: true,
+          job: {
+            id: jobId,
+            status: 'completed',
+            progress: 100,
+            result: {
+              outputPath: path.join(outputDir, files[0]),
+              filename: files[0]
+            },
+            downloadUrl: `/api/export/download/${jobId}`
+          }
+        });
+      } else {
+        return res.status(404).json({
+          success: false,
+          error: 'Job not found'
+        });
+      }
+    }
+    
+    // Normal Redis queue processing
     if (!checkQueueAvailable(res)) return;
     
     const status = await queueFunctions.getJobStatus(jobId);
@@ -437,6 +527,39 @@ router.get('/download/:jobId', async (req, res) => {
   try {
     const { jobId } = req.params;
     
+    // Check if this is a direct fallback job
+    if (jobId.startsWith('fallback_')) {
+      const outputDir = path.join(__dirname, '../output');
+      const files = fs.readdirSync(outputDir).filter(f => f.includes(jobId));
+      
+      if (files.length === 0) {
+        return res.status(404).json({
+          success: false,
+          error: 'Export file not found'
+        });
+      }
+      
+      const filePath = path.join(outputDir, files[0]);
+      const fileName = files[0];
+      
+      if (!fs.existsSync(filePath)) {
+        return res.status(404).json({
+          success: false,
+          error: 'Export file not available'
+        });
+      }
+
+      console.log('📥 Serving direct fallback file:', fileName);
+      
+      res.setHeader('Content-Disposition', `attachment; filename="${fileName}"`);
+      res.setHeader('Content-Type', 'application/octet-stream');
+      
+      const fileStream = fs.createReadStream(filePath);
+      fileStream.pipe(res);
+      return;
+    }
+    
+    // Normal Redis queue processing
     if (!checkQueueAvailable(res)) return;
     
     const status = await queueFunctions.getJobStatus(jobId);
