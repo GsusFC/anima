@@ -1000,6 +1000,10 @@ app.post('/preview', async (req, res) => {
         height = Math.round(height * scaleRatio);
       }
       
+      // Ensure dimensions are even (required for H.264)
+      width = width % 2 === 0 ? width : width - 1;
+      height = height % 2 === 0 ? height : height - 1;
+      
       previewSettings = { width, height, fps: 30, bitrate: '2M', crf: 23 };
       console.log(`Preview: Auto-detected dimensions ${firstImageDims.width}x${firstImageDims.height}, using ${width}x${height}`);
     } catch (error) {
