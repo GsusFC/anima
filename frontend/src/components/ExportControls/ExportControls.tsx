@@ -268,7 +268,12 @@ const ExportControls: React.FC = () => {
             });
             
             showNotification('success', 'Export Completed! 🎉', 
-              `${selectedFormat.toUpperCase()} generated! Click buttons below to export other formats instantly.`);
+              `${selectedFormat.toUpperCase()} generated and downloaded automatically!`);
+            
+            // Auto-download the file
+            setTimeout(() => {
+              downloadFile(result.filename);
+            }, 1000);
           } catch (compositionError) {
             console.error('Failed to load composition:', compositionError);
             showNotification('success', 'Export Completed! 🎉', 
@@ -536,17 +541,8 @@ const ExportControls: React.FC = () => {
             position: 'relative',
             overflow: 'hidden'
           }}
-          onClick={lastExportResult ? () => {
-            // Find the export for the currently selected format
-            const currentFormatExport = currentComposition?.exports.find(exp => exp.format === selectedFormat);
-            if (currentFormatExport) {
-              downloadFile(currentFormatExport.filename);
-            } else {
-              // Fallback to lastExportResult if no specific format found
-              downloadFile(lastExportResult);
-            }
-          } : handleExport}
-          disabled={!lastExportResult && (!canExport || isExporting)}
+          onClick={handleExport}
+          disabled={!canExport || isExporting}
         >
           {/* Progress bar background when exporting */}
           {isExporting && exportProgress && (
@@ -577,9 +573,7 @@ const ExportControls: React.FC = () => {
 
             {/* Text */}
             <span>
-              {lastExportResult && currentComposition?.exports.find(exp => exp.format === selectedFormat) ? (
-                `DOWNLOAD ${selectedFormat.toUpperCase()}`
-              ) : isExporting ? (
+              {isExporting ? (
                 exportProgress ? `${exportProgress.message} ${Math.round(exportProgress.progress)}%` : 'EXPORTING...'
               ) : canExport ? (
                 `EXPORT ${selectedFormat.toUpperCase()}`

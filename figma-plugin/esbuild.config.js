@@ -25,8 +25,7 @@ const buildComplete = async () => {
       '.css': 'text'
     },
     define: {
-      'process.env.NODE_ENV': '"production"',
-      'process.env.API_BASE_URL': JSON.stringify(process.env.API_BASE_URL || '')
+      'process.env.NODE_ENV': '"production"'
     }
   });
   
@@ -60,8 +59,7 @@ const buildComplete = async () => {
     sourcemap: true,
     external: [],
     define: {
-      '__html__': escapedHTML,
-      'process.env.API_BASE_URL': JSON.stringify(process.env.API_BASE_URL || '')
+      '__html__': escapedHTML
     }
   });
   

@@ -1,6 +1,8 @@
 const { Queue } = require('bullmq');
 const { createRedisConnection } = require('../utils/redis');
 const { JobTypes, jobConfigs } = require('./jobTypes');
+const path = require('path');
+const fs = require('fs');
 
 // Create Redis connection for the queue
 const queueConnection = createRedisConnection();
@@ -11,11 +13,12 @@ const videoQueue = new Queue('video-processing', {
   defaultJobOptions: {
     removeOnComplete: 50,
     removeOnFail: 100,
-    attempts: 3,
+    attempts: 2,
     backoff: {
       type: 'exponential',
-      delay: 2000
-    }
+      delay: 5000
+    },
+    delay: 1000
   }
 });
 
@@ -63,6 +66,19 @@ async function getJobStatus(jobId) {
 
     const state = await job.getState();
     
+    const logDir = path.join(__dirname, '..', 'logs');
+    let logUrl = null;
+    const logPath = path.join(logDir, `job_${job.id}.log`);
+    if (fs.existsSync(logPath)) {
+      logUrl = `/logs/job_${job.id}.log`;
+    }
+
+    // Generate download URL if job is completed and has result
+    let downloadUrl = null;
+    if (state === 'completed' && job.returnvalue && job.returnvalue.outputPath) {
+      downloadUrl = `/api/export/download/${job.id}`;
+    }
+
     return {
       id: job.id,
       type: job.name,
@@ -70,7 +86,9 @@ async function getJobStatus(jobId) {
       progress: job.progress || 0,
       data: job.data,
       result: job.returnvalue,
+      downloadUrl,
       error: job.failedReason,
+      logUrl,
       createdAt: new Date(job.timestamp),
       processedAt: job.processedOn ? new Date(job.processedOn) : null,
       completedAt: job.finishedOn ? new Date(job.finishedOn) : null,

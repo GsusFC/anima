@@ -19,7 +19,13 @@ const uploadVideoFile = async (file: File, sessionId?: string): Promise<any> => 
   });
 
   if (!response.ok) {
-    throw new Error(`Video upload failed: ${response.statusText}`);
+    let respBody: string;
+    try {
+      respBody = await response.text();
+    } catch {
+      respBody = '<unable to read body>';
+    }
+    throw new Error(`Video upload failed (${response.status}): ${response.statusText}. Body: ${respBody}`);
   }
 
   return response.json();
@@ -58,7 +64,12 @@ const generateVideoThumbnails = async (file: File, duration: number, count: numb
   return new Promise((resolve) => {
     const video = document.createElement('video');
     const canvas = document.createElement('canvas');
-    const ctx = canvas.getContext('2d')!;
+    const ctx = canvas.getContext('2d');
+    if (!ctx) {
+      console.warn('Canvas 2D context not available. Skipping thumbnail generation.');
+      resolve([]);
+      return;
+    }
     const thumbnails: string[] = [];
     let currentIndex = 0;
     
@@ -78,7 +89,7 @@ const generateVideoThumbnails = async (file: File, duration: number, count: numb
         video.currentTime = time;
       };
       
-      let seekTimeout: number;
+      let seekTimeout: ReturnType<typeof setTimeout>;
       video.onseeked = () => {
         // Debounce rapid seek events
         clearTimeout(seekTimeout);

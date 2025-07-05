@@ -1,11 +1,12 @@
 import React from 'react';
+import { COLORS } from './styles/theme';
 
 const VideoEditorAppSimple: React.FC = () => {
   return (
     <div style={{
       height: '100vh',
-      backgroundColor: '#0a0a0b',
-      color: 'white',
+      backgroundColor: COLORS.bg,
+      color: COLORS.text,
       display: 'flex',
       flexDirection: 'column',
       fontFamily: '"Space Mono", monospace'
@@ -13,16 +14,16 @@ const VideoEditorAppSimple: React.FC = () => {
       {/* Header */}
       <div style={{
         height: '60px',
-        borderBottom: '1px solid #343536',
+        borderBottom: `1px solid ${COLORS.borderLight}`,
         display: 'flex',
         alignItems: 'center',
         padding: '0 20px',
-        backgroundColor: '#1a1a1b'
+        backgroundColor: COLORS.panelBg
       }}>
         <h1 style={{
           margin: 0,
           fontSize: '18px',
-          color: '#22c55e',
+          color: COLORS.accent,
           fontWeight: 'bold'
         }}>
           🎬 PROFESSIONAL VIDEO EDITOR
@@ -37,22 +38,22 @@ const VideoEditorAppSimple: React.FC = () => {
         {/* Left Panel - Video Library */}
         <div style={{
           width: '320px',
-          borderRight: '1px solid #343536',
-          backgroundColor: '#1a1a1b',
+          borderRight: `1px solid ${COLORS.borderLight}`,
+          backgroundColor: COLORS.panelBg,
           padding: '20px'
         }}>
-          <h3 style={{ margin: '0 0 20px 0', color: '#22c55e' }}>Video Library</h3>
+          <h3 style={{ margin: '0 0 20px 0', color: COLORS.accent }}>Video Library</h3>
           <div style={{
-            border: '2px dashed #343536',
+            border: `2px dashed ${COLORS.borderLight}`,
             borderRadius: '8px',
             padding: '40px 20px',
             textAlign: 'center',
-            color: '#9ca3af'
+            color: COLORS.grayText
           }}>
             <div style={{ fontSize: '48px', marginBottom: '10px' }}>📹</div>
             <p>Drop videos here</p>
             <button style={{
-              backgroundColor: '#22c55e',
+              backgroundColor: COLORS.accent,
               color: 'white',
               border: 'none',
               padding: '10px 20px',
@@ -78,9 +79,9 @@ const VideoEditorAppSimple: React.FC = () => {
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',
-            border: '1px solid #343536'
+            border: `1px solid ${COLORS.borderLight}`
           }}>
-            <div style={{ textAlign: 'center', color: '#9ca3af' }}>
+            <div style={{ textAlign: 'center', color: COLORS.grayText }}>
               <div style={{ fontSize: '64px', marginBottom: '20px' }}>🎥</div>
               <h3>Multi-Video Editor</h3>
               <p>Professional video editing with sequences</p>
@@ -90,8 +91,8 @@ const VideoEditorAppSimple: React.FC = () => {
           {/* Timeline */}
           <div style={{
             height: '200px',
-            borderTop: '1px solid #343536',
-            backgroundColor: '#272729',
+            borderTop: `1px solid ${COLORS.borderLight}`,
+            backgroundColor: COLORS.panelBgAlt,
             padding: '20px'
           }}>
             <div style={{
@@ -100,10 +101,10 @@ const VideoEditorAppSimple: React.FC = () => {
               justifyContent: 'space-between',
               marginBottom: '10px'
             }}>
-              <h4 style={{ margin: 0, color: '#22c55e' }}>Timeline</h4>
+              <h4 style={{ margin: 0, color: COLORS.accent }}>Timeline</h4>
               <div style={{ display: 'flex', gap: '10px' }}>
                 <button style={{
-                  backgroundColor: '#343536',
+                  backgroundColor: COLORS.borderLight,
                   color: 'white',
                   border: 'none',
                   padding: '8px 16px',
@@ -116,12 +117,12 @@ const VideoEditorAppSimple: React.FC = () => {
             </div>
             <div style={{
               height: '80px',
-              backgroundColor: '#1a1a1b',
+              backgroundColor: COLORS.panelBg,
               borderRadius: '6px',
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
-              color: '#9ca3af'
+              color: COLORS.grayText
             }}>
               Drag videos from library to create sequence
             </div>
@@ -131,21 +132,21 @@ const VideoEditorAppSimple: React.FC = () => {
         {/* Right Panel - Export Controls */}
         <div style={{
           width: '320px',
-          borderLeft: '1px solid #343536',
-          backgroundColor: '#1a1a1b',
+          borderLeft: `1px solid ${COLORS.borderLight}`,
+          backgroundColor: COLORS.panelBg,
           padding: '20px'
         }}>
-          <h3 style={{ margin: '0 0 20px 0', color: '#22c55e' }}>Export Settings</h3>
+          <h3 style={{ margin: '0 0 20px 0', color: COLORS.accent }}>Export Settings</h3>
           
           <div style={{ marginBottom: '20px' }}>
-            <label style={{ display: 'block', marginBottom: '8px', color: '#d1d5db' }}>
+            <label style={{ display: 'block', marginBottom: '8px', color: COLORS.grayText }}>
               Format
             </label>
             <select style={{
               width: '100%',
               padding: '8px',
-              backgroundColor: '#272729',
-              border: '1px solid #343536',
+              backgroundColor: COLORS.panelBgAlt,
+              border: `1px solid ${COLORS.borderLight}`,
               borderRadius: '4px',
               color: 'white'
             }}>
@@ -157,14 +158,14 @@ const VideoEditorAppSimple: React.FC = () => {
           </div>
 
           <div style={{ marginBottom: '20px' }}>
-            <label style={{ display: 'block', marginBottom: '8px', color: '#d1d5db' }}>
+            <label style={{ display: 'block', marginBottom: '8px', color: COLORS.grayText }}>
               Quality
             </label>
             <select style={{
               width: '100%',
               padding: '8px',
-              backgroundColor: '#272729',
-              border: '1px solid #343536',
+              backgroundColor: COLORS.panelBgAlt,
+              border: `1px solid ${COLORS.borderLight}`,
               borderRadius: '4px',
               color: 'white'
             }}>
@@ -177,7 +178,7 @@ const VideoEditorAppSimple: React.FC = () => {
 
           <button style={{
             width: '100%',
-            backgroundColor: '#22c55e',
+            backgroundColor: COLORS.accent,
             color: 'white',
             border: 'none',
             padding: '12px',

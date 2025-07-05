@@ -9,6 +9,7 @@ interface SlideshowContextType {
   export: ReturnType<typeof useSlideshow>['export'];
   isUploading: boolean;
   dragActive: boolean;
+  selection: ReturnType<typeof useSlideshow>['selection'];
   
   // Computed
   hasImages: boolean;
@@ -26,6 +27,12 @@ interface SlideshowContextType {
   updateExportSettings: (updates: any) => void;
   setDragActive: (active: boolean) => void;
   clearProject: () => void;
+  
+  // Selection Actions
+  toggleSelectionMode: () => void;
+  toggleImageSelection: (imageId: string) => void;
+  clearSelection: () => void;
+  addSelectedToTimeline: () => void;
 }
 
 const SlideshowContext = createContext<SlideshowContextType | null>(null);

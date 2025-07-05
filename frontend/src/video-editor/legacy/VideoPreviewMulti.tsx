@@ -12,7 +12,8 @@ export const VideoPreviewMulti: React.FC<VideoPreviewMultiProps> = () => {
     setCurrentTime,
     togglePlayback,
     getVideoById,
-    getSequenceDuration
+    getSequenceDuration,
+    isPlaying
   } = useVideoEditor();
 
   const videoRef = useRef<HTMLVideoElement>(null);
@@ -103,6 +104,19 @@ export const VideoPreviewMulti: React.FC<VideoPreviewMultiProps> = () => {
     // Set playback rate
     videoRef.current.playbackRate = currentVideoItem.speed;
   }, [currentTime, currentVideoItem]);
+
+  // Sync native video playback with global isPlaying state
+  useEffect(() => {
+    if (!videoRef.current) return;
+    if (isPlaying) {
+      const playPromise = videoRef.current.play();
+      if (playPromise && typeof playPromise.catch === 'function') {
+        playPromise.catch(() => {/* ignore autoplay blocking */});
+      }
+    } else {
+      videoRef.current.pause();
+    }
+  }, [isPlaying]);
 
   // Handle keyboard shortcuts
   useEffect(() => {

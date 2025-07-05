@@ -60,13 +60,7 @@ export const VideoLibrary: React.FC<VideoLibraryProps> = () => {
   };
 
   return (
-    <div style={{
-      backgroundColor: '#111827',
-      borderRight: '1px solid #374151',
-      display: 'flex',
-      flexDirection: 'column',
-      height: '100%'
-    }}>
+    <div className="bg-gray-900 border-r border-gray-700 flex flex-col h-full">
       {/* Header */}
       <div className="p-4 border-b border-gray-700">
         <div className="flex items-center justify-between">

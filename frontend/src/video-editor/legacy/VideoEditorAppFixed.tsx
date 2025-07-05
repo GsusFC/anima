@@ -21,6 +21,8 @@ const VideoEditorAppFixed: React.FC = () => {
       const ctx = canvas.getContext('2d')!;
       const thumbnails: string[] = [];
       let currentIndex = 0;
+      let seekTimer: ReturnType<typeof setTimeout> | null = null;
+      const SEEK_TIMEOUT_MS = 5000;
       
       video.onloadeddata = () => {
         canvas.width = 160;
@@ -35,9 +37,20 @@ const VideoEditorAppFixed: React.FC = () => {
           
           const time = (currentIndex / (count - 1)) * duration;
           video.currentTime = time;
+
+          // If onseeked never fires, abort this frame and continue.
+          if (seekTimer) clearTimeout(seekTimer);
+          seekTimer = setTimeout(() => {
+            console.warn('Seek timeout, skipping frame', currentIndex);
+            currentIndex++;
+            captureFrame();
+          }, SEEK_TIMEOUT_MS);
         };
         
         video.onseeked = () => {
+          // Clear per-seek timer
+          if (seekTimer) clearTimeout(seekTimer);
+
           ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
           thumbnails.push(canvas.toDataURL('image/jpeg', 0.7));
           currentIndex++;
@@ -790,6 +803,14 @@ const VideoEditorAppFixed: React.FC = () => {
                 fontWeight: 'bold'
               }}
               disabled={videos.length === 0}
+              onClick={() => {
+                if (videos.length === 0) {
+                  alert('Add videos to export first');
+                  return;
+                }
+                // Placeholder export action
+                alert(`Exporting ${videos.length} videos (not implemented)`);
+              }}
             >
               {videos.length > 0 ? 'Export Sequence' : 'Add Videos to Export'}
             </button>

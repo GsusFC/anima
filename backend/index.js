@@ -447,8 +447,22 @@ app.get('/api/status', (req, res) => {
   });
 });
 
+// Debug logger for export requests
+app.use((req, res, next) => {
+  if (req.url.includes('export') || req.url.includes('video')) {
+    console.log(`🌐 REQUEST: ${req.method} ${req.url}`);
+  }
+  next();
+});
+
 // Mount the new job queue export routes
 app.use('/api/export', exportRoutes);
+
+// Simple GIF export route (new implementation)
+const gifSimpleRoutes = require('./routes/gif-simple');
+const videoSimpleRoutes = require('./routes/video-simple');
+app.use('/gif-simple', gifSimpleRoutes);
+app.use('/video-simple', videoSimpleRoutes);
 
 // File upload endpoint (preferred)
 app.post('/upload', upload.array('images', 50), (req, res) => {
@@ -888,6 +902,32 @@ const getImageDimensions = (imagePath) => {
   });
 };
 
+// Calculate auto resolution based on first image aspect ratio
+const calculateAutoResolution = async (images, sessionId, maxHeight = 1080) => {
+  if (!images || images.length === 0) return { width: 1920, height: 1080 };
+  
+  try {
+    const firstImagePath = path.join(__dirname, 'uploads', sessionId, images[0].filename);
+    const dims = await getImageDimensions(firstImagePath);
+    
+    // Calculate aspect ratio
+    const aspectRatio = dims.width / dims.height;
+    
+    // Scale to fit maxHeight while maintaining aspect ratio
+    const height = Math.min(dims.height, maxHeight);
+    const width = Math.round(height * aspectRatio);
+    
+    // Ensure even numbers for better encoding
+    return {
+      width: width % 2 === 0 ? width : width + 1,
+      height: height % 2 === 0 ? height : height + 1
+    };
+  } catch (error) {
+    console.error('Error calculating auto resolution:', error);
+    return { width: 1920, height: 1080 }; // Fallback
+  }
+};
+
 // PREVIEW ENDPOINT - Generate quick video preview with transitions
 app.post('/preview', async (req, res) => {
   try {
@@ -942,6 +982,10 @@ app.post('/preview', async (req, res) => {
     // Detect dimensions from first image
     let previewSettings;
     try {
+      if (!validImages[0].path) {
+        console.error('❌ First valid image has no path:', validImages[0]);
+        return res.status(400).json({ error: 'First image path is undefined' });
+      }
       const firstImageDims = await getImageDimensions(validImages[0].path);
       // Use native dimensions for preview but scale down if too large
       const maxWidth = 1280;
@@ -1651,19 +1695,53 @@ app.post('/export/gif', async (req, res) => {
 
 // CORRECTED VIDEO EXPORT ENDPOINT
 app.post('/export/video', async (req, res) => {
+  console.log('🚨🚨🚨 /export/video endpoint hit!', req.body?.format, req.body?.sessionId);
+  console.log('📦 Full request body:', JSON.stringify(req.body, null, 2));
   try {
-    const { images, transitions, duration = 1, sessionId, exportSettings: userExportSettings = {} } = req.body;
+    const { 
+      images, 
+      transitions, 
+      duration = 1, 
+      sessionId, 
+      exportSettings: userExportSettings = {},
+      resolution: resolutionMode = 'auto',
+      videoConfig = {},
+      fps: requestFps,
+      quality: requestQuality,
+      format = 'mp4'
+    } = req.body;
     const frameDurations = req.body.frameDurations || [];
     
-    // Extract settings from exportSettings object or fallback to defaults
-    const quality = userExportSettings.quality || 'medium';
-    const format = userExportSettings.format || 'mp4';
-    const fps = userExportSettings.fps || 30;
+    // Extract settings from exportSettings object or direct params
+    const quality = requestQuality || userExportSettings.quality || 'standard';
+    const fps = requestFps || videoConfig.fps || userExportSettings.fps || 30;
     const preset = userExportSettings.preset || 'medium';
     const bitrate = userExportSettings.bitrate;
     const optimizeSize = userExportSettings.optimizeSize || false;
     const fastStart = userExportSettings.fastStart || false;
-    const resolution = userExportSettings.resolution || { width: 1920, height: 1080 };
+    
+    // Calculate resolution based on mode
+    let resolution;
+    console.log('🔍 Debug params:', { resolutionMode, videoConfig, requestFps, requestQuality, format });
+    
+    if (resolutionMode === 'custom' && videoConfig.resolution && videoConfig.resolution.width && videoConfig.resolution.height) {
+      resolution = { width: videoConfig.resolution.width, height: videoConfig.resolution.height };
+      console.log('📐 Custom resolution applied:', resolution);
+    } else if (resolutionMode === 'auto') {
+      resolution = await calculateAutoResolution(images, sessionId);
+      console.log('🎯 Auto resolution calculated:', resolution);
+    } else {
+      // Use preset resolutions
+      const presets = {
+        '480p': { width: 854, height: 480 },
+        '720p': { width: 1280, height: 720 },
+        '1080p': { width: 1920, height: 1080 }
+      };
+      resolution = presets[resolutionMode] || { width: 1920, height: 1080 };
+      console.log('📏 Preset resolution applied:', resolution);
+    }
+    
+    console.log('🎬 Final resolution for export:', resolution);
     
     // Build custom settings from advanced options
     const customSettings = {};

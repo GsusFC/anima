@@ -1,17 +1,22 @@
 import React from 'react';
-import { VideoEditorProvider } from './context/VideoEditorContextMulti';
-import { VideoLibrary } from './components/VideoLibrary';
-import { VideoTimelineMulti } from './components/VideoTimelineMulti';
-import { VideoPreviewMulti } from './components/VideoPreviewMulti';
-import VideoExportMulti from './components/VideoExportMulti';
+
+// Correct relative imports (legacy folder structure)
+import { VideoEditorProvider } from './VideoEditorContextMulti';
+import { VideoLibrary } from './VideoLibrary';
+import { VideoTimelineMulti } from './VideoTimelineMulti';
+import { VideoPreviewMulti } from './VideoPreviewMulti';
+import VideoExportMulti from './VideoExportMulti';
+
+// Shared design tokens
+import { COLORS } from './styles/theme';
 
 const VideoEditorApp: React.FC = () => {
   return (
     <VideoEditorProvider>
       <div style={{
         height: '100vh',
-        backgroundColor: '#111827',
-        color: 'white',
+        backgroundColor: COLORS.bg,
+        color: COLORS.text,
         display: 'flex',
         flexDirection: 'column',
         fontFamily: '"Space Mono", monospace'
@@ -19,8 +24,8 @@ const VideoEditorApp: React.FC = () => {
         {/* Header */}
         <div style={{
           height: '48px',
-          backgroundColor: '#1f2937',
-          borderBottom: '1px solid #374151',
+          backgroundColor: COLORS.headerBg,
+          borderBottom: `1px solid ${COLORS.border}`,
           display: 'flex',
           alignItems: 'center',
           padding: '0 16px'
@@ -29,7 +34,7 @@ const VideoEditorApp: React.FC = () => {
             fontSize: '18px',
             fontWeight: '600',
             margin: 0,
-            color: '#22c55e'
+            color: COLORS.accent
           }}>
             🎬 AnimaGen - Professional Video Editor
           </h1>
@@ -75,7 +80,7 @@ const VideoEditorApp: React.FC = () => {
           <div style={{
             width: '320px',
             flexShrink: 0,
-            borderLeft: '1px solid #374151'
+            borderLeft: `1px solid ${COLORS.border}`
           }}>
             <VideoExportMulti />
           </div>

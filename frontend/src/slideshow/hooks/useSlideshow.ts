@@ -17,6 +17,10 @@ interface SlideshowState {
   export: ExportState;
   isUploading: boolean;
   dragActive: boolean;
+  selection: {
+    selectedImages: string[]; // IDs en orden de selección
+    isSelectionMode: boolean;
+  };
 }
 
 // Initial state
@@ -52,7 +56,11 @@ const initialState: SlideshowState = {
     error: null
   },
   isUploading: false,
-  dragActive: false
+  dragActive: false,
+  selection: {
+    selectedImages: [],
+    isSelectionMode: false
+  }
 };
 
 export const useSlideshow = () => {
@@ -205,9 +213,61 @@ export const useSlideshow = () => {
         progress: 0,
         lastResult: null,
         error: null
+      },
+      selection: {
+        selectedImages: [],
+        isSelectionMode: false
       }
     }));
   }, []);
+
+  // Selection Management
+  const toggleSelectionMode = useCallback(() => {
+    setState(prev => ({
+      ...prev,
+      selection: {
+        selectedImages: [],
+        isSelectionMode: !prev.selection.isSelectionMode
+      }
+    }));
+  }, []);
+
+  const toggleImageSelection = useCallback((imageId: string) => {
+    setState(prev => {
+      const currentSelected = prev.selection.selectedImages;
+      const isSelected = currentSelected.includes(imageId);
+      
+      const newSelected = isSelected 
+        ? currentSelected.filter(id => id !== imageId)
+        : [...currentSelected, imageId]; // Mantiene orden de selección
+      
+      return {
+        ...prev,
+        selection: {
+          ...prev.selection,
+          selectedImages: newSelected
+        }
+      };
+    });
+  }, []);
+
+  const clearSelection = useCallback(() => {
+    setState(prev => ({
+      ...prev,
+      selection: {
+        ...prev.selection,
+        selectedImages: []
+      }
+    }));
+  }, []);
+
+  const addSelectedToTimeline = useCallback(() => {
+    const selectedImages = state.selection.selectedImages;
+    selectedImages.forEach(imageId => {
+      addToTimeline(imageId);
+    });
+    clearSelection();
+  }, [state.selection.selectedImages, addToTimeline, clearSelection]);
 
   return {
     // State
@@ -216,6 +276,7 @@ export const useSlideshow = () => {
     export: state.export,
     isUploading: state.isUploading,
     dragActive: state.dragActive,
+    selection: state.selection,
     
     // Computed
     hasImages: state.project.images.length > 0,
@@ -241,6 +302,12 @@ export const useSlideshow = () => {
     
     // General Actions
     setDragActive,
-    clearProject
+    clearProject,
+    
+    // Selection Actions
+    toggleSelectionMode,
+    toggleImageSelection,
+    clearSelection,
+    addSelectedToTimeline
   };
 };

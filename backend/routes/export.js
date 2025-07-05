@@ -136,10 +136,39 @@ router.post('/slideshow', async (req, res) => {
         
         // Set codec and options based on format
         let codecOptions;
+        // Calculate resolution for 'auto' mode
+        let targetResolution = null;
+        if (resolution === 'auto') {
+          targetResolution = await calculateAutoResolution(images, sessionId);
+          console.log('🎯 Auto resolution calculated:', targetResolution);
+        } else if (RESOLUTION_PRESETS[resolution]) {
+          targetResolution = RESOLUTION_PRESETS[resolution];
+        } else if (videoConfig.resolution && videoConfig.resolution.width && videoConfig.resolution.height) {
+          targetResolution = { width: videoConfig.resolution.width, height: videoConfig.resolution.height };
+        }
+
         if (format === 'webm') {
-          codecOptions = '-c:v libvpx-vp9 -crf 30 -b:v 0 -pix_fmt yuv420p';
+          // WebM with optimized VP9 settings
+          const preset = WEBM_PRESETS[quality] || WEBM_PRESETS.standard;
+          const finalFps = videoConfig.fps || fps;
+          
+          codecOptions = `-c:v libvpx-vp9 -deadline ${preset.preset} -crf ${preset.crf} -b:v 0 -maxrate ${preset.maxBitrate} -bufsize ${preset.maxBitrate} -threads ${preset.threads} -tile-columns 2 -frame-parallel 1 -auto-alt-ref 1 -lag-in-frames 25 -pix_fmt yuv420p`;
+          
+          // Apply resolution if calculated
+          if (targetResolution) {
+            codecOptions += ` -vf scale=${targetResolution.width}:${targetResolution.height}:force_original_aspect_ratio=decrease,pad=${targetResolution.width}:${targetResolution.height}:(ow-iw)/2:(oh-ih)/2`;
+          }
         } else {
-          codecOptions = '-c:v libx264 -preset fast -crf 23 -pix_fmt yuv420p';
+          // MP4 with optimized settings
+          const preset = MP4_PRESETS[quality] || MP4_PRESETS.standard;
+          const finalFps = videoConfig.fps || fps;
+          
+          codecOptions = `-c:v libx264 -preset ${preset.preset} -crf ${preset.crf} -maxrate ${preset.maxBitrate} -bufsize ${preset.maxBitrate} -pix_fmt yuv420p -movflags +faststart`;
+          
+          // Apply resolution if calculated
+          if (targetResolution) {
+            codecOptions += ` -vf scale=${targetResolution.width}:${targetResolution.height}:force_original_aspect_ratio=decrease,pad=${targetResolution.width}:${targetResolution.height}:(ow-iw)/2:(oh-ih)/2`;
+          }
         }
         
         const ffmpegCmd = `ffmpeg ${inputFlags.join(' ')} -filter_complex "${filterComplex}" -map "[out]" ${codecOptions} -y "${outputFile}"`;
@@ -197,6 +226,72 @@ router.post('/slideshow', async (req, res) => {
   }
 });
 
+// MP4 Quality presets
+const MP4_PRESETS = {
+  web: { crf: 28, preset: 'fast', maxBitrate: '1M' },
+  standard: { crf: 23, preset: 'medium', maxBitrate: '2M' },
+  high: { crf: 18, preset: 'slow', maxBitrate: '4M' },
+  ultra: { crf: 15, preset: 'veryslow', maxBitrate: '8M' }
+};
+
+// WebM Quality presets (VP9 codec)
+const WEBM_PRESETS = {
+  web: { crf: 35, preset: 'good', maxBitrate: '800k', threads: 4 },
+  standard: { crf: 30, preset: 'good', maxBitrate: '1.5M', threads: 6 },
+  high: { crf: 25, preset: 'best', maxBitrate: '3M', threads: 8 },
+  ultra: { crf: 20, preset: 'best', maxBitrate: '6M', threads: 8 }
+};
+
+// Resolution presets
+const RESOLUTION_PRESETS = {
+  auto: null, // Will be calculated from first image aspect ratio
+  '480p': { width: 854, height: 480 },
+  '720p': { width: 1280, height: 720 },
+  '1080p': { width: 1920, height: 1080 }
+};
+
+// Helper function to get image dimensions
+const getImageDimensions = (imagePath) => {
+  return new Promise((resolve, reject) => {
+    const ffmpeg = require('fluent-ffmpeg');
+    ffmpeg.ffprobe(imagePath, (err, metadata) => {
+      if (err) return reject(err);
+      const stream = metadata.streams.find(s => s.codec_type === 'video');
+      if (stream) {
+        resolve({ width: stream.width, height: stream.height });
+      } else {
+        reject(new Error('No video stream found'));
+      }
+    });
+  });
+};
+
+// Calculate auto resolution based on first image aspect ratio
+const calculateAutoResolution = async (images, sessionId, maxHeight = 1080) => {
+  if (!images || images.length === 0) return { width: 1920, height: 1080 };
+  
+  try {
+    const firstImagePath = path.join(__dirname, '../uploads', sessionId, images[0].filename);
+    const dims = await getImageDimensions(firstImagePath);
+    
+    // Calculate aspect ratio
+    const aspectRatio = dims.width / dims.height;
+    
+    // Scale to fit maxHeight while maintaining aspect ratio
+    const height = Math.min(dims.height, maxHeight);
+    const width = Math.round(height * aspectRatio);
+    
+    // Ensure even numbers for better encoding
+    return {
+      width: width % 2 === 0 ? width : width + 1,
+      height: height % 2 === 0 ? height : height + 1
+    };
+  } catch (error) {
+    console.error('Error calculating auto resolution:', error);
+    return { width: 1920, height: 1080 }; // Fallback
+  }
+};
+
 // Queue video export job
 router.post('/video', async (req, res) => {
   try {
@@ -205,9 +300,10 @@ router.post('/video', async (req, res) => {
       startTime,
       endTime,
       quality = 'standard',
-      resolution,
+      resolution = 'auto',
       fps = 30,
-      format = 'mp4'
+      format = 'mp4',
+      videoConfig = {}
     } = req.body;
 
     console.log('🎬 Video export job requested:', {
@@ -215,7 +311,10 @@ router.post('/video', async (req, res) => {
       startTime,
       endTime,
       quality,
-      format
+      format,
+      fps,
+      resolution,
+      videoConfig
     });
 
     if (!videoPath) {
@@ -360,12 +459,18 @@ router.post('/gif', async (req, res) => {
       quality = 'standard'
     } = req.body;
 
-    console.log('🎬 GIF export job requested:', {
-      imagesCount: images?.length,
-      sessionId,
-      fps,
-      quality
-    });
+    // LOG: Payload recibido
+    console.log('🟢 [GIF EXPORT] Payload recibido:');
+    console.log('  - sessionId:', sessionId);
+    console.log('  - imagesCount:', images?.length);
+    if (Array.isArray(images)) {
+      images.forEach((img, idx) => {
+        console.log(`    [${idx}] filename:`, img.filename, 'id:', img.id);
+      });
+    }
+    console.log('  - frameDurations:', frameDurations);
+    console.log('  - transitions:', transitions);
+    console.log('  - fps:', fps, 'quality:', quality);
 
     if (!images || !Array.isArray(images) || images.length === 0) {
       return res.status(400).json({
@@ -380,6 +485,15 @@ router.post('/gif', async (req, res) => {
         error: 'Session ID is required'
       });
     }
+
+    // LOG: Rutas de archivos esperadas
+    const uploadsDir = path.join(__dirname, '../uploads', sessionId);
+    console.log('🟢 [GIF EXPORT] Directorio de uploads esperado:', uploadsDir);
+    images.forEach((img, idx) => {
+      const imgPath = path.join(uploadsDir, img.filename);
+      const exists = fs.existsSync(imgPath);
+      console.log(`    [${idx}] Ruta esperada: ${imgPath}  (existe: ${exists})`);
+    });
 
     // Force direct processing fallback in production environment
     const forceDirectProcessing = process.env.NODE_ENV === 'production' || process.env.FORCE_DIRECT_PROCESSING === 'true';
@@ -413,8 +527,12 @@ router.post('/gif', async (req, res) => {
           inputFlags.push(`-loop 1 -t ${duration} -i "${imagePath}"`);
         });
         
-        // Simple concatenation for GIF
-        const concatList = images.map((_, index) => `[${index}:v]scale=800:600:force_original_aspect_ratio=decrease,pad=800:600:(ow-iw)/2:(oh-ih)/2[v${index}]`);
+        // Calculate auto resolution for GIF too
+        const gifResolution = await calculateAutoResolution(images, sessionId, 720); // Max 720p for GIFs
+        console.log('🎨 GIF auto resolution calculated:', gifResolution);
+        
+        // Simple concatenation for GIF with calculated resolution
+        const concatList = images.map((_, index) => `[${index}:v]scale=${gifResolution.width}:${gifResolution.height}:force_original_aspect_ratio=decrease,pad=${gifResolution.width}:${gifResolution.height}:(ow-iw)/2:(oh-ih)/2[v${index}]`);
         const concatInputs = images.map((_, index) => `[v${index}]`).join('');
         
         const filterComplex = `${concatList.join(';')};${concatInputs}concat=n=${images.length}:v=1:a=0[out]`;
@@ -422,6 +540,12 @@ router.post('/gif', async (req, res) => {
         const ffmpegCmd = `ffmpeg ${inputFlags.join(' ')} -filter_complex "${filterComplex}" -map "[out]" -r ${fps} -y "${outputFile}"`;
         
         console.log('🎬 Direct GIF FFmpeg processing:', ffmpegCmd);
+        console.log('🎬 Images being processed:', images.map((img, idx) => ({
+          index: idx,
+          filename: img.filename,
+          duration: frameDurations[idx] || 1000,
+          path: path.join(__dirname, '../uploads', sessionId, img.filename)
+        })));
         
         // Execute FFmpeg
         await execAsync(ffmpegCmd);

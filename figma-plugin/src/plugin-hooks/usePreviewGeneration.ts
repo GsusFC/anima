@@ -1,6 +1,5 @@
-// @ts-nocheck
 import { useCallback } from 'react';
-import { API_BASE_URL } from '../constants';
+import { apiService } from '../services/api';
 import { TimelineItem, ImageFile } from '../types/slideshow.types';
 
 // --- Types -------------------------------------------------------------
@@ -30,14 +29,17 @@ export interface UsePreviewGenerationProps {
 
 // --- Helpers -----------------------------------------------------------
 const generatePreviewAPI = async (payload: any): Promise<PreviewResponse> => {
-  const res = await fetch(`${API_BASE_URL}/preview`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify(payload)
-  });
-
-  if (!res.ok) throw new Error(`HTTP ${res.status}`);
-  return res.json();
+  console.log(`🌐 Making preview API call using apiService`);
+  console.log(`📤 Payload:`, payload);
+  
+  try {
+    const result = await apiService.post<PreviewResponse>('/preview', payload);
+    console.log(`✅ Preview API response:`, result);
+    return result;
+  } catch (error) {
+    console.error(`❌ Preview API error:`, error);
+    throw error;
+  }
 };
 
 // --- Hook --------------------------------------------------------------
@@ -57,7 +59,7 @@ export const usePreviewGeneration = ({
       const payload = {
         images: timeline.map(item => {
           const img = images.find(i => i.id === item.imageId);
-          const filename = img?.uploadedInfo?.filename || img?.name;
+          const filename = img?.uploadedInfo?.filename || img?.file?.name || img?.name;
           return { filename };
         }),
         transitions: timeline.slice(0, -1).map(item => ({
@@ -68,13 +70,48 @@ export const usePreviewGeneration = ({
         sessionId
       };
 
+      console.log('🔍 Preview generation debug info:', {
+        timelineLength: timeline.length,
+        imagesLength: images.length,
+        sessionId: sessionId
+      });
+
+      console.log('📸 Images data:', images.map(img => ({
+        id: img.id,
+        name: img.name,
+        hasUploadInfo: !!img.uploadedInfo,
+        filename: img.uploadedInfo?.filename || img.file?.name || img.name
+      })));
+
+      console.log('⏱️ Timeline data:', timeline.map(item => ({
+        id: item.id,
+        imageId: item.imageId,
+        duration: item.duration
+      })));
+
+      console.log('🔍 Preview payload being sent:', {
+        sessionId: payload.sessionId,
+        imagesCount: payload.images.length,
+        imageFilenames: payload.images.map(img => img.filename),
+        frameDurations: payload.frameDurations,
+        transitions: payload.transitions
+      });
+
       if (!payload.sessionId) throw new Error('No session ID. Upload images first.');
       if (payload.images.length === 0) throw new Error('No images in timeline.');
+
+      // Check for missing filenames
+      const missingFilenames = payload.images.filter(img => !img.filename);
+      if (missingFilenames.length > 0) {
+        console.error('⚠️ Some images missing filenames:', missingFilenames);
+        throw new Error(`${missingFilenames.length} images missing filenames. Re-upload images.`);
+      }
 
       const result = await generatePreviewAPI(payload);
 
       if (result.success) {
-        const videoUrl = `${API_BASE_URL}${result.previewUrl}?t=${Date.now()}`;
+        const videoUrl = `${apiService.getBaseURL()}${result.previewUrl}?t=${Date.now()}`;
+        console.log(`🎥 Preview video URL: ${videoUrl}`);
         updatePreviewState({ url: videoUrl, isGenerating: false, error: null });
       } else {
         throw new Error(result.message || 'Preview generation failed');

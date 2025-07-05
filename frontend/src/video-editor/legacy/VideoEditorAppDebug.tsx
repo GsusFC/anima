@@ -1,10 +1,19 @@
 import React, { useState, useRef } from 'react';
 
+interface VideoInfo {
+  name: string;
+  size: number;
+  duration: number;
+  width: number;
+  height: number;
+  type: string;
+}
+
 const VideoEditorAppDebug: React.FC = () => {
   const [file, setFile] = useState<File | null>(null);
   const [status, setStatus] = useState('Ready');
   const [error, setError] = useState<string | null>(null);
-  const [videoInfo, setVideoInfo] = useState<any>(null);
+  const [videoInfo, setVideoInfo] = useState<VideoInfo | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const videoRef = useRef<HTMLVideoElement>(null);
 

@@ -172,7 +172,7 @@ export const useAPI = () => {
     connectSocket();
 
     try {
-      const response = await fetch(`${API_BASE_URL}/export/video`, {
+      const response = await fetch(`${API_BASE_URL}/video-simple`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

@@ -19,7 +19,8 @@ if (process.env.REDIS_URL) {
     lazyConnect: true,
     keepAlive: 30000,
     connectTimeout: 10000,
-    commandTimeout: 5000
+    commandTimeout: 120000, // Increased to 120 seconds for heavy operations
+    family: 4 // Force IPv4
   };
 }
 

@@ -5,7 +5,7 @@ import SlideshowApp from './slideshow/SlideshowApp';
 import VideoEditorApp from './video-editor/VideoEditorApp';
 
 // SlideShow App Component  
-const SlideShowApp: React.FC = () => {
+const SlideShowRoute: React.FC = () => {
   return (
     <div style={{
       height: '100vh',
@@ -116,7 +116,7 @@ const App: React.FC = () => {
     <Router>
       <Routes>
         <Route path="/" element={<ModeSelector />} />
-        <Route path="/slideshow" element={<SlideShowApp />} />
+        <Route path="/slideshow" element={<SlideShowRoute />} />
         <Route path="/video-editor" element={<VideoEditorApp />} />
       </Routes>
     </Router>

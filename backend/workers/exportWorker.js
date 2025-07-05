@@ -5,8 +5,7 @@ const fs = require('fs');
 const { createRedisConnection } = require('../utils/redis');
 const { JobTypes } = require('../queues/jobTypes');
 
-// Import helper functions from main server (we'll need to extract these)
-const { FilterGraph } = require('../FilterGraph');
+// Note: FilterGraph import removed - implementing GIF export directly
 
 class ExportWorker {
   constructor() {
@@ -14,6 +13,7 @@ class ExportWorker {
     this.outputDir = path.join(__dirname, '..', process.env.OUTPUT_DIR || 'output');
     this.tempDir = path.join(__dirname, '..', process.env.TEMP_DIR || 'uploads');
     this.compositionsDir = path.join(__dirname, '..', 'compositions');
+    this.logsDir = path.join(__dirname, '..', 'logs');
     
     // Ensure directories exist
     this.ensureDirectories();
@@ -27,13 +27,13 @@ class ExportWorker {
       ultra: { width: 3840, height: 2160, fps: 60, bitrate: '20M', crf: 16 }
     };
 
-    // Transition effects mapping
+    // Transition effects mapping (FFmpeg xfade compatible)
     this.transitionEffects = {
       none: 'none',
       cut: 'none',
       fade: 'fade',
       fadeblack: 'fadeblack',
-      fadewhite: 'fadewhite',
+      fadewhite: 'fadewhite', 
       dissolve: 'dissolve',
       slideleft: 'slideleft',
       slideright: 'slideright',
@@ -43,12 +43,50 @@ class ExportWorker {
       wiperight: 'wiperight',
       wipeup: 'wipeup',
       wipedown: 'wipedown',
+      wipetl: 'wipetl',
+      wipetr: 'wipetr',
+      wipebl: 'wipebl',
+      wipebr: 'wipebr',
+      smoothleft: 'smoothleft',
+      smoothright: 'smoothright',
+      smoothup: 'smoothup',
+      smoothdown: 'smoothdown',
       circlecrop: 'circlecrop',
+      rectcrop: 'rectcrop',
       circleopen: 'circleopen',
       circleclose: 'circleclose',
+      horzopen: 'horzopen',
+      horzclose: 'horzclose',
+      vertopen: 'vertopen',
+      vertclose: 'vertclose',
+      diagbl: 'diagbl',
+      diagbr: 'diagbr',
+      diagtl: 'diagtl',
+      diagtr: 'diagtr',
       radial: 'radial',
       pixelize: 'pixelize',
-      distance: 'distance'
+      distance: 'distance',
+      squeezev: 'squeezev',
+      squeezeh: 'squeezeh',
+      zoomin: 'zoomin',
+      coverleft: 'coverleft',
+      coverright: 'coverright',
+      coverup: 'coverup',
+      coverdown: 'coverdown',
+      revealleft: 'revealleft',
+      revealright: 'revealright',
+      revealup: 'revealup',
+      revealdown: 'revealdown',
+      hlwind: 'hlwind',
+      hrwind: 'hrwind',
+      vuwind: 'vuwind',
+      vdwind: 'vdwind',
+      hlslice: 'hlslice',
+      hrslice: 'hrslice',
+      vuslice: 'vuslice',
+      vdslice: 'vdslice',
+      fadegrays: 'fadegrays',
+      hblur: 'hblur'
     };
 
     this.worker = new Worker('video-processing', this.processJob.bind(this), {
@@ -59,6 +97,11 @@ class ExportWorker {
     });
 
     this.setupEventHandlers();
+
+    // Ensure logs directory
+    if (!fs.existsSync(this.logsDir)) {
+      fs.mkdirSync(this.logsDir, { recursive: true });
+    }
   }
 
   ensureDirectories() {
@@ -89,7 +132,8 @@ class ExportWorker {
   }
 
   async processJob(job) {
-    const { type, data } = job;
+    const type = job.name;
+    const data = job.data;
     
     try {
       console.log(`🔄 Processing job ${job.id}: ${type}`);
@@ -117,6 +161,13 @@ class ExportWorker {
       }
     } catch (error) {
       console.error(`❌ Job ${job.id} processing failed:`, error.message);
+      // Write error log
+      try {
+        const logPath = path.join(this.logsDir, `job_${job.id}.log`);
+        fs.writeFileSync(logPath, `[${new Date().toISOString()}] ${error.stack || error.message}`);
+      } catch (logErr) {
+        console.warn('Could not write job error log:', logErr.message);
+      }
       await job.moveToFailed({ message: error.message });
       throw error;
     }
@@ -395,7 +446,24 @@ class ExportWorker {
 
     job.updateProgress(5);
 
+    // LOG: Imágenes recibidas
+    console.log('🟣 [WORKER GIF] Imágenes recibidas:', images?.length, 'sessionId:', sessionId);
+    if (Array.isArray(images)) {
+      images.forEach((img, idx) => {
+        console.log(`    [${idx}] filename:`, img.filename, 'id:', img.id);
+      });
+    }
+
     const validImages = this.validateImages(images, sessionId);
+    // LOG: Imágenes válidas tras validación
+    console.log('🟣 [WORKER GIF] Imágenes válidas tras validación:', validImages.length);
+    validImages.forEach((img, idx) => {
+      console.log(`    [${idx}] path: ${img.path}  (existe: ${fs.existsSync(img.path)})`);
+    });
+    if (validImages.length !== images.length) {
+      console.warn('⚠️ [WORKER GIF] ¡Alerta! No todas las imágenes existen en disco.');
+    }
+
     if (validImages.length === 0) {
       throw new Error('No valid images found');
     }
@@ -407,30 +475,40 @@ class ExportWorker {
 
     return new Promise((resolve, reject) => {
       try {
-        const filterGraph = new FilterGraph();
-        
-        // Build filter for GIF creation
-        const filters = filterGraph.createGifFilters(validImages, transitions, frameDurations, { fps });
-        
         let command = ffmpeg();
+        let complexFilter = [];
         
+        // Build simple GIF export without complex transitions
         validImages.forEach((image, index) => {
           const duration = (frameDurations[index] || 1000) / 1000;
           command.input(image.path).inputOptions(['-loop', '1', '-t', String(duration)]);
+          
+          // Scale and prepare each image for GIF
+          complexFilter.push(`[${index}:v]scale=720:720:force_original_aspect_ratio=decrease,pad=720:720:(ow-iw)/2:(oh-ih)/2,fps=${fps}[v${index}]`);
         });
 
+        // Concatenate all images for GIF
+        let concatInput = '';
+        for (let i = 0; i < validImages.length; i++) {
+          concatInput += `[v${i}]`;
+        }
+        complexFilter.push(`${concatInput}concat=n=${validImages.length}:v=1:a=0[outv]`);
+
+        job.updateProgress(30);
+
         command
-          .complexFilter(filters)
+          .complexFilter(complexFilter)
           .outputOptions([
             '-f gif',
             '-loop 0'
           ])
+          .map('[outv]')
           .output(outputPath)
           .on('start', (cmd) => {
             console.log(`🚀 FFmpeg started for job ${job.id}:`, cmd);
           })
           .on('progress', async (progress) => {
-            const percent = Math.min(10 + (progress.percent || 0) * 0.9, 99);
+            const percent = Math.min(30 + (progress.percent || 0) * 0.7, 99);
             job.updateProgress(percent);
           })
           .on('end', async () => {
@@ -524,94 +602,74 @@ class ExportWorker {
   }
 
   calculateInputDurations(validImages, transitions, frameDurations, defaultDuration) {
-    const results = {
-      totalDuration: 0,
-      inputDurations: [],
-      maxTransitionDuration: 0
-    };
-    
-    const hasRealTransitions = transitions && transitions.some(t => 
-      t && t.type && t.type !== 'cut' && t.type !== 'none'
-    );
-    
-    if (!hasRealTransitions) {
-      for (let i = 0; i < validImages.length; i++) {
-        const frameDuration = (frameDurations[i] || defaultDuration) / 1000;
-        results.inputDurations.push(frameDuration);
-        results.totalDuration += frameDuration;
-      }
-    } else {
-      for (let i = 0; i < validImages.length; i++) {
-        const frameDuration = (frameDurations[i] || defaultDuration) / 1000;
-        results.totalDuration += frameDuration;
-        
-        if (i < transitions.length && transitions[i] && transitions[i].type !== 'cut' && transitions[i].type !== 'none') {
-          const transitionDuration = Math.min(transitions[i].duration / 1000, frameDuration * 0.9);
-          results.maxTransitionDuration = Math.max(results.maxTransitionDuration, transitionDuration);
-          results.totalDuration += transitionDuration * 0.3;
-        }
-      }
-      
-      const bufferMultiplier = 1.5 + (results.maxTransitionDuration / results.totalDuration);
-      
-      for (let i = 0; i < validImages.length; i++) {
-        const baseDuration = (frameDurations[i] || defaultDuration) / 1000;
-        const inputDuration = Math.max(
-          baseDuration,
-          results.totalDuration / validImages.length * bufferMultiplier
-        );
-        results.inputDurations.push(inputDuration);
+    const inputDurations = [];
+    let totalDuration = 0; // en segundos
+
+    for (let i = 0; i < validImages.length; i++) {
+      const baseMs = frameDurations[i] || defaultDuration; // duración pura del frame
+      const transMs = (i < transitions.length && transitions[i] && transitions[i].duration)
+        ? transitions[i].duration
+        : 0; // duración de la transición que le sigue
+
+      // La entrada FFmpeg para la imagen i debe durar base + transición (en segundos)
+      const inputSeconds = (baseMs + transMs) / 1000;
+      inputDurations.push(inputSeconds);
+
+      totalDuration += baseMs / 1000;
+      if (i < validImages.length - 1) {
+        totalDuration += transMs / 1000; // suma transición sólo una vez
       }
     }
-    
-    return results;
+
+    return { inputDurations, totalDuration };
   }
 
   buildUnifiedTransitionChain(validImages, transitions, frameDurations, defaultDuration, complexFilter) {
-    if (validImages.length === 1) {
-      return '[v0]';
-    }
+    if (validImages.length === 1) return '[v0]';
 
-    const hasAnyRealTransitions = transitions && transitions.some(t => 
-      t && t.type && t.type !== 'cut' && t.type !== 'none'
-    );
+    console.log('🎞️  Building transition chain:', {
+      images: validImages.length,
+      transitions: transitions.map((t, i) => `${i}: ${t?.type || 'cut'}:${t?.duration || 0}ms`),
+      frameDurations
+    });
 
-    if (!transitions || validImages.length < 2 || !hasAnyRealTransitions) {
-      let concatVideo = "";
-      for(let i = 0; i < validImages.length; i++){
-        concatVideo += `[v${i}]`;
-      }
-      complexFilter.push(`${concatVideo}concat=n=${validImages.length}[outv]`);
-      return '[outv]';
-    }
+    let lastLabel = '[v0]';
+    let cumulativeTime = (frameDurations[0] || defaultDuration) / 1000; // segundos acumulados tras el primer frame
 
-    let lastOutput = '[v0]';
-    let totalVideoTime = 0;
-    
     for (let i = 0; i < validImages.length - 1; i++) {
-      const currentFrameDuration = (frameDurations[i] || defaultDuration) / 1000;
-      const transition = transitions[i] || { type: 'fade', duration: 500 };
+      const nextLabel = `[v${i + 1}]`;
+      const trans = transitions[i] || { type: 'cut', duration: 0 };
+      const transDurSec = (trans.duration || 0) / 1000;
+      const effect = this.transitionEffects[trans.type] || 'fade';
       
-      let transitionDuration = Math.min(transition.duration / 1000, currentFrameDuration * 0.9);
-      let transitionType = this.transitionEffects[transition.type] || 'fade';
+      console.log(`🎞️  Transition ${i}: ${trans.type} -> ${effect}, duration: ${transDurSec}s`);
 
-      if (transitionType === 'none') {
-        transitionType = 'fade';
-        transitionDuration = 0.001;
+      // Offset = tiempo transcurrido hasta el inicio del frame siguiente menos la duración de la transición
+      const offset = cumulativeTime - transDurSec;
+
+      const outLabel = i === validImages.length - 2 ? '[outv]' : `[x${i}]`;
+
+      // Skip xfade for instant transitions (cut, none) or zero duration
+      if (effect === 'none' || transDurSec <= 0) {
+        // For instant transitions, just use the current frame label
+        console.log(`🎞️  Skipping transition ${i} (instant cut)`);
+        lastLabel = nextLabel;
+      } else {
+        const filterCommand = `${lastLabel}${nextLabel}xfade=transition=${effect}:duration=${transDurSec}:offset=${offset}${outLabel}`;
+        complexFilter.push(filterCommand);
+        console.log(`🎞️  Added filter: ${filterCommand}`);
+        // Preparar para la siguiente iteración
+        lastLabel = outLabel;
       }
-
-      const nextInput = `[v${i + 1}]`;
-      const outputLabel = (i === validImages.length - 2) ? '[outv]' : `[t${i}]`;
-      
-      const offset = totalVideoTime + currentFrameDuration - transitionDuration;
-      totalVideoTime += currentFrameDuration;
-      
-      const xfadeFilter = `${lastOutput}${nextInput}xfade=transition=${transitionType}:duration=${transitionDuration}:offset=${offset}${outputLabel}`;
-      complexFilter.push(xfadeFilter);
-      lastOutput = outputLabel;
+      if (i + 1 < frameDurations.length) {
+        cumulativeTime += (frameDurations[i + 1] || defaultDuration) / 1000;
+      }
+      if (i + 1 < transitions.length) {
+        cumulativeTime += transDurSec;
+      }
     }
-    
-    return lastOutput;
+
+    return lastLabel;
   }
 
   getOutputOptionsForFormat(format, settings) {

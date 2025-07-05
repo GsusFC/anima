@@ -1,9 +1,30 @@
-// @ts-nocheck
 import React, { useState, useEffect } from 'react';
 import { useImageManagement } from '../plugin-hooks/useImageManagement';
 import { useExportManagement } from '../plugin-hooks/useExportManagement';
 import { usePreviewGeneration, PreviewState } from '../plugin-hooks/usePreviewGeneration';
+import { useExportProgress } from '../plugin-hooks/useExportProgress';
+import { useKeyboardShortcuts } from '../hooks/useKeyboardShortcuts';
 import { ImageFile, TimelineItem, ExportSettings } from '../types/slideshow.types';
+import { colors, typography } from '../design-system/tokens';
+import { ScrollContainerWithCSS as ScrollContainer } from '../design-system/ScrollContainer';
+
+// Components
+import { Header } from '../components/Header';
+import { EmptyState } from '../components/EmptyState';
+import { Timeline } from '../components/Timeline';
+import { ExportSection } from '../components/ExportSection';
+import { ErrorDisplay } from '../components/ErrorDisplay';
+
+
+// Utils
+import { validateExportData } from '../utils/validation';
+import { downloadBlob, generateFilename } from '../utils/download';
+import { apiService } from '../services/api';
+import { usePluginContext, useAPIConfig } from '../context/PluginContext';
+import { SettingsModal } from '../components/SettingsModal';
+import { LogViewer } from '../components/LogViewer';
+import { logger } from '../utils/logger';
+import { pluginStorage } from '../utils/storage';
 
 interface Project {
   id: string;
@@ -12,9 +33,14 @@ interface Project {
   exportSettings: ExportSettings;
 }
 
-// Plugin-specific slideshow component
-const FigmaSlideshow = () => {
-  const [project, setProject] = useState({
+const FigmaSlideshow: React.FC = () => {
+    const { config } = usePluginContext();
+    const { promptForAPIURL } = useAPIConfig();
+    const [showSettings, setShowSettings] = useState(false);
+    const [showLogs, setShowLogs] = useState(false);
+    const [showPreviewModal, setShowPreviewModal] = useState(false);
+
+    const [project, setProject] = useState<Project>({
     id: `figma_project_${Date.now()}`,
     images: [],
     timeline: [],
@@ -26,9 +52,16 @@ const FigmaSlideshow = () => {
     }
   });
 
-  const [error, setError] = useState(null);
-  
-  // Hooks for image and export management
+    // Note: Selection state removed - using direct reordering in timeline instead
+
+    const [error, setError] = useState<string | null>(null);
+    const [previewState, setPreviewState] = useState<PreviewState>({
+        url: null,
+        isGenerating: false,
+        error: null
+    });
+
+    // Hooks for functionality
   const { sessionId, uploadImages, isUploading } = useImageManagement();
   const { 
     currentJob, 
@@ -37,19 +70,9 @@ const FigmaSlideshow = () => {
     startExport, 
     downloadResult, 
     cancelExport,
-    isCompleted,
-    canDownload,
-    isProcessing
+        canDownload
   } = useExportManagement();
 
-  // Preview state
-  const [previewState, setPreviewState] = useState<PreviewState>({
-    url: null,
-    isGenerating: false,
-    error: null
-  });
-
-  // Hook preview generation
   const { generatePreview, clearPreview } = usePreviewGeneration({
     timeline: project.timeline,
     images: project.images,
@@ -58,19 +81,194 @@ const FigmaSlideshow = () => {
       setPreviewState((prev) => ({ ...prev, ...updates }))
   });
 
+    const { percent: socketPercent, connected: socketConnected } = useExportProgress(
+        sessionId // Connect when we have a sessionId, not just when exporting
+    );
+
+    // Note: Selection management functions removed - timeline now uses direct reordering
+
+    // Set up logging session
+  useEffect(() => {
+        if (sessionId) {
+            logger.setSessionId(sessionId);
+            logger.logComponentMount('FigmaSlideshow', { config });
+        }
+
+        return () => {
+            logger.logComponentUnmount('FigmaSlideshow');
+        };
+    }, [sessionId, config]);
+
+    // Handlers
+    const handleAPISettings = () => {
+        const url = prompt(
+            'API base URL',
+            pluginStorage.getItem('ANIMAGEN_API') || 'http://localhost:3001'
+        );
+        if (url) {
+            pluginStorage.setItem('ANIMAGEN_API', url);
+            apiService.updateBaseURL(url);
+            alert('API URL saved. Reload the plugin to apply changes.');
+        }
+    };
+
+    const handleClose = () => {
+        parent.postMessage({ pluginMessage: { type: 'close-plugin' } }, '*');
+    };
+
+    const handleRefresh = () => {
+        parent.postMessage({ pluginMessage: { type: 'request-images' } }, '*');
+    };
+
+    const handleUpdateTimelineItem = (itemId: string, updates: Partial<TimelineItem>) => {
+        setProject(prev => ({
+            ...prev,
+            timeline: prev.timeline.map(item =>
+                item.id === itemId ? { ...item, ...updates } : item
+            )
+        }));
+    };
+
+    const handleRemoveTimelineItem = (itemId: string) => {
+        setProject(prev => ({
+            ...prev,
+            timeline: prev.timeline.filter(item => item.id !== itemId)
+        }));
+    };
+
+    const handleMoveTimelineItem = (fromIndex: number, toIndex: number) => {
+        if (toIndex < 0 || toIndex >= project.timeline.length) return;
+
+        setProject(prev => {
+            const newTimeline = [...prev.timeline];
+            const [movedItem] = newTimeline.splice(fromIndex, 1);
+            newTimeline.splice(toIndex, 0, movedItem);
+
+            // Update positions
+            const updatedTimeline = newTimeline.map((item, index) => ({
+                ...item,
+                position: index
+            }));
+
+            return {
+                ...prev,
+                timeline: updatedTimeline
+            };
+        });
+    };
+
+    const handleFormatChange = (format: string) => {
+        setProject(prev => ({
+            ...prev,
+            exportSettings: { ...prev.exportSettings, format: format as any }
+        }));
+    };
+
+    const cycleFormat = () => {
+        const formats = ['mp4', 'gif', 'webm'];
+        const currentIndex = formats.indexOf(project.exportSettings.format);
+        const nextIndex = (currentIndex + 1) % formats.length;
+        handleFormatChange(formats[nextIndex]);
+    };
+
+    // Export handling
+    const handleExport = async () => {
+        const validation = validateExportData(
+            sessionId || '',
+            project.timeline,
+            project.images,
+            project.exportSettings
+        );
+
+        if (!validation.isValid) {
+            setError(validation.errors.join('; '));
+            return;
+        }
+
+        try {
+            const timelineData = project.timeline.map(item => {
+                const img = project.images.find(i => i.id === item.imageId);
+                const filename = img?.uploadedInfo?.filename || img?.file?.name || `${item.imageId}.png`;
+                return {
+                    imageId: item.imageId,
+                    duration: item.duration,
+                    transition: item.transition,
+                    filename
+                };
+            });
+
+            // Convert timeline data to proper format for export
+            const exportData = timelineData.map((item, index) => ({
+                ...item,
+                id: project.timeline[index]?.id || `export_${index}`,
+                position: index
+            }));
+
+            await startExport(sessionId!, exportData, project.exportSettings, config.gif);
+        } catch (err) {
+            setError(`Export failed: ${err instanceof Error ? err.message : 'Unknown error'}`);
+        }
+    };
+
+    const handleDownload = async () => {
+        try {
+            await downloadResult();
+        } catch (err) {
+            setError(`Download failed: ${err instanceof Error ? err.message : 'Unknown error'}`);
+        }
+    };
+
+    const handleLogDownload = async () => {
+        if (!currentJob?.logUrl) return;
+
+        try {
+            const response = await fetch(`${apiService['baseURL']}${currentJob.logUrl}`);
+            if (!response.ok) {
+                throw new Error(`Failed to fetch log: ${response.statusText}`);
+            }
+
+            const logText = await response.text();
+            const filename = `error-log-${currentJob.id}.txt`;
+            downloadBlob(new Blob([logText], { type: 'text/plain' }), filename);
+        } catch (err) {
+            console.error('Log download failed:', err);
+            setError(`Log download failed: ${err instanceof Error ? err.message : 'Unknown error'}`);
+        }
+    };
+
+    const handleRetry = () => {
+        setError(null);
+        if (exportError) {
+            cancelExport();
+        }
+    };
+
+    // Keyboard shortcuts
+    useKeyboardShortcuts({
+        onRefresh: handleRefresh,
+        onExport: () => {
+            if (!isExporting && canExport) {
+                handleExport();
+            }
+        },
+        onPreview: () => {
+            if (canGeneratePreview) {
+                generatePreview();
+            }
+        },
+        onClose: handleClose,
+        onFormatCycle: cycleFormat,
+        enabled: Boolean(!isExporting && !previewState.isGenerating)
+    });
+
   // Listen for images from Figma plugin
   useEffect(() => {
-    try {
-      console.log('Setting up message listener...');
-      
-      window.onmessage = async (event) => {
-        console.log('Received message:', event.data);
-        
+        const handleMessage = async (event: MessageEvent) => {
         const msg = event.data.pluginMessage;
         if (msg?.type === 'images') {
           console.log('Processing images:', msg.data);
           
-          const processed = msg.data.map((arr, index) => {
+                const processed = msg.data.map((arr: ArrayBuffer, index: number) => {
             try {
               const uint8 = new Uint8Array(arr);
               const blob = new Blob([uint8], { type: 'image/png' });
@@ -80,12 +278,9 @@ const FigmaSlideshow = () => {
               console.error(`Error processing image ${index}:`, err);
               return null;
             }
-          }).filter(Boolean);
+                }).filter((item: { blob: Blob; url: string } | null): item is { blob: Blob; url: string } => item !== null);
           
-          console.log('Created URLs:', processed.map(p=>p.url));
-          
-          // Convert to ImageFile format and add to project (preserve blob bytes for upload)
-          const newImages = processed.map((item, index) => ({
+                const newImages: ImageFile[] = processed.map((item: { blob: Blob; url: string }, index: number) => ({
             file: new File([item.blob], `figma-frame-${index}.png`, { type: 'image/png' }),
             id: `figma_image_${index}_${Date.now()}`,
             name: `Frame ${index + 1}`,
@@ -94,13 +289,14 @@ const FigmaSlideshow = () => {
             addedAt: new Date()
           }));
 
-          const newTimeline = newImages.map((img, index) => ({
-            id: `timeline_${index}_${Date.now()}`,
-            imageId: img.id,
-            duration: 1000, // 1 second default
-            position: index,
-            transition: index < newImages.length - 1 ? { type: 'fade', duration: 500 } : undefined
-          }));
+                // Auto-add to timeline (restored original behavior)
+                const newTimeline: TimelineItem[] = newImages.map((img, index) => ({
+                id: `timeline_${index}_${Date.now()}`,
+                imageId: img.id,
+                duration: 3000,  // 3 seconds per frame for better visibility
+                position: index,
+                transition: index < newImages.length - 1 ? { type: 'fade', duration: 1000 } : undefined  // 1 second fade
+                }));
 
           setProject(prev => ({
             ...prev,
@@ -111,8 +307,41 @@ const FigmaSlideshow = () => {
           // Upload images to backend
           if (newImages.length > 0) {
             try {
+                        console.log('🔄 Uploading images to backend...', { count: newImages.length });
               const files = newImages.map(img => img.file);
-              await uploadImages(files);
+              const uploadResult = await uploadImages(files);
+
+                        console.log('✅ Upload result:', {
+                            sessionId: uploadResult?.sessionId,
+                            imagesCount: uploadResult?.images?.length,
+                            uploadedFilenames: uploadResult?.images?.map(img => img.uploadedInfo?.filename)
+                        });
+
+                        if (uploadResult?.images) {
+                setProject(prev => {
+                                console.log('🔄 Enriching project images with upload info...', {
+                                    projectImagesCount: prev.images.length,
+                                    uploadedImagesCount: uploadResult.images.length
+                                });
+
+                  const enriched = prev.images.map((img, idx) => {
+                    const uploaded = uploadResult.images[idx];
+                                    if (uploaded?.uploadedInfo) {
+                                        console.log(`📸 Enriching image ${idx}: ${img.name} -> ${uploaded.uploadedInfo.filename}`);
+                                        return { ...img, uploadedInfo: uploaded.uploadedInfo };
+                                    }
+                                    return img;
+                                });
+
+                                console.log('✅ Enriched images:', enriched.map(img => ({
+                                    name: img.name,
+                                    filename: img.uploadedInfo?.filename,
+                                    hasUploadInfo: !!img.uploadedInfo
+                                })));
+
+                  return { ...prev, images: enriched };
+                });
+              }
             } catch (uploadError) {
               console.error('Upload failed:', uploadError);
               setError('Failed to upload images to backend');
@@ -123,419 +352,117 @@ const FigmaSlideshow = () => {
         }
       };
 
-      // Request images on mount
-      console.log('Requesting images from plugin...');
-      parent.postMessage({ pluginMessage: { type: 'request-images' } }, '*');
-    } catch (err) {
-      console.error('Setup error:', err);
-      setError('Failed to initialize plugin');
-    }
-  }, []);
+        window.addEventListener('message', handleMessage);
+        handleRefresh(); // Request images on mount
 
-  const updateTimelineItem = (itemId, updates) => {
-    setProject(prev => ({
-      ...prev,
-      timeline: prev.timeline.map(item =>
-        item.id === itemId ? { ...item, ...updates } : item
-      )
-    }));
-  };
+        return () => {
+            window.removeEventListener('message', handleMessage);
+        };
+    }, [uploadImages]);
 
-  const removeFromTimeline = (itemId) => {
-    setProject(prev => ({
-      ...prev,
-      timeline: prev.timeline.filter(item => item.id !== itemId)
-    }));
-  };
-
-  const formatDuration = (duration) => {
-    return `${(duration / 1000).toFixed(1)}s`;
-  };
-
-  // Handle export
-  const handleExport = async () => {
-    if (!sessionId || project.timeline.length === 0) {
-      setError('No images to export');
-      return;
-    }
-
-    try {
-      // Convert timeline to backend format
-      const timelineData = project.timeline.map(item => ({
-        imageId: item.imageId,
-        duration: item.duration,
-        transition: item.transition
-      }));
-
-      await startExport(sessionId, timelineData, project.exportSettings);
-    } catch (err) {
-      setError(`Export failed: ${err.message}`);
-    }
-  };
-
-  // Handle download
-  const handleDownload = async () => {
-    try {
-      await downloadResult();
-    } catch (err) {
-      setError(`Download failed: ${err.message}`);
-    }
-  };
-
-  // Error display (includes preview errors)
-  if (error || exportError || previewState.error) {
-    const errorMessage = error || exportError || previewState.error;
-    return React.createElement('div', {
-      style: {
-        padding: '20px',
-        backgroundColor: '#0a0a0b',
-        color: '#ef4444',
-        fontFamily: '"Space Mono", monospace',
-        height: '100vh',
-        display: 'flex',
-        flexDirection: 'column',
-        gap: '12px'
-      }
-    }, [
-      React.createElement('div', {
-        key: 'error-text',
-        style: { fontSize: '14px' }
-      }, `Error: ${errorMessage}`),
-      React.createElement('button', {
-        key: 'retry',
-        onClick: () => {
-          setError(null);
-          if (exportError) {
-            cancelExport();
-          }
-        },
-        style: {
-          padding: '8px 16px',
-          backgroundColor: '#ec4899',
-          border: 'none',
-          borderRadius: '4px',
-          color: 'white',
-          cursor: 'pointer',
-          fontSize: '12px'
+    // Clear preview when timeline changes
+    useEffect(() => {
+        if (previewState.url) {
+            clearPreview();
         }
-      }, 'Try Again')
-    ]);
-  }
+    }, [project.timeline, clearPreview, previewState.url]);
 
-  return React.createElement('div', {
-    style: {
+    // Auto-open preview modal when preview is ready
+    useEffect(() => {
+        if (previewState.url && !previewState.isGenerating && !previewState.error) {
+            setShowPreviewModal(true);
+        }
+    }, [previewState.url, previewState.isGenerating, previewState.error]);
+
+    // Computed values
+    const anyError = error || exportError || previewState.error;
+    const canExport = Boolean(!isExporting && project.timeline.length > 0 && project.images.length > 0 && sessionId && !isUploading);
+    const canGeneratePreview = Boolean(!previewState.isGenerating && project.timeline.length > 0 && !isUploading && sessionId);
+
+    // Error display
+    if (anyError) {
+        return (
+            <ErrorDisplay
+                errorMessage={anyError}
+                canDownload={Boolean(canDownload)}
+                hasLogUrl={!!currentJob?.logUrl}
+                onDownloadVideo={canDownload ? handleDownload : undefined}
+                onDownloadLog={currentJob?.logUrl ? handleLogDownload : undefined}
+                onRetry={handleRetry}
+            />
+        );
+    }
+
+    // Main UI
+    return (
+        <div
+            style={{
       height: '100vh',
-      backgroundColor: '#0a0a0b',
-      color: 'white',
-      fontFamily: '"Space Mono", monospace',
-      display: 'flex',
-      flexDirection: 'column',
-      overflow: 'hidden'
-    }
-  }, [
-    // Header
-    React.createElement('div', {
-      key: 'header',
-      style: {
-        padding: '12px 16px',
-        borderBottom: '1px solid #343536',
-        display: 'flex',
-        justifyContent: 'space-between',
-        alignItems: 'center'
-      }
-    }, [
-      React.createElement('h3', {
-        key: 'title',
-        style: { margin: 0, fontSize: '14px' }
-      }, `🎬 Slideshow (${project.images.length} frames)`),
-      React.createElement('button', {
-        key: 'close',
-        onClick: () => parent.postMessage({ pluginMessage: { type: 'close-plugin' } }, '*'),
-        style: {
-          background: 'none',
-          border: '1px solid #343536',
-          color: 'white',
-          padding: '4px 8px',
-          borderRadius: '4px',
-          cursor: 'pointer',
-          fontSize: '12px'
-        }
-      }, 'Close')
-    ]),
+                backgroundColor: colors.bg.primary,
+                color: colors.text.primary,
+                fontFamily: typography.fontFamily,
+                display: 'flex',
+                flexDirection: 'column',
+                overflow: 'hidden'
+            }}
+        >
+            <Header
+                frameCount={project.images.length}
+                onSetAPI={handleAPISettings}
+                onClose={handleClose}
+                onOpenLogs={() => setShowLogs(true)}
+                onOpenSettings={() => setShowSettings(true)}
+                debugMode={config.debugMode}
+            />
 
-    // Content
-    React.createElement('div', {
-      key: 'content',
-      style: {
-        flex: 1,
-        padding: '16px',
-        overflow: 'auto'
-      }
-    }, project.timeline.length === 0 ? 
-      // Empty state
-      React.createElement('div', {
-        style: {
-          textAlign: 'center',
-          color: '#9ca3af',
-          padding: '40px'
-        }
-      }, [
-        React.createElement('p', { key: 'msg' }, 'Select frames in Figma and click "Refresh" to load images'),
-        React.createElement('button', {
-          key: 'refresh',
-          onClick: () => parent.postMessage({ pluginMessage: { type: 'request-images' } }, '*'),
-          style: {
-            padding: '8px 16px',
-            backgroundColor: '#ec4899',
-            border: 'none',
-            borderRadius: '4px',
-            color: 'white',
-            cursor: 'pointer',
-            fontSize: '12px'
-          }
-        }, 'Refresh Selection')
-      ]) : 
-      // Timeline items
-      React.createElement('div', {
-        style: {
-          display: 'flex',
-          flexDirection: 'column',
-          gap: '12px'
-        }
-      }, project.timeline.map((item, index) => {
-        const image = project.images.find(img => img.id === item.imageId);
-        if (!image) return null;
 
-        return React.createElement('div', {
-          key: item.id,
-          style: {
-            backgroundColor: '#1a1a1b',
-            border: '1px solid #343536',
-            borderRadius: '6px',
-            padding: '12px',
-            display: 'flex',
-            alignItems: 'center',
-            gap: '12px'
-          }
-        }, [
-          // Thumbnail
-          React.createElement('img', {
-            key: 'thumb',
-            src: image.preview,
-            style: {
-              width: '60px',
-              height: '40px',
-              objectFit: 'cover',
-              borderRadius: '4px',
-              border: '1px solid #4b5563'
-            }
-          }),
-          // Info
-          React.createElement('div', {
-            key: 'info',
-            style: { flex: 1 }
-          }, [
-            React.createElement('div', {
-              key: 'name',
-              style: { fontSize: '12px', marginBottom: '4px' }
-            }, image.name),
-            // Duration control
-            React.createElement('div', {
-              key: 'duration',
-              style: { display: 'flex', alignItems: 'center', gap: '8px' }
-            }, [
-              React.createElement('label', {
-                key: 'label',
-                style: { fontSize: '10px', color: '#9ca3af' }
-              }, 'Duration:'),
-              React.createElement('input', {
-                key: 'slider',
-                type: 'range',
-                min: '300',
-                max: '5000',
-                step: '100',
-                value: item.duration,
-                onChange: (e) => updateTimelineItem(item.id, { duration: parseInt(e.target.value) }),
-                style: { flex: 1, accentColor: '#ec4899' }
-              }),
-              React.createElement('span', {
-                key: 'time',
-                style: { fontSize: '10px', minWidth: '40px' }
-              }, formatDuration(item.duration))
-            ])
-          ])
-        ]);
-      })),
 
-    // Preview section (video or button)
-    previewState.url && React.createElement('video', {
-      key: 'preview-video',
-      src: previewState.url,
-      controls: true,
-      style: {
-        width: '100%',
-        borderRadius: '6px',
-        marginBottom: '12px',
-        maxHeight: '200px',
-        objectFit: 'contain',
-        backgroundColor: '#000'
-      }
-    }),
-    !previewState.url && React.createElement('button', {
-      key: 'preview-btn',
-      onClick: generatePreview,
-      disabled: previewState.isGenerating || project.timeline.length === 0 || isUploading,
-      style: {
-        width: '100%',
-        padding: '12px',
-        backgroundColor: previewState.isGenerating || project.timeline.length === 0 ? '#343536' : '#3b82f6',
-        border: 'none',
-        borderRadius: '6px',
-        color: 'white',
-        cursor: previewState.isGenerating || project.timeline.length === 0 ? 'not-allowed' : 'pointer',
-        fontSize: '14px',
-        fontWeight: 'bold',
-        marginBottom: '8px'
-      }
-    }, previewState.isGenerating ? 'Generating Preview...' : '🔍 PREVIEW'),
+            <ScrollContainer>
+                {project.timeline.length === 0 ? (
+                    <EmptyState onRefresh={handleRefresh} />
+                ) : (
+                    <Timeline
+                        timeline={project.timeline}
+                        images={project.images}
+                        previewState={previewState}
+                        canGeneratePreview={canGeneratePreview}
+                        onUpdateItem={handleUpdateTimelineItem}
+                        onRemoveItem={handleRemoveTimelineItem}
+                        onMoveItem={handleMoveTimelineItem}
+                        onGeneratePreview={generatePreview}
+                        exportFormat={project.exportSettings.format}
+                    />
+                )}
+            </ScrollContainer>
 
-    // Export Section
-    React.createElement('div', {
-      key: 'export',
-      style: {
-        padding: '16px',
-        borderTop: '1px solid #343536',
-        backgroundColor: '#1a1a1b'
-      }
-    }, [
-      // Export button or progress
-      isExporting ? 
-        // Progress UI
-        React.createElement('div', {
-          key: 'progress',
-          style: { marginBottom: '12px' }
-        }, [
-          React.createElement('div', {
-            key: 'status',
-            style: {
-              display: 'flex',
-              justifyContent: 'space-between',
-              alignItems: 'center',
-              marginBottom: '8px'
-            }
-          }, [
-            React.createElement('span', {
-              key: 'label',
-              style: { fontSize: '12px' }
-            }, currentJob?.status === 'pending' ? 'Queued...' : 
-               currentJob?.status === 'processing' ? 'Processing...' : 
-               'Exporting...'),
-            React.createElement('span', {
-              key: 'percent',
-              style: { fontSize: '12px', color: '#9ca3af' }
-            }, `${currentJob?.progress || 0}%`)
-          ]),
-          React.createElement('div', {
-            key: 'bar',
-            style: {
-              width: '100%',
-              height: '4px',
-              backgroundColor: '#343536',
-              borderRadius: '2px',
-              overflow: 'hidden'
-            }
-          }, React.createElement('div', {
-            style: {
-              width: `${currentJob?.progress || 0}%`,
-              height: '100%',
-              backgroundColor: '#ec4899',
-              transition: 'width 0.3s ease'
-            }
-          })),
-          React.createElement('button', {
-            key: 'cancel',
-            onClick: cancelExport,
-            style: {
-              marginTop: '8px',
-              padding: '6px 12px',
-              backgroundColor: 'transparent',
-              border: '1px solid #ef4444',
-              color: '#ef4444',
-              borderRadius: '4px',
-              cursor: 'pointer',
-              fontSize: '11px',
-              width: '100%'
-            }
-          }, 'Cancel Export')
-        ]) :
-        // Export button
-        React.createElement('button', {
-          key: 'export-btn',
-          onClick: handleExport,
-          disabled: project.timeline.length === 0 || isUploading,
-          style: {
-            width: '100%',
-            padding: '12px',
-            backgroundColor: project.timeline.length === 0 || isUploading ? '#343536' : '#ec4899',
-            border: 'none',
-            borderRadius: '6px',
-            color: 'white',
-            cursor: project.timeline.length === 0 || isUploading ? 'not-allowed' : 'pointer',
-            fontSize: '14px',
-            fontWeight: 'bold',
-            marginBottom: '8px'
-          }
-        }, isUploading ? 'Uploading...' : 
-           project.timeline.length === 0 ? 'No frames to export' : 
-           '🚀 EXPORT SLIDESHOW'),
+            <ExportSection
+                isExporting={isExporting}
+                currentJob={currentJob}
+                socketConnected={socketConnected}
+                socketPercent={socketPercent}
+                canExport={canExport}
+                canDownload={Boolean(canDownload)}
+                exportSettings={project.exportSettings}
+                onExport={handleExport}
+                onDownload={handleDownload}
+                onCancel={cancelExport}
+                onFormatChange={handleFormatChange}
+            />
 
-      // Download button (when completed)
-      canDownload && React.createElement('button', {
-        key: 'download-btn',
-        onClick: handleDownload,
-        style: {
-          width: '100%',
-          padding: '12px',
-          backgroundColor: '#22c55e',
-          border: 'none',
-          borderRadius: '6px',
-          color: 'white',
-          cursor: 'pointer',
-          fontSize: '14px',
-          fontWeight: 'bold',
-          marginTop: '8px'
-        }
-      }, '⬇️ DOWNLOAD VIDEO'),
+            {/* Modals */}
+            <SettingsModal
+                isOpen={showSettings}
+                onClose={() => setShowSettings(false)}
+            />
 
-      // Format selector
-      !isExporting && React.createElement('div', {
-        key: 'format',
-        style: {
-          display: 'flex',
-          gap: '8px',
-          justifyContent: 'center',
-          marginTop: '8px'
-        }
-      }, ['mp4', 'gif', 'webm'].map(format => 
-        React.createElement('button', {
-          key: format,
-          onClick: () => setProject(prev => ({
-            ...prev,
-            exportSettings: { ...prev.exportSettings, format }
-          })),
-          style: {
-            padding: '4px 12px',
-            backgroundColor: project.exportSettings.format === format ? '#ec4899' : 'transparent',
-            border: `1px solid ${project.exportSettings.format === format ? '#ec4899' : '#343536'}`,
-            color: project.exportSettings.format === format ? 'white' : '#9ca3af',
-            borderRadius: '4px',
-            cursor: 'pointer',
-            fontSize: '11px'
-          }
-        }, format.toUpperCase())
-      ))
-    ])
-  ]);
+            <LogViewer
+                isOpen={showLogs}
+                onClose={() => setShowLogs(false)}
+            />
+
+
+        </div>
+    );
 };
 
-export default FigmaSlideshow; 
+export default FigmaSlideshow;

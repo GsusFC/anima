@@ -1,22 +1,59 @@
 <!DOCTYPE html>
-<html lang="en">
-  <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Slideshow Exporter</title>
-    <style>
-      html, body {
-        margin: 0;
-        height: 100%;
-        width: 100%;
-      }
-      #root {
-        height: 100%;
-      }
-    </style>
-  </head>
-  <body>
-    <div id="root"></div>
-    <!-- JavaScript will be inlined by build process -->
-  </body>
-</html> 
+<html>
+<head>
+  <meta charset="utf-8">
+  <title>AnimaGen Slideshow Plugin</title>
+  <style>
+    * {
+      box-sizing: border-box;
+    }
+    
+    body {
+      margin: 0;
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      background-color: #2C2C2C;
+      color: #FFFFFF;
+      overflow: hidden;
+    }
+    
+    #react-page {
+      width: 100%;
+      height: 100vh;
+      overflow: hidden;
+    }
+    
+    /* Global scrollbar styles for webkit browsers */
+    ::-webkit-scrollbar {
+      width: 8px;
+      height: 8px;
+    }
+    
+    ::-webkit-scrollbar-track {
+      background: transparent;
+      border-radius: 4px;
+    }
+    
+    ::-webkit-scrollbar-thumb {
+      background: #5C5C5C;
+      border-radius: 4px;
+      border: 2px solid #2C2C2C;
+    }
+    
+    ::-webkit-scrollbar-thumb:hover {
+      background: #8C8C8C;
+    }
+    
+    ::-webkit-scrollbar-thumb:active {
+      background: #B3B3B3;
+    }
+    
+    ::-webkit-scrollbar-corner {
+      background: transparent;
+    }
+  </style>
+</head>
+<body>
+  <div id="react-page"></div>
+  <!-- JavaScript will be inlined by build process -->
+</body>
+</html>

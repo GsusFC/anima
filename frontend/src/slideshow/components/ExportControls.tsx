@@ -56,7 +56,8 @@ const ExportControls: React.FC = () => {
       '1080p': { width: 1920, height: 1080, preset: '1080p' },
       '720p': { width: 1280, height: 720, preset: '720p' },
       '480p': { width: 854, height: 480, preset: '480p' },
-      '360p': { width: 640, height: 360, preset: '360p' }
+      '360p': { width: 640, height: 360, preset: '360p' },
+      'custom': { width: 1920, height: 1080, preset: 'custom' }
     };
     
     const resolution = presets[preset as keyof typeof presets];
@@ -151,7 +152,7 @@ const ExportControls: React.FC = () => {
       <div className="mb-3">
         <h4 className="text-dark-400 font-mono text-xs mb-2 uppercase tracking-wider">Resolution</h4>
         <div className="flex flex-wrap gap-1.5">
-          {['4k', '1080p', '720p', '480p'].map(preset => (
+          {['4k', '1080p', '720p', '480p', 'custom'].map(preset => (
             <button
               key={preset}
               onClick={() => handleResolutionChange(preset)}
@@ -165,6 +166,42 @@ const ExportControls: React.FC = () => {
             </button>
           ))}
         </div>
+        
+        {/* Custom Resolution Input */}
+        {exportSettings.resolution?.preset === 'custom' && (
+          <div className="mt-2 p-2 bg-dark-800 rounded border border-dark-650">
+            <div className="text-dark-400 font-mono text-xs mb-2">Custom Resolution</div>
+            <div className="flex gap-2">
+              <input
+                type="number"
+                placeholder="Width"
+                value={exportSettings.resolution?.width || 1920}
+                onChange={(e) => updateExportSettings({
+                  resolution: {
+                    ...exportSettings.resolution,
+                    width: parseInt(e.target.value) || 1920,
+                    preset: 'custom'
+                  }
+                })}
+                className="flex-1 px-2 py-1 bg-dark-700 border border-dark-600 rounded text-white text-xs font-mono"
+              />
+              <span className="text-dark-400 font-mono text-xs flex items-center">×</span>
+              <input
+                type="number"
+                placeholder="Height"
+                value={exportSettings.resolution?.height || 1080}
+                onChange={(e) => updateExportSettings({
+                  resolution: {
+                    ...exportSettings.resolution,
+                    height: parseInt(e.target.value) || 1080,
+                    preset: 'custom'
+                  }
+                })}
+                className="flex-1 px-2 py-1 bg-dark-700 border border-dark-600 rounded text-white text-xs font-mono"
+              />
+            </div>
+          </div>
+        )}
       </div>
 
       {/* FPS Tags */}

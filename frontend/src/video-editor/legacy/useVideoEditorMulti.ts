@@ -78,7 +78,18 @@ const extractVideoMetadata = async (file: File): Promise<VideoFile> => {
         id: `video_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
         name: file.name,
         duration: video.duration,
-        fps: 30, // Default, could be extracted from metadata
+        fps: (() => {
+          // Attempt to derive FPS from VideoPlaybackQuality if supported
+          try {
+            // Safari/WebKit may not support it; wrap in try
+            const q: any = (video as any).getVideoPlaybackQuality?.();
+            if (q && q.totalVideoFrames && video.duration > 0) {
+              const calc = q.totalVideoFrames / video.duration;
+              if (!isNaN(calc) && calc > 0) return Math.round(calc);
+            }
+          } catch {/* ignore */}
+          return 30;
+        })(),
         width: video.videoWidth,
         height: video.videoHeight,
         size: file.size,

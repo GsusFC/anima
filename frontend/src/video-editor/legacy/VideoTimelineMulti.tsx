@@ -21,7 +21,6 @@ export const VideoTimelineMulti: React.FC<VideoTimelineMultiProps> = () => {
 
   const timelineRef = useRef<HTMLDivElement>(null);
   const [isDraggingPlayhead, setIsDraggingPlayhead] = useState(false);
-  const [isDraggingItem, setIsDraggingItem] = useState<string | null>(null);
 
   const sequenceDuration = getSequenceDuration();
   const timelineWidth = Math.max(800, sequenceDuration * 100 * timelineZoom); // 100px per second base
@@ -47,11 +46,10 @@ export const VideoTimelineMulti: React.FC<VideoTimelineMultiProps> = () => {
 
   const handleMouseUp = useCallback(() => {
     setIsDraggingPlayhead(false);
-    setIsDraggingItem(null);
   }, []);
 
   React.useEffect(() => {
-    if (isDraggingPlayhead || isDraggingItem) {
+    if (isDraggingPlayhead) {
       document.addEventListener('mousemove', handleMouseMove);
       document.addEventListener('mouseup', handleMouseUp);
       return () => {
@@ -59,11 +57,11 @@ export const VideoTimelineMulti: React.FC<VideoTimelineMultiProps> = () => {
         document.removeEventListener('mouseup', handleMouseUp);
       };
     }
-  }, [isDraggingPlayhead, isDraggingItem, handleMouseMove, handleMouseUp]);
+  }, [isDraggingPlayhead, handleMouseMove, handleMouseUp]);
 
   // Handle timeline click for seeking
   const handleTimelineClick = (e: React.MouseEvent) => {
-    if (!timelineRef.current || isDraggingPlayhead || isDraggingItem) return;
+    if (!timelineRef.current || isDraggingPlayhead) return;
 
     const rect = timelineRef.current.getBoundingClientRect();
     const x = e.clientX - rect.left;
@@ -123,8 +121,7 @@ export const VideoTimelineMulti: React.FC<VideoTimelineMultiProps> = () => {
           height: '60px',
           top: '10px'
         }}
-        draggable
-        onDragStart={() => setIsDraggingItem(item.id)}
+        // Removed draggable functionality for now
       >
         {/* Video thumbnail background */}
         {video.thumbnails[0] && (

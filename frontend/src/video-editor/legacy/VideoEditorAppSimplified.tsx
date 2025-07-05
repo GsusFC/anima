@@ -17,6 +17,14 @@ interface VideoSegment {
   endTime: number;
 }
 
+// ---------------------------------------------------------------------------
+// Constants
+// ---------------------------------------------------------------------------
+
+// Timeout (ms) used when cargando metadatos del vídeo. Extraído para mantener
+// fácilmente y documentar el propósito.
+const VIDEO_METADATA_TIMEOUT_MS = 10000;
+
 const VideoEditorAppSimplified: React.FC = () => {
   const [video, setVideo] = useState<VideoData | null>(null);
   const [segments, setSegments] = useState<VideoSegment[]>([]);
@@ -39,6 +47,12 @@ const VideoEditorAppSimplified: React.FC = () => {
       const thumbnails: string[] = [];
       let currentIndex = 0;
       const count = 6; // Reduced for faster generation
+
+      /**
+       * Flag to avoid lanzar capturas en paralelo.
+       *  true  => actualmente se está procesando un frame / seek
+       *  false => listo para procesar el siguiente frame o terminado
+       */
       let isProcessing = false;
       
       const cleanup = () => {
@@ -52,35 +66,45 @@ const VideoEditorAppSimplified: React.FC = () => {
         canvas.height = 56;
         
         const captureFrame = () => {
-          if (currentIndex >= count || isProcessing) {
+          // Si ya procesamos todos los frames, salimos.
+          if (currentIndex >= count) {
             cleanup();
             resolve(thumbnails);
             return;
           }
           
+          // Marca que empieza el procesamiento de este frame
+          isProcessing = true;
+
           const time = Math.min((currentIndex / (count - 1)) * duration, duration - 0.1);
           video.currentTime = time;
         };
         
         video.onseeked = () => {
-          if (isProcessing) return;
+          // drawImage solo si no se canceló.
+          if (!isProcessing) return;
           
           try {
             ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
             thumbnails.push(canvas.toDataURL('image/jpeg', 0.5));
             currentIndex++;
+            // Marca fin de procesamiento de este frame
+            isProcessing = false;
+
             setTimeout(captureFrame, 150); // Longer delay for stability
           } catch (error) {
             console.warn('Thumbnail capture error:', error);
             currentIndex++;
+            isProcessing = false;
             captureFrame();
           }
         };
         
-        // Timeout to prevent hanging
+        // Protección de timeout global (15 s)
         setTimeout(() => {
-          if (!isProcessing) {
-            isProcessing = true;
+          if (isProcessing) {
+            // Cancelamos cualquier trabajo pendiente
+            isProcessing = false;
             cleanup();
             resolve(thumbnails);
           }
@@ -178,11 +202,11 @@ const VideoEditorAppSimplified: React.FC = () => {
           reject(new Error('Failed to load video metadata'));
         };
         
-        // Set timeout to prevent hanging
+        // Timeout para evitar cuelgues durante la lectura de metadatos
         setTimeout(() => {
           cleanup();
           reject(new Error('Video metadata extraction timeout'));
-        }, 10000);
+        }, VIDEO_METADATA_TIMEOUT_MS);
         
         video.src = URL.createObjectURL(selectedFile);
       });
@@ -392,7 +416,7 @@ const VideoEditorAppSimplified: React.FC = () => {
           color: '#22c55e',
           fontWeight: 'bold'
         }}>
-          🎬 VIDEO EDITOR - Funcional & Rápido
+          <span role="img" aria-label="Clapperboard icon">🎬</span> VIDEO EDITOR - Funcional & Rápido
         </h1>
         
         <div style={{
@@ -447,12 +471,12 @@ const VideoEditorAppSimplified: React.FC = () => {
               >
                 {isUploading ? (
                   <div style={{ color: '#3b82f6' }}>
-                    <div style={{ fontSize: '32px', marginBottom: '10px' }}>⏳</div>
+                    <div style={{ fontSize: '32px', marginBottom: '10px' }} role="img" aria-label="Hourglass icon">⏳</div>
                     <p>Processing...</p>
                   </div>
                 ) : (
                   <>
-                    <div style={{ fontSize: '48px', marginBottom: '10px' }}>📹</div>
+                    <div style={{ fontSize: '48px', marginBottom: '10px' }} role="img" aria-label="Video camera icon">📹</div>
                     <p style={{ margin: '0 0 10px 0' }}>Drop video here</p>
                     <p style={{ margin: 0, fontSize: '12px', color: '#9ca3af' }}>or click to browse</p>
                   </>
@@ -524,7 +548,7 @@ const VideoEditorAppSimplified: React.FC = () => {
                 />
               ) : (
                 <div style={{ textAlign: 'center', color: '#9ca3af' }}>
-                  <div style={{ fontSize: '64px', marginBottom: '20px' }}>🎥</div>
+                  <div style={{ fontSize: '64px', marginBottom: '20px' }} role="img" aria-label="Camera icon">🎥</div>
                   <h3>Video Preview</h3>
                   <p>Upload a video to start editing</p>
                 </div>
@@ -555,7 +579,11 @@ const VideoEditorAppSimplified: React.FC = () => {
                     Time: {formatTime(currentTime)} / {formatTime(video.duration)}
                   </p>
                   <p style={{ margin: '5px 0', fontSize: '14px' }}>
-                    Status: {isPlaying ? '▶️ Playing' : '⏸️ Paused'}
+                    Status: {isPlaying ? (
+                      <span><span role="img" aria-label="Playing icon">▶️</span> Playing</span>
+                    ) : (
+                      <span><span role="img" aria-label="Paused icon">⏸️</span> Paused</span>
+                    )}
                   </p>
                 </div>
 
@@ -568,6 +596,7 @@ const VideoEditorAppSimplified: React.FC = () => {
                   <h4 style={{ margin: '0 0 10px 0' }}>Timeline Zoom</h4>
                   <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
                     <button
+                      aria-label="Zoom out"
                       onClick={() => setZoom(Math.max(0.5, zoom * 0.8))}
                       style={{
                         padding: '5px 10px',
@@ -584,6 +613,7 @@ const VideoEditorAppSimplified: React.FC = () => {
                       {(zoom * 100).toFixed(0)}%
                     </span>
                     <button
+                      aria-label="Zoom in"
                       onClick={() => setZoom(Math.min(3, zoom * 1.25))}
                       style={{
                         padding: '5px 10px',

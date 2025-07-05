@@ -53,25 +53,61 @@ const VideoExportMulti: React.FC = () => {
   };
 
   const handleExport = async () => {
-    setIsExporting(true);
-    setExportProgress(0);
+    const API_BASE_URL = window.location.hostname === 'localhost'
+      ? 'http://localhost:3001'
+      : window.location.origin;
 
     try {
-      // TODO: Implement actual export functionality
-      // For now, just simulate progress
-      for (let i = 0; i <= 100; i += 10) {
-        setExportProgress(i);
-        await new Promise(resolve => setTimeout(resolve, 200));
+      setIsExporting(true);
+      setExportProgress(0);
+
+      // 1) Enviar solicitud de exportación al backend (job queue)
+      const exportResp = await fetch(`${API_BASE_URL}/api/export/video`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          sessionId: project.sessionId,
+          items: project.sequence.items,
+          exportSettings
+        })
+      });
+
+      if (!exportResp.ok) {
+        const msg = await exportResp.text();
+        throw new Error(`Backend error: ${exportResp.status} - ${msg}`);
       }
 
-      console.log('Export completed:', exportSettings);
-      alert('Export completed! (This is a placeholder - actual export functionality will be implemented next)');
+      const { jobId } = await exportResp.json();
+      if (!jobId) throw new Error('No jobId returned from backend');
+
+      showToast('Export started…', 'info');
+
+      // 2) Poll job status cada 2s
+      const poll = async () => {
+        const statusResp = await fetch(`${API_BASE_URL}/api/export/status/${jobId}`);
+        if (!statusResp.ok) throw new Error('Failed to get job status');
+        const data = await statusResp.json();
+
+        setExportProgress(data.progress || 0);
+
+        if (data.status === 'completed') {
+          showToast('Export ready! Downloading…', 'success');
+          window.open(`${API_BASE_URL}/api/export/download/${jobId}`, '_blank');
+          setIsExporting(false);
+          return;
+        }
+        if (data.status === 'failed') {
+          throw new Error(data.message || 'Export failed');
+        }
+        // pending or processing → seguir
+        setTimeout(poll, 2000);
+      };
+
+      poll();
     } catch (error) {
       console.error('Export failed:', error);
-      alert('Export failed: ' + (error as Error).message);
-    } finally {
+      showToast('Export failed: ' + (error as Error).message, 'error');
       setIsExporting(false);
-      setExportProgress(0);
     }
   };
 

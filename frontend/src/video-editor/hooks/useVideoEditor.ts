@@ -54,42 +54,37 @@ export const useVideoEditor = () => {
 
   // Segment management actions (wrapped to update project state)
   const addSegment = useCallback((startTime: number, endTime: number) => {
-    if (!project.video) return null;
-    
-    const segment = segments.addSegment(startTime, endTime, project.video.id);
-    setProject(prev => ({
-      ...prev,
-      segments: segments.segments
-    }));
-    return segment;
-  }, [project.video, segments]);
+    // Use functional access to latest project state to avoid stale closures
+    setProject(prev => {
+      if (!prev.video) return prev; // no video loaded
+
+      segments.addSegment(startTime, endTime, prev.video.id);
+      // Return updated project with fresh segments list
+      return { ...prev, segments: [...segments.segments] };
+    });
+    // Return last added segment (caller may ignore if undefined)
+    return segments.segments[segments.segments.length - 1] || null;
+  }, [segments]);
 
   const updateSegment = useCallback((segmentId: string, updates: VideoSegmentUpdate) => {
     segments.updateSegment(segmentId, updates);
-    setProject(prev => ({
-      ...prev,
-      segments: segments.segments
-    }));
+    setProject(prev => ({ ...prev, segments: [...segments.segments] }));
   }, [segments]);
 
   const removeSegment = useCallback((segmentId: string) => {
     segments.removeSegment(segmentId);
-    setProject(prev => ({
-      ...prev,
-      segments: segments.segments
-    }));
+    setProject(prev => ({ ...prev, segments: [...segments.segments] }));
   }, [segments]);
 
   const trimVideo = useCallback((startTime: number, endTime: number) => {
-    if (!project.video) return null;
-    
-    const segment = segments.trimVideo(startTime, endTime, project.video.id);
-    setProject(prev => ({
-      ...prev,
-      segments: [segment]
-    }));
-    return segment;
-  }, [project.video, segments]);
+    let newSegment: ReturnType<typeof segments.trimVideo> | null = null;
+    setProject(prev => {
+      if (!prev.video) return prev;
+      newSegment = segments.trimVideo(startTime, endTime, prev.video.id);
+      return { ...prev, segments: [newSegment] };
+    });
+    return newSegment;
+  }, [segments]);
 
   // Clear project
   const clearProject = useCallback(() => {

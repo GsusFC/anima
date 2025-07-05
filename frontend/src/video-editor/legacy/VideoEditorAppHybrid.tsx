@@ -1,9 +1,9 @@
 import React from 'react';
-import { VideoEditorProvider } from './context/VideoEditorContextMulti';
-import { VideoLibrary } from './components/VideoLibrary';
-import { VideoTimelineMulti } from './components/VideoTimelineMulti';
-import { VideoPreviewMulti } from './components/VideoPreviewMulti';
-import VideoExportMulti from './components/VideoExportMulti';
+import { VideoEditorProvider } from './VideoEditorContextMulti';
+import { VideoLibrary } from './VideoLibrary';
+import { VideoTimelineMulti } from './VideoTimelineMulti';
+import { VideoPreviewMulti } from './VideoPreviewMulti';
+import VideoExportMulti from './VideoExportMulti';
 
 const VideoEditorAppHybrid: React.FC = () => {
   return (

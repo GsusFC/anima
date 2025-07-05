@@ -7,7 +7,7 @@ const API_BASE_URL = window.location.hostname === 'localhost'
 
 // API function for export
 const exportAPI = async (format: string, payload: any): Promise<ExportResponse> => {
-  const endpoint = format === 'gif' ? '/export/gif' : '/export/video';
+  const endpoint = format === 'gif' ? '/gif-simple' : '/video-simple';
   const response = await fetch(`${API_BASE_URL}${endpoint}`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
@@ -103,6 +103,15 @@ export const useExportManagement = ({
         sessionId: sessionId,
         exportSettings: exportSettings
       };
+
+      // Debug logging
+      console.log('🎬 Export payload:', {
+        totalImages: images.length,
+        timelineItems: timeline.length,
+        payload: payload,
+        imageFilenames: payload.images.map(img => img.filename)
+      });
+      console.log('🎬 Full export payload:', JSON.stringify(payload, null, 2));
 
       // Use 'video' endpoint for slideshow exports (supports mp4/webm), 'gif' for GIF
       const format = exportSettings.format === 'gif' ? 'gif' : 'video';
