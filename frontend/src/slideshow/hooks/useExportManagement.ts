@@ -101,7 +101,17 @@ export const useExportManagement = ({
         })),
         frameDurations: timeline.map(item => item.duration),
         sessionId: sessionId,
-        exportSettings: exportSettings
+        // Flatten exportSettings for simple endpoints
+        format: exportSettings.format,
+        fps: exportSettings.fps,
+        quality: exportSettings.quality,
+        resolution: exportSettings.resolution?.preset || 'auto',
+        videoConfig: exportSettings.resolution?.preset === 'custom' ? {
+          resolution: {
+            width: exportSettings.resolution?.width || 1920,
+            height: exportSettings.resolution?.height || 1080
+          }
+        } : undefined
       };
 
       // Debug logging
