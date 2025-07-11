@@ -226,10 +226,37 @@ const logsDir = path.join(__dirname, 'logs');
 
 // Serve uploaded videos and processed files
 app.use('/temp', express.static(tempDir));
+
+// Serve output files with proper video headers for streaming
 app.use('/output', (req, res, next) => {
-  // Force download headers for exported files
-  res.setHeader('Content-Disposition', `attachment; filename="${path.basename(req.path)}"`);
-  res.setHeader('Content-Type', 'application/octet-stream');
+  const filename = path.basename(req.path);
+  const ext = path.extname(filename).toLowerCase();
+
+  // Set proper MIME type for video files
+  if (['.mp4', '.webm', '.mov'].includes(ext)) {
+    const mimeType = ext === '.webm' ? 'video/webm' :
+                    ext === '.mov' ? 'video/quicktime' :
+                    'video/mp4';
+
+    res.setHeader('Content-Type', mimeType);
+    res.setHeader('Accept-Ranges', 'bytes');
+    res.setHeader('Cache-Control', 'no-cache');
+
+    // For preview files, serve inline; for exports, force download
+    if (filename.includes('preview_') || filename.includes('master_')) {
+      res.setHeader('Content-Disposition', 'inline');
+    } else {
+      res.setHeader('Content-Disposition', `attachment; filename="${filename}"`);
+    }
+  } else if (ext === '.gif') {
+    res.setHeader('Content-Type', 'image/gif');
+    res.setHeader('Content-Disposition', `attachment; filename="${filename}"`);
+  } else {
+    // For other files, force download
+    res.setHeader('Content-Disposition', `attachment; filename="${filename}"`);
+    res.setHeader('Content-Type', 'application/octet-stream');
+  }
+
   next();
 }, express.static(outputDir));
 
@@ -1400,30 +1427,109 @@ app.post('/export/from-master', async (req, res) => {
   }
 });
 
-// COMPATIBILITY: Legacy preview endpoint - redirects to generate-master
+// COMPATIBILITY: Legacy preview endpoint - simplified implementation
 app.post('/preview', async (req, res) => {
-  console.log('⚠️  Legacy /preview endpoint called - redirecting to /generate-master');
+  console.log('⚠️  Legacy /preview endpoint called - implementing preview generation directly');
 
   try {
-    // Forward the request to the new endpoint
-    const response = await fetch(`http://localhost:3001/generate-master`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(req.body)
+    const { images, transitions, sessionId } = req.body;
+    const frameDurations = req.body.frameDurations || [];
+    const defaultDuration = 1000; // Match frontend default (1s per frame)
+
+    if (!sessionId) {
+      return res.status(400).json({
+        error: 'Session ID is required'
+      });
+    }
+
+    if (!images || images.length === 0) {
+      return res.status(400).json({
+        error: 'No images provided'
+      });
+    }
+
+    // Validate images exist in session directory
+    const sessionDir = path.join(tempDir, sessionId);
+    const validImages = [];
+
+    for (const image of images) {
+      const imagePath = path.join(sessionDir, image.filename);
+      if (fs.existsSync(imagePath)) {
+        validImages.push({ ...image, path: imagePath });
+      } else {
+        console.warn(`⚠️  Image not found: ${imagePath}`);
+      }
+    }
+
+    if (validImages.length === 0) {
+      return res.status(400).json({
+        error: 'No valid images found in session directory'
+      });
+    }
+
+    console.log(`🎬 Preview: Processing ${validImages.length} images`);
+
+    const outputFilename = `master_${sessionId}_${Date.now()}.mp4`;
+    const outputPath = path.join(outputDir, outputFilename);
+
+    let command = ffmpeg();
+    let complexFilter = [];
+
+    // Calculate optimal input durations using consolidated helper
+    const inputDurations = validImages.map((_, index) => {
+      const frameDuration = (frameDurations[index] || defaultDuration) / 1000; // Convert to seconds
+      return frameDuration + 0.5; // Add buffer for transitions
     });
 
-    const result = await response.json();
+    // Add inputs with calculated durations
+    validImages.forEach((image, index) => {
+      const inputDuration = inputDurations[index];
+      command.input(image.path).inputOptions(['-loop', '1', '-t', String(inputDuration)]);
+      complexFilter.push(`[${index}:v]scale=1920:1080:force_original_aspect_ratio=decrease,pad=1920:1080:(ow-iw)/2:(oh-ih)/2,setpts=PTS-STARTPTS,fps=30[v${index}]`);
+    });
 
-    // Transform response to maintain compatibility
-    if (result.success) {
-      res.json({
-        ...result,
-        previewUrl: result.masterUrl,  // Legacy field name
-        previewPath: result.masterPath // Legacy field name
-      });
-    } else {
-      res.status(response.status).json(result);
-    }
+    // Use unified transition chain
+    const lastOutput = buildUnifiedTransitionChain(validImages, transitions, frameDurations, defaultDuration, complexFilter);
+
+    command
+      .complexFilter(complexFilter)
+      .outputOptions([
+        '-c:v libx264',
+        '-preset medium',
+        '-profile:v high',
+        '-crf 23',
+        '-b:v 4M',
+        '-pix_fmt yuv420p',
+        '-movflags +faststart'
+      ])
+      .map(lastOutput)
+      .output(outputPath)
+      .on('start', cmd => {
+        console.log('FFmpeg started for Preview:', cmd);
+      })
+      .on('end', () => {
+        if (!res.headersSent) {
+          res.json({
+            success: true,
+            filename: outputFilename,
+            previewUrl: `/download/${outputFilename}`,  // Legacy field name
+            masterUrl: `/download/${outputFilename}`,
+            masterPath: outputPath,
+            message: 'Preview video generated successfully'
+          });
+        }
+      })
+      .on('error', (err) => {
+        console.error('❌ Preview generation failed:', err);
+        if (!res.headersSent) {
+          res.status(500).json({
+            error: 'Preview generation failed',
+            details: err.message
+          });
+        }
+      })
+      .run();
+
   } catch (error) {
     console.error('❌ Legacy preview endpoint failed:', error);
     res.status(500).json({
