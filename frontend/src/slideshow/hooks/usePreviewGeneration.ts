@@ -58,11 +58,10 @@ export const usePreviewGeneration = ({
   const generatePreview = useCallback(async () => {
     if (timeline.length === 0) return;
 
-    updatePreviewState({ 
-    isGenerating: true, 
-    error: null,
-      progress: 0
-      });
+    updatePreviewState({
+      isGenerating: true,
+      error: null
+    });
 
     try {
       const payload = {
@@ -107,8 +106,7 @@ export const usePreviewGeneration = ({
         updatePreviewState({
           url: directVideoUrl,
           isGenerating: false,
-          error: null,
-          mockMode: false
+          error: null
         });
       } else {
         throw new Error(result.message || 'Preview generation failed');

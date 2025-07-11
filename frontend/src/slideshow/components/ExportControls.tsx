@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React from 'react';
 import { useSlideshowContext } from '../context/SlideshowContext';
 import ExportProgressModal from './ExportProgressModal';
 import { ExportStrategyFactory } from '../strategies/ExportStrategyFactory';
@@ -27,8 +27,7 @@ const ExportControls: React.FC = () => {
     updateExportState
   } = useSlideshowContext();
 
-  // State for custom resolution tab
-  const [customResolutionTab, setCustomResolutionTab] = useState<'manual' | 'presets'>('presets');
+
 
   const { exportSettings } = project;
 

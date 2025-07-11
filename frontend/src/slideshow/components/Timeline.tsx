@@ -28,9 +28,7 @@ interface TransitionModalState {
   frameNumber: number;
 }
 
-interface DragStateMap {
-  [itemId: string]: DragState;
-}
+
 
 const initialModalState: TransitionModalState = {
   isOpen: false,
@@ -138,7 +136,7 @@ const Timeline: React.FC = () => {
     e.preventDefault();
     const draggedItemId = e.dataTransfer.getData('text/plain');
 
-    if (!draggedItemId || draggedItemId === draggedItem) return;
+    if (!draggedItemId) return;
 
     const draggedIndex = project.timeline.findIndex(item => item.id === draggedItemId);
     if (draggedIndex === -1 || draggedIndex === dropIndex) return;
@@ -251,6 +249,7 @@ const Timeline: React.FC = () => {
 
   return (
     <div className="timeline-container" style={{
+      position: 'relative', // ✅ Añadido para que FloatingExportButton se posicione correctamente
       display: 'flex',
       flexDirection: 'column',
       gap: '16px',

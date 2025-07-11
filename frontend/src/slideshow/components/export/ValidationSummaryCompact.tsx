@@ -1,9 +1,6 @@
 import React, { useState } from 'react';
-
-export interface ValidationResult {
-  canExport: boolean;
-  messages: Array<{ type: 'error' | 'warning'; message: string }>;
-}
+import { ValidationResult } from '../../../shared/types/validation.types';
+import { toValidationSummaryCompact } from '../../../shared/utils/validation-adapters';
 
 export interface ValidationSummaryCompactProps {
   validation: ValidationResult;
@@ -14,13 +11,16 @@ const ValidationSummaryCompact: React.FC<ValidationSummaryCompactProps> = ({
 }) => {
   const [showDetails, setShowDetails] = useState(false);
 
+  // Convertir a formato legacy para compatibilidad
+  const legacyValidation = toValidationSummaryCompact(validation);
+
   // Don't show anything if validation passes and no warnings
-  if (validation.canExport && validation.messages.length === 0) {
+  if (legacyValidation.canExport && legacyValidation.messages.length === 0) {
     return null;
   }
 
-  const errorCount = validation.messages.filter(m => m.type === 'error').length;
-  const warningCount = validation.messages.filter(m => m.type === 'warning').length;
+  const errorCount = legacyValidation.messages.filter(m => m.type === 'error').length;
+  const warningCount = legacyValidation.messages.filter(m => m.type === 'warning').length;
 
   const getStatusIcon = () => {
     if (errorCount > 0) return '❌';
@@ -57,7 +57,7 @@ const ValidationSummaryCompact: React.FC<ValidationSummaryCompactProps> = ({
           <span>{getStatusIcon()}</span>
           <span className={getStatusColor()}>{getStatusText()}</span>
         </div>
-        {validation.messages.length > 0 && (
+        {legacyValidation.messages.length > 0 && (
           <span className={`text-dark-500 transition-transform ${showDetails ? 'rotate-180' : ''}`}>
             ▼
           </span>
@@ -65,9 +65,9 @@ const ValidationSummaryCompact: React.FC<ValidationSummaryCompactProps> = ({
       </button>
 
       {/* Detailed Messages */}
-      {showDetails && validation.messages.length > 0 && (
+      {showDetails && legacyValidation.messages.length > 0 && (
         <div className="mt-2 p-2 bg-dark-800/30 border border-dark-650/50 rounded space-y-1">
-          {validation.messages.slice(0, 3).map((message, index) => (
+          {legacyValidation.messages.slice(0, 3).map((message, index) => (
             <div
               key={index}
               className={`text-xs flex items-start gap-2 ${
@@ -80,9 +80,9 @@ const ValidationSummaryCompact: React.FC<ValidationSummaryCompactProps> = ({
               <span>{message.message}</span>
             </div>
           ))}
-          {validation.messages.length > 3 && (
+          {legacyValidation.messages.length > 3 && (
             <div className="text-xs text-dark-500 text-center pt-1">
-              +{validation.messages.length - 3} more...
+              +{legacyValidation.messages.length - 3} more...
             </div>
           )}
         </div>

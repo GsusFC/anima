@@ -27,7 +27,6 @@ export const MediaItem: React.FC<MediaItemProps> = ({
   const [isHovered, setIsHovered] = useState(false);
   
   const {
-    showActions = true,
     showMetadata = false, // Default to false for cleaner look
     showSelection = false,
     size = 'medium',
@@ -41,7 +40,7 @@ export const MediaItem: React.FC<MediaItemProps> = ({
     onRemove,
     onAdd,
     onPreview,
-    onEdit,
+  
   } = handlers;
 
   const theme = defaultMediaTheme;
@@ -70,15 +69,7 @@ export const MediaItem: React.FC<MediaItemProps> = ({
     onRemove?.(item);
   }, [item, onRemove]);
 
-  const handlePreviewClick = useCallback((e: React.MouseEvent) => {
-    e.stopPropagation();
-    onPreview?.(item);
-  }, [item, onPreview]);
 
-  const handleEditClick = useCallback((e: React.MouseEvent) => {
-    e.stopPropagation();
-    onEdit?.(item);
-  }, [item, onEdit]);
 
   const formatFileSize = (bytes: number): string => {
     if (bytes === 0) return '0 B';
@@ -130,16 +121,7 @@ export const MediaItem: React.FC<MediaItemProps> = ({
     alignItems: 'center', // Center content
   };
 
-  const nameStyle: React.CSSProperties = {
-    fontSize: size === 'small' ? '0.75rem' : '0.875rem',
-    fontWeight: 'bold',
-    color: theme.colors.text,
-    margin: 0,
-    overflow: 'hidden',
-    textOverflow: 'ellipsis',
-    whiteSpace: 'nowrap',
-    fontFamily: '"Space Mono", monospace',
-  };
+
 
   const metadataStyle: React.CSSProperties = {
     fontSize: '0.75rem',
@@ -148,35 +130,13 @@ export const MediaItem: React.FC<MediaItemProps> = ({
     fontFamily: '"Space Mono", monospace',
   };
 
-  const actionsStyle: React.CSSProperties = {
-    display: 'flex',
-    gap: theme.spacing.xs,
-    opacity: isHovered || selected ? 1 : 0,
-    transition: theme.transitions.fast,
-    marginTop: theme.spacing.xs,
-  };
-
-  // Exact button style from ExportControls (lines 471-483)
-  const buttonStyle: React.CSSProperties = {
-    padding: '8px 12px', // Exact padding from ExportControls
-    fontSize: '12px', // Exact fontSize from ExportControls
-    fontWeight: '500', // Exact fontWeight from ExportControls
-    borderRadius: '2px', // Exact borderRadius from ExportControls
-    border: '1px solid #343536', // Exact border from ExportControls
-    cursor: 'pointer',
-    transition: theme.transitions.fast,
-    fontFamily: '"Space Mono", monospace',
-    textTransform: 'uppercase', // From ExportControls
-  };
 
 
 
-  // Exact ExportControls button style for unselected state
-  const secondaryButtonStyle: React.CSSProperties = {
-    ...buttonStyle,
-    backgroundColor: '#1a1a1b', // Exact from ExportControls
-    color: '#9ca3af', // Exact from ExportControls
-  };
+
+
+
+
 
   const selectionIndicatorStyle: React.CSSProperties = {
     position: 'absolute',

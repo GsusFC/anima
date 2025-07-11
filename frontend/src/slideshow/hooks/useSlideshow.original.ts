@@ -1,13 +1,15 @@
 import { useState, useCallback } from 'react';
-import { 
-  ImageFile, 
-  TimelineItem, 
+import {
+  ImageFile,
+  TimelineItem,
   ExportSettings,
   SlideshowState,
   UploadResponse,
   PreviewResponse,
   ExportResponse
 } from '../types/slideshow.types';
+import { createInitialExportState } from '../../shared/types/export.types';
+import { toLegacySlideshowExportState } from '../../shared/utils/validation-adapters';
 
 const API_BASE_URL = window.location.hostname === 'localhost' 
   ? 'http://localhost:3001' 
@@ -88,12 +90,7 @@ export const useSlideshow = () => {
       isGenerating: false,
       error: null
     },
-    export: {
-      isExporting: false,
-      progress: 0,
-      lastResult: null,
-      error: null
-    },
+    export: toLegacySlideshowExportState(createInitialExportState()),
     isUploading: false,
     dragActive: false
   });
@@ -411,7 +408,9 @@ export const useSlideshow = () => {
               progress: 100,
               lastResult: result.downloadUrl,
               error: null,
-              currentStep: undefined
+              currentStep: undefined,
+              isCompleted: true,
+              downloadUrl: result.downloadUrl
             }
           }));
         }, 1000);
@@ -463,12 +462,7 @@ export const useSlideshow = () => {
         isGenerating: false,
         error: null
       },
-      export: {
-        isExporting: false,
-        progress: 0,
-        lastResult: null,
-        error: null
-      }
+      export: toLegacySlideshowExportState(createInitialExportState())
     }));
   }, []);
 

@@ -6,16 +6,13 @@
 # =============================================================================
 FROM node:18-alpine AS frontend-builder
 
-# Install build dependencies
-RUN apk add --no-cache python3 make g++
-
 WORKDIR /app/frontend
 
 # Copy frontend package files
 COPY frontend/package*.json ./
 
-# Install ALL dependencies (including dev dependencies needed for build)
-RUN npm ci
+# Install frontend dependencies
+RUN npm ci --only=production
 
 # Copy frontend source
 COPY frontend/ ./
@@ -33,8 +30,8 @@ WORKDIR /app/backend
 # Copy backend package files
 COPY backend/package*.json ./
 
-# Install backend dependencies (production only for backend)
-RUN npm ci --omit=dev
+# Install backend dependencies
+RUN npm ci --only=production
 
 # =============================================================================
 # Production Stage

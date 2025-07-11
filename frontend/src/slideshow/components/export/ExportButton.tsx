@@ -1,19 +1,9 @@
 import React from 'react';
-
-export interface ExportState {
-  isExporting: boolean;
-  progress: number;
-  error: string | null;
-  isCompleted: boolean;
-}
-
-export interface ValidationResult {
-  canExport: boolean;
-  messages: Array<{ type: 'error' | 'warning'; message: string }>;
-}
+import { ValidationResult } from '../../../shared/types/validation.types';
+import { toLegacyValidation, fromLegacySlideshowExportState, LegacySlideshowExportState } from '../../../shared/utils/validation-adapters';
 
 export interface ExportButtonProps {
-  exportState: ExportState;
+  exportState: LegacySlideshowExportState;
   validation: ValidationResult;
   currentFormat: string;
   onExport: () => void;
@@ -25,21 +15,25 @@ const ExportButton: React.FC<ExportButtonProps> = ({
   currentFormat,
   onExport
 }) => {
+  // Convertir a formatos canónicos
+  const canonicalExportState = fromLegacySlideshowExportState(exportState);
+  const legacyValidation = toLegacyValidation(validation);
+
   const getButtonText = () => {
-    if (exportState.isExporting) {
+    if (canonicalExportState.isExporting) {
       return '⏳ Exporting...';
     }
-    
-    if (!validation.canExport) {
+
+    if (!legacyValidation.canExport) {
       return '❌ Configuración Inválida';
     }
-    
+
     return `🚀 Export ${currentFormat.toUpperCase()}`;
   };
 
   const getButtonTitle = () => {
-    if (!validation.canExport) {
-      const errorMessages = validation.messages
+    if (!legacyValidation.canExport) {
+      const errorMessages = legacyValidation.messages
         .filter(m => m.type === 'error')
         .map(m => m.message)
         .join(', ');
@@ -51,9 +45,9 @@ const ExportButton: React.FC<ExportButtonProps> = ({
   return (
     <button
       onClick={onExport}
-      disabled={exportState.isExporting || !validation.canExport}
+      disabled={canonicalExportState.isExporting || !legacyValidation.canExport}
       className={`mt-auto p-4 rounded-lg font-mono font-bold text-lg uppercase transition-all duration-200 ${
-        exportState.isExporting || !validation.canExport
+        canonicalExportState.isExporting || !legacyValidation.canExport
           ? 'bg-dark-600 cursor-not-allowed opacity-70 text-dark-400'
           : 'bg-accent-pink hover:bg-accent-pink-dark text-white shadow-glow-pink'
       }`}

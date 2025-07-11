@@ -26,9 +26,7 @@ interface TransitionModalState {
   frameNumber: number;
 }
 
-interface DragStateMap {
-  [itemId: string]: DragState;
-}
+
 
 const initialModalState: TransitionModalState = {
   isOpen: false,
@@ -123,8 +121,8 @@ const TimelineRefactored: React.FC = () => {
   const handleDrop = useCallback((e: React.DragEvent, dropIndex: number) => {
     e.preventDefault();
     const draggedItemId = e.dataTransfer.getData('text/plain');
-    
-    if (!draggedItemId || draggedItemId === draggedItem) return;
+
+    if (!draggedItemId) return;
 
     const draggedIndex = project.timeline.findIndex(item => item.id === draggedItemId);
     if (draggedIndex === -1 || draggedIndex === dropIndex) return;

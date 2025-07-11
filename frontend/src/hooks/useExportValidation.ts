@@ -1,19 +1,13 @@
 import { useMemo } from 'react';
+import {
+  ValidationResult,
+  ValidationMessage,
+  createValidationMessage,
+  ValidationCodes
+} from '../shared/types/validation.types';
 
-export interface ValidationMessage {
-  type: 'error' | 'warning' | 'info';
-  field: string;
-  message: string;
-  code: string;
-}
-
-export interface ValidationResult {
-  isValid: boolean;
-  canExport: boolean;
-  messages: ValidationMessage[];
-  hasErrors: boolean;
-  hasWarnings: boolean;
-}
+// Re-exportar tipos para compatibilidad con componentes existentes
+export type { ValidationResult, ValidationMessage };
 
 export interface ExportSettings {
   format: 'gif' | 'mp4' | 'webm' | 'mov';
@@ -75,26 +69,26 @@ function validateGifSettings(settings: ExportSettings, messages: ValidationMessa
   // Validación de FPS para GIF
   if (settings.fps) {
     if (settings.fps > 50) {
-      messages.push({
-        type: 'error',
-        field: 'fps',
-        message: 'FPS para GIF debe ser 50 o menor para mejor compatibilidad',
-        code: 'GIF_FPS_TOO_HIGH'
-      });
+      messages.push(createValidationMessage(
+        'error',
+        'fps',
+        ValidationCodes.INVALID_DURATION,
+        'FPS para GIF debe ser 50 o menor para mejor compatibilidad'
+      ));
     } else if (settings.fps > 30) {
-      messages.push({
-        type: 'warning',
-        field: 'fps',
-        message: 'FPS mayor a 30 puede resultar en archivos GIF muy grandes',
-        code: 'GIF_FPS_HIGH'
-      });
+      messages.push(createValidationMessage(
+        'warning',
+        'fps',
+        ValidationCodes.PERFORMANCE_TIP,
+        'FPS mayor a 30 puede resultar en archivos GIF muy grandes'
+      ));
     } else if (settings.fps < 10) {
-      messages.push({
-        type: 'warning',
-        field: 'fps',
-        message: 'FPS menor a 10 puede resultar en animación entrecortada',
-        code: 'GIF_FPS_LOW'
-      });
+      messages.push(createValidationMessage(
+        'warning',
+        'fps',
+        ValidationCodes.PERFORMANCE_TIP,
+        'FPS menor a 10 puede resultar en animación entrecortada'
+      ));
     }
   }
   
@@ -102,42 +96,42 @@ function validateGifSettings(settings: ExportSettings, messages: ValidationMessa
   if (settings.resolution) {
     const { width, height } = settings.resolution;
     const totalPixels = width * height;
-    
+
     if (width > 1920 || height > 1080) {
-      messages.push({
-        type: 'warning',
-        field: 'resolution',
-        message: 'Resolución alta puede resultar en archivos GIF muy grandes',
-        code: 'GIF_RESOLUTION_HIGH'
-      });
+      messages.push(createValidationMessage(
+        'warning',
+        'resolution',
+        ValidationCodes.PERFORMANCE_TIP,
+        'Resolución alta puede resultar en archivos GIF muy grandes'
+      ));
     }
-    
+
     if (totalPixels > 2073600) { // 1920x1080
-      messages.push({
-        type: 'warning',
-        field: 'resolution',
-        message: 'Resolución muy alta puede causar problemas de rendimiento',
-        code: 'GIF_RESOLUTION_PERFORMANCE'
-      });
+      messages.push(createValidationMessage(
+        'warning',
+        'resolution',
+        ValidationCodes.PERFORMANCE_TIP,
+        'Resolución muy alta puede causar problemas de rendimiento'
+      ));
     }
   }
-  
+
   // Validación de colores para GIF
   if (settings.gif?.colors) {
     if (settings.gif.colors < 16) {
-      messages.push({
-        type: 'warning',
-        field: 'colors',
-        message: 'Menos de 16 colores puede resultar en calidad muy baja',
-        code: 'GIF_COLORS_LOW'
-      });
+      messages.push(createValidationMessage(
+        'warning',
+        'colors',
+        ValidationCodes.PERFORMANCE_TIP,
+        'Menos de 16 colores puede resultar en calidad muy baja'
+      ));
     } else if (settings.gif.colors > 256) {
-      messages.push({
-        type: 'error',
-        field: 'colors',
-        message: 'GIF no puede tener más de 256 colores',
-        code: 'GIF_COLORS_INVALID'
-      });
+      messages.push(createValidationMessage(
+        'error',
+        'colors',
+        ValidationCodes.INVALID_AUDIO_CONFIG,
+        'GIF no puede tener más de 256 colores'
+      ));
     }
   }
 }
@@ -146,42 +140,42 @@ function validateMp4Settings(settings: ExportSettings, messages: ValidationMessa
   // Validación de FPS para MP4
   if (settings.fps) {
     if (settings.fps > 60) {
-      messages.push({
-        type: 'error',
-        field: 'fps',
-        message: 'FPS para MP4 debe ser 60 o menor',
-        code: 'MP4_FPS_TOO_HIGH'
-      });
+      messages.push(createValidationMessage(
+        'error',
+        'fps',
+        ValidationCodes.INVALID_DURATION,
+        'FPS para MP4 debe ser 60 o menor'
+      ));
     } else if (settings.fps < 1) {
-      messages.push({
-        type: 'error',
-        field: 'fps',
-        message: 'FPS debe ser al menos 1',
-        code: 'MP4_FPS_TOO_LOW'
-      });
+      messages.push(createValidationMessage(
+        'error',
+        'fps',
+        ValidationCodes.INVALID_DURATION,
+        'FPS debe ser al menos 1'
+      ));
     }
   }
-  
+
   // Validación de resolución para MP4
   if (settings.resolution) {
     const { width, height } = settings.resolution;
-    
+
     if (width < 128 || height < 128) {
-      messages.push({
-        type: 'error',
-        field: 'resolution',
-        message: 'Resolución debe ser al menos 128x128',
-        code: 'MP4_RESOLUTION_TOO_LOW'
-      });
+      messages.push(createValidationMessage(
+        'error',
+        'resolution',
+        ValidationCodes.INVALID_DURATION,
+        'Resolución debe ser al menos 128x128'
+      ));
     }
-    
+
     if (width > 4096 || height > 4096) {
-      messages.push({
-        type: 'error',
-        field: 'resolution',
-        message: 'Resolución no puede exceder 4096x4096',
-        code: 'MP4_RESOLUTION_TOO_HIGH'
-      });
+      messages.push(createValidationMessage(
+        'error',
+        'resolution',
+        ValidationCodes.INVALID_DURATION,
+        'Resolución no puede exceder 4096x4096'
+      ));
     }
   }
 }
@@ -190,41 +184,41 @@ function validateWebmSettings(settings: ExportSettings, messages: ValidationMess
   // Validación similar a MP4 para WebM
   if (settings.fps) {
     if (settings.fps > 60) {
-      messages.push({
-        type: 'error',
-        field: 'fps',
-        message: 'FPS para WebM debe ser 60 o menor',
-        code: 'WEBM_FPS_TOO_HIGH'
-      });
+      messages.push(createValidationMessage(
+        'error',
+        'fps',
+        ValidationCodes.INVALID_DURATION,
+        'FPS para WebM debe ser 60 o menor'
+      ));
     } else if (settings.fps < 1) {
-      messages.push({
-        type: 'error',
-        field: 'fps',
-        message: 'FPS debe ser al menos 1',
-        code: 'WEBM_FPS_TOO_LOW'
-      });
+      messages.push(createValidationMessage(
+        'error',
+        'fps',
+        ValidationCodes.INVALID_DURATION,
+        'FPS debe ser al menos 1'
+      ));
     }
   }
-  
+
   if (settings.resolution) {
     const { width, height } = settings.resolution;
-    
+
     if (width < 128 || height < 128) {
-      messages.push({
-        type: 'error',
-        field: 'resolution',
-        message: 'Resolución debe ser al menos 128x128',
-        code: 'WEBM_RESOLUTION_TOO_LOW'
-      });
+      messages.push(createValidationMessage(
+        'error',
+        'resolution',
+        ValidationCodes.INVALID_DURATION,
+        'Resolución debe ser al menos 128x128'
+      ));
     }
-    
+
     if (width > 4096 || height > 4096) {
-      messages.push({
-        type: 'error',
-        field: 'resolution',
-        message: 'Resolución no puede exceder 4096x4096',
-        code: 'WEBM_RESOLUTION_TOO_HIGH'
-      });
+      messages.push(createValidationMessage(
+        'error',
+        'resolution',
+        ValidationCodes.INVALID_DURATION,
+        'Resolución no puede exceder 4096x4096'
+      ));
     }
   }
 }
@@ -233,82 +227,82 @@ function validateMovSettings(settings: ExportSettings, messages: ValidationMessa
   // Validación similar a MP4 para MOV
   if (settings.fps) {
     if (settings.fps > 120) {
-      messages.push({
-        type: 'error',
-        field: 'fps',
-        message: 'FPS para MOV debe ser 120 o menor',
-        code: 'MOV_FPS_TOO_HIGH'
-      });
+      messages.push(createValidationMessage(
+        'error',
+        'fps',
+        ValidationCodes.INVALID_DURATION,
+        'FPS para MOV debe ser 120 o menor'
+      ));
     } else if (settings.fps < 1) {
-      messages.push({
-        type: 'error',
-        field: 'fps',
-        message: 'FPS debe ser al menos 1',
-        code: 'MOV_FPS_TOO_LOW'
-      });
+      messages.push(createValidationMessage(
+        'error',
+        'fps',
+        ValidationCodes.INVALID_DURATION,
+        'FPS debe ser al menos 1'
+      ));
     }
   }
-  
+
   if (settings.resolution) {
     const { width, height } = settings.resolution;
-    
+
     if (width < 128 || height < 128) {
-      messages.push({
-        type: 'error',
-        field: 'resolution',
-        message: 'Resolución debe ser al menos 128x128',
-        code: 'MOV_RESOLUTION_TOO_LOW'
-      });
+      messages.push(createValidationMessage(
+        'error',
+        'resolution',
+        ValidationCodes.INVALID_DURATION,
+        'Resolución debe ser al menos 128x128'
+      ));
     }
-    
+
     if (width > 7680 || height > 4320) {
-      messages.push({
-        type: 'warning',
-        field: 'resolution',
-        message: 'Resolución muy alta (8K) puede causar problemas de rendimiento',
-        code: 'MOV_RESOLUTION_8K'
-      });
+      messages.push(createValidationMessage(
+        'warning',
+        'resolution',
+        ValidationCodes.PERFORMANCE_TIP,
+        'Resolución muy alta (8K) puede causar problemas de rendimiento'
+      ));
     }
   }
 }
 
 function validateGeneralSettings(settings: ExportSettings, messages: ValidationMessage[]) {
   // Validaciones que aplican a todos los formatos
-  
+
   // Validación de calidad
   if (settings.quality) {
     const validQualities = ['web', 'standard', 'high', 'premium', 'ultra'];
-    if (!validQualities.includes(settings.quality)) {
-      messages.push({
-        type: 'error',
-        field: 'quality',
-        message: 'Calidad no válida',
-        code: 'INVALID_QUALITY'
-      });
+    if (validQualities.indexOf(settings.quality) === -1) {
+      messages.push(createValidationMessage(
+        'error',
+        'quality',
+        ValidationCodes.INVALID_AUDIO_CONFIG,
+        'Calidad no válida'
+      ));
     }
   }
-  
+
   // Validación de resolución general
   if (settings.resolution) {
     const { width, height } = settings.resolution;
-    
+
     if (width <= 0 || height <= 0) {
-      messages.push({
-        type: 'error',
-        field: 'resolution',
-        message: 'Resolución debe ser mayor a 0',
-        code: 'INVALID_RESOLUTION'
-      });
+      messages.push(createValidationMessage(
+        'error',
+        'resolution',
+        ValidationCodes.INVALID_DURATION,
+        'Resolución debe ser mayor a 0'
+      ));
     }
-    
+
     // Advertencia para resoluciones muy pequeñas
     if (width < 240 || height < 240) {
-      messages.push({
-        type: 'warning',
-        field: 'resolution',
-        message: 'Resolución muy baja puede resultar en calidad pobre',
-        code: 'RESOLUTION_LOW_QUALITY'
-      });
+      messages.push(createValidationMessage(
+        'warning',
+        'resolution',
+        ValidationCodes.PERFORMANCE_TIP,
+        'Resolución muy baja puede resultar en calidad pobre'
+      ));
     }
   }
 }

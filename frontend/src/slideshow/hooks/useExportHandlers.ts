@@ -1,5 +1,7 @@
 import { useCallback } from 'react';
 import { ExportStrategyFactory } from '../strategies/ExportStrategyFactory';
+import { ValidationResult } from '../../shared/types/validation.types';
+import { toLegacyValidation } from '../../shared/utils/validation-adapters';
 
 export interface ExportSettings {
   format: 'gif' | 'mp4' | 'webm' | 'mov';
@@ -18,11 +20,6 @@ export interface ExportHandlersProps {
   updateExportSettings: (updates: Partial<ExportSettings>) => void;
   exportSlideshow: () => void;
   updateExportState: (updates: any) => void;
-}
-
-export interface ValidationResult {
-  canExport: boolean;
-  messages: Array<{ type: 'error' | 'warning'; message: string }>;
 }
 
 export const useExportHandlers = ({
@@ -79,9 +76,12 @@ export const useExportHandlers = ({
 
   // Export handlers
   const handleExport = useCallback((validation: ValidationResult) => {
+    // Convertir a formato legacy para compatibilidad
+    const legacyValidation = toLegacyValidation(validation);
+
     // Use real-time validation
-    if (!validation.canExport) {
-      const errorMessages = validation.messages
+    if (!legacyValidation.canExport) {
+      const errorMessages = legacyValidation.messages
         .filter(m => m.type === 'error')
         .map(m => m.message)
         .join('\n');

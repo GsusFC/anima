@@ -218,15 +218,7 @@ ffmpeg -version
 # Build and run with Docker
 docker build -t animagen .
 docker run -p 3001:3001 animagen
-
-# Or use Docker Compose
-docker-compose up
-
-# For development
-docker-compose -f docker-compose.dev.yml up
 ```
-
-**Note:** If you encounter build issues, see [Docker Troubleshooting Guide](docs/DOCKER_TROUBLESHOOTING.md).
 
 ### Environment Variables
 

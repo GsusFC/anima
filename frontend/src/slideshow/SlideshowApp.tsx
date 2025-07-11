@@ -30,8 +30,10 @@ const SlideshowApp: React.FC = () => {
           </div>
           
           {/* Bottom Section - Enhanced Timeline */}
-          <div className="h-[300px] border-t border-dark-700 flex-shrink-0 overflow-hidden">
-            <Timeline />
+          <div className="h-[300px] border-t border-dark-700 flex-shrink-0 relative">
+            <div className="h-full overflow-x-auto overflow-y-hidden">
+              <Timeline />
+            </div>
           </div>
         </div>
       </div>
