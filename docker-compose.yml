@@ -8,7 +8,9 @@ services:
   # AnimaGen Application
   # =============================================================================
   animagen:
-    build: .
+    build:
+      context: .
+      dockerfile: Dockerfile
     container_name: animagen-app
     restart: unless-stopped
     ports:
