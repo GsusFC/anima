@@ -1,0 +1,45 @@
+# Git
+.git
+.gitignore
+
+# Dependencies (will be installed during build)
+node_modules
+backend/node_modules
+frontend/node_modules
+
+# Build artifacts
+backend/output
+backend/temp
+backend/compositions
+backend/public
+frontend/dist
+
+# Logs
+*.log
+backend/*.log
+
+# Test files
+test_*.json
+*.test.js
+
+# Development files
+.vscode
+.idea
+*.swp
+*.swo
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Documentation (not needed in container)
+*.md
+!README.md
+
+# Config files not needed in container
+.env.local
+.env.development.local
+vercel.json
+railway.toml
+nixpacks.toml
+postcss.config.js

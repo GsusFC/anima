@@ -1,0 +1,207 @@
+const fs = require('fs');
+const path = require('path');
+
+class FFmpegWasm {
+  constructor() {
+    this.ffmpeg = null;
+    this.initialized = false;
+    this.FFmpegClass = null;
+  }
+
+  async init() {
+    if (this.initialized) return;
+    
+    console.log('🎬 Initializing FFmpeg WASM...');
+    
+    // Dynamic import for ES module
+    if (!this.FFmpegClass) {
+      const { FFmpeg } = await import('@ffmpeg/ffmpeg');
+      this.FFmpegClass = FFmpeg;
+    }
+    
+    this.ffmpeg = new this.FFmpegClass();
+    
+    // Load FFmpeg core
+    await this.ffmpeg.load();
+    this.initialized = true;
+    console.log('✅ FFmpeg WASM initialized');
+  }
+
+  async createVideo(images, outputPath, options = {}) {
+    await this.init();
+    
+    const {
+      fps = 30,
+      resolution = { width: 1920, height: 1080 },
+      quality = 'high',
+      format = 'mp4',
+      frameDurations = []
+    } = options;
+
+    try {
+      console.log('🎬 Creating video with FFmpeg WASM');
+      console.log('📊 Images:', images.length);
+      console.log('📊 Resolution:', resolution);
+      console.log('📊 FPS:', fps);
+
+      // Write images to WASM filesystem
+      for (let i = 0; i < images.length; i++) {
+        const imageData = fs.readFileSync(images[i]);
+        await this.ffmpeg.writeFile(`image${i}.png`, imageData);
+      }
+
+      // Create filter complex for video
+      const filterComplex = this.createFilterComplex(images.length, resolution);
+      
+      // Quality settings
+      const qualityMap = {
+        'web': ['-crf', '28', '-b:v', '2M'],
+        'standard': ['-crf', '23', '-b:v', '4M'], 
+        'high': ['-crf', '18', '-b:v', '8M'],
+        'ultra': ['-crf', '15', '-b:v', '12M']
+      };
+
+      const qualityArgs = qualityMap[quality] || qualityMap['high'];
+
+      // Build FFmpeg command
+      const inputArgs = [];
+      for (let i = 0; i < images.length; i++) {
+        const duration = frameDurations[i] || 3; // Use specific duration or default 3 seconds
+        inputArgs.push('-loop', '1', '-t', duration.toString(), '-i', `image${i}.png`);
+      }
+
+      const args = [
+        ...inputArgs,
+        '-filter_complex', filterComplex,
+        '-map', '[out]',
+        '-r', fps.toString(),
+        '-c:v', 'libx264',
+        '-preset', 'fast',
+        ...qualityArgs,
+        '-pix_fmt', 'yuv420p',
+        '-movflags', '+faststart',
+        `output.${format}`
+      ];
+
+      console.log('🎬 FFmpeg command:', args.join(' '));
+      
+      // Execute FFmpeg
+      await this.ffmpeg.exec(args);
+
+      // Read output file
+      const outputData = await this.ffmpeg.readFile(`output.${format}`);
+      
+      // Write to actual filesystem
+      fs.writeFileSync(outputPath, outputData);
+      
+      // Cleanup WASM filesystem
+      await this.cleanup(images.length, format);
+      
+      console.log('✅ Video created successfully:', outputPath);
+      return outputPath;
+
+    } catch (error) {
+      console.error('❌ FFmpeg WASM error:', error);
+      throw error;
+    }
+  }
+
+  createFilterComplex(imageCount, resolution) {
+    const { width, height } = resolution;
+    
+    // Scale and pad each image
+    const scaleFilters = [];
+    for (let i = 0; i < imageCount; i++) {
+      scaleFilters.push(`[${i}:v]scale=${width}:${height}:force_original_aspect_ratio=decrease,pad=${width}:${height}:(ow-iw)/2:(oh-ih)/2[v${i}]`);
+    }
+    
+    // Concat all images
+    const inputs = Array.from({length: imageCount}, (_, i) => `[v${i}]`).join('');
+    const concatFilter = `${inputs}concat=n=${imageCount}:v=1:a=0[out]`;
+    
+    return scaleFilters.join(';') + ';' + concatFilter;
+  }
+
+  async cleanup(imageCount, format) {
+    try {
+      // Remove input images
+      for (let i = 0; i < imageCount; i++) {
+        await this.ffmpeg.deleteFile(`image${i}.png`);
+      }
+      // Remove output file
+      await this.ffmpeg.deleteFile(`output.${format}`);
+    } catch (error) {
+      console.warn('⚠️ Cleanup warning:', error.message);
+    }
+  }
+
+  async createGif(images, outputPath, options = {}) {
+    await this.init();
+    
+    const {
+      fps = 10,
+      colors = 256,
+      resolution = { width: 640, height: 640 },
+      frameDurations = []
+    } = options;
+
+    try {
+      console.log('🎨 Creating GIF with FFmpeg WASM');
+      console.log('📊 Images:', images.length);
+      console.log('📊 Resolution:', resolution);
+      console.log('📊 FPS:', fps);
+      
+      // Write images to WASM filesystem
+      for (let i = 0; i < images.length; i++) {
+        const imageData = fs.readFileSync(images[i]);
+        await this.ffmpeg.writeFile(`image${i}.png`, imageData);
+      }
+
+      // Create filter for GIF with dynamic durations
+      const { width, height } = resolution;
+      
+      const inputArgs = [];
+      for (let i = 0; i < images.length; i++) {
+        const duration = frameDurations[i] || 1; // Default 1 second per frame
+        inputArgs.push('-loop', '1', '-t', duration.toString(), '-i', `image${i}.png`);
+      }
+
+      // Create filter complex for GIF
+      const scaleFilters = [];
+      for (let i = 0; i < images.length; i++) {
+        scaleFilters.push(`[${i}:v]scale=${width}:${height}:force_original_aspect_ratio=decrease,pad=${width}:${height}:(ow-iw)/2:(oh-ih)/2[v${i}]`);
+      }
+      
+      const inputs = Array.from({length: images.length}, (_, i) => `[v${i}]`).join('');
+      const concatFilter = `${inputs}concat=n=${images.length}:v=1:a=0[concat]`;
+      
+      const filterComplex = scaleFilters.join(';') + ';' + concatFilter + `;[concat]fps=${fps}[gif]`;
+
+      const args = [
+        ...inputArgs,
+        '-filter_complex', filterComplex,
+        '-map', '[gif]',
+        '-loop', '0',
+        'output.gif'
+      ];
+
+      console.log('🎨 GIF FFmpeg command:', args.join(' '));
+      
+      await this.ffmpeg.exec(args);
+      
+      const outputData = await this.ffmpeg.readFile('output.gif');
+      fs.writeFileSync(outputPath, outputData);
+      
+      await this.cleanup(images.length, 'gif');
+      
+      console.log('✅ GIF created successfully:', outputPath);
+      return outputPath;
+
+    } catch (error) {
+      console.error('❌ FFmpeg WASM GIF error:', error);
+      throw error;
+    }
+  }
+}
+
+module.exports = new FFmpegWasm();

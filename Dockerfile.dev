@@ -1,0 +1,43 @@
+# AnimaGen Development Dockerfile
+# Development setup with hot reload and debugging tools
+
+FROM node:18-alpine
+
+# Install FFmpeg and development tools
+RUN apk add --no-cache \
+    ffmpeg \
+    git \
+    && rm -rf /var/cache/apk/*
+
+# Set working directory
+WORKDIR /app
+
+# Copy package files for dependency installation
+COPY package*.json ./
+COPY frontend/package*.json ./frontend/
+COPY backend/package*.json ./backend/
+
+# Install dependencies
+RUN npm install
+RUN cd frontend && npm install
+RUN cd backend && npm install
+
+# Copy source code
+COPY . .
+
+# Create necessary directories
+RUN mkdir -p backend/output backend/uploads backend/logs backend/compositions
+
+# Set proper permissions
+RUN chown -R node:node /app
+USER node
+
+# Expose ports for both frontend and backend
+EXPOSE 3001 5173
+
+# Health check for development
+HEALTHCHECK --interval=30s --timeout=10s --start-period=10s --retries=3 \
+    CMD node -e "require('http').get('http://localhost:3001/api/health', (res) => { process.exit(res.statusCode === 200 ? 0 : 1) })" || exit 1
+
+# Default command (can be overridden)
+CMD ["npm", "run", "dev"]

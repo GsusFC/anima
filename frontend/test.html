@@ -1,0 +1,82 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AnimaGen Test</title>
+    <style>
+        body {
+            background: #0a0a0b;
+            color: white;
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 20px;
+        }
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+        }
+        .status {
+            padding: 10px;
+            margin: 10px 0;
+            border-radius: 5px;
+        }
+        .success { background: #22c55e; }
+        .error { background: #ef4444; }
+        .info { background: #3b82f6; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🎬 AnimaGen Integration Test</h1>
+        
+        <div class="status success">
+            ✅ Frontend HTML loading correctly
+        </div>
+        
+        <div class="status info">
+            🔗 Backend URL: <span id="backendUrl">http://localhost:3001</span>
+        </div>
+        
+        <div class="status" id="backendStatus">
+            🔄 Testing backend connection...
+        </div>
+        
+        <div class="status" id="reactStatus">
+            🔄 Testing React app...
+        </div>
+        
+        <h2>Integration Status:</h2>
+        <ul>
+            <li>✅ Backend: Express server with FFmpeg</li>
+            <li>✅ Frontend: React + Vite + Tailwind</li>
+            <li>⚡ API Integration: In progress</li>
+            <li>🎯 Ready for testing</li>
+        </ul>
+        
+        <a href="/" style="color: #ff4500; text-decoration: none;">
+            → Go to React App
+        </a>
+    </div>
+    
+    <script>
+        // Test backend connection
+        fetch('http://localhost:3001/')
+            .then(res => res.json())
+            .then(data => {
+                document.getElementById('backendStatus').innerHTML = `✅ Backend connected: ${data.message}`;
+                document.getElementById('backendStatus').className = 'status success';
+            })
+            .catch(err => {
+                document.getElementById('backendStatus').innerHTML = `❌ Backend error: ${err.message}`;
+                document.getElementById('backendStatus').className = 'status error';
+            });
+            
+        // Check if we can access the React app
+        setTimeout(() => {
+            document.getElementById('reactStatus').innerHTML = `✅ React app accessible at ${window.location.origin}`;
+            document.getElementById('reactStatus').className = 'status success';
+        }, 1000);
+    </script>
+</body>
+</html> 

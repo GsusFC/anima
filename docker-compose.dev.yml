@@ -1,0 +1,72 @@
+# AnimaGen Development Docker Compose
+# Development setup with hot reload and debugging
+
+version: '3.8'
+
+services:
+  # =============================================================================
+  # AnimaGen Development
+  # =============================================================================
+  animagen-dev:
+    build:
+      context: .
+      dockerfile: Dockerfile.dev
+    container_name: animagen-dev
+    restart: unless-stopped
+    ports:
+      - "3001:3001"  # Backend
+      - "5173:5173"  # Frontend Vite dev server
+    environment:
+      - NODE_ENV=development
+      - PORT=3001
+      - OUTPUT_DIR=output
+      - TEMP_DIR=uploads
+      - REDIS_URL=redis://redis:6379
+      - CORS_ORIGINS=http://localhost:5173,http://localhost:3000
+      - DEBUG=animagen:*
+      - CHOKIDAR_USEPOLLING=true
+    volumes:
+      - .:/app
+      - /app/node_modules
+      - /app/frontend/node_modules
+      - /app/backend/node_modules
+      - dev_output:/app/backend/output
+      - dev_uploads:/app/backend/uploads
+    depends_on:
+      - redis
+    networks:
+      - animagen-dev-network
+    command: npm run dev
+
+  # =============================================================================
+  # Redis for Development
+  # =============================================================================
+  redis:
+    image: redis:7-alpine
+    container_name: animagen-redis-dev
+    restart: unless-stopped
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_dev_data:/data
+    networks:
+      - animagen-dev-network
+    command: redis-server --appendonly yes
+
+# =============================================================================
+# Development Volumes
+# =============================================================================
+volumes:
+  dev_output:
+    driver: local
+  dev_uploads:
+    driver: local
+  redis_dev_data:
+    driver: local
+
+# =============================================================================
+# Development Networks
+# =============================================================================
+networks:
+  animagen-dev-network:
+    driver: bridge

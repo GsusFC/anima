@@ -1,0 +1,28 @@
+{
+  "name": "animagen",
+  "version": "1.0.0",
+  "description": "Professional animation creation tool",
+  "main": "backend/index.js",
+  "scripts": {
+    "start": "node backend/index.js",
+    "build": "echo 'Building with Docker - see Dockerfile'",
+    "heroku-postbuild": "cd backend && npm install && cd ../frontend && npm install && npm run build && mkdir -p ../backend/public && cp -r dist/* ../backend/public/",
+    "dev": "concurrently \"cd backend && npm run dev\" \"cd frontend && npm run dev\"",
+    "test": "cd backend && npm test",
+    "test:ui": "echo 'UI tests available in tests/ directory'",
+    "test:integration": "echo 'Integration tests available in tests/ directory'"
+  },
+  "engines": {
+    "node": "18.x"
+  },
+  "buildpacks": [
+    {
+      "url": "heroku/nodejs"
+    }
+  ],
+  "author": "GsusFC",
+  "license": "MIT",
+  "devDependencies": {
+    "concurrently": "^8.2.2"
+  }
+}

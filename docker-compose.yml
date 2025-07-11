@@ -1,0 +1,101 @@
+# AnimaGen Docker Compose Configuration
+# Production-ready setup with Redis and Nginx
+
+version: '3.8'
+
+services:
+  # =============================================================================
+  # AnimaGen Application
+  # =============================================================================
+  animagen:
+    build: .
+    container_name: animagen-app
+    restart: unless-stopped
+    ports:
+      - "3001:3001"
+    environment:
+      - NODE_ENV=production
+      - PORT=3001
+      - OUTPUT_DIR=output
+      - TEMP_DIR=uploads
+      - REDIS_URL=redis://redis:6379
+      - CORS_ORIGINS=http://localhost,https://yourdomain.com
+      - MAX_FILE_SIZE=104857600
+      - MAX_FILES=100
+      - FFMPEG_THREADS=4
+      - MAX_CONCURRENT_JOBS=3
+    volumes:
+      - animagen_output:/app/output
+      - animagen_uploads:/app/uploads
+      - animagen_logs:/app/logs
+    depends_on:
+      - redis
+    networks:
+      - animagen-network
+    healthcheck:
+      test: ["CMD", "node", "-e", "require('http').get('http://localhost:3001/api/health', (res) => { process.exit(res.statusCode === 200 ? 0 : 1) })"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+
+  # =============================================================================
+  # Redis for Queue Processing
+  # =============================================================================
+  redis:
+    image: redis:7-alpine
+    container_name: animagen-redis
+    restart: unless-stopped
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    networks:
+      - animagen-network
+    command: redis-server --appendonly yes
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  # =============================================================================
+  # Nginx Reverse Proxy (Optional)
+  # =============================================================================
+  nginx:
+    image: nginx:alpine
+    container_name: animagen-nginx
+    restart: unless-stopped
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./nginx.conf:/etc/nginx/nginx.conf:ro
+      - ./ssl:/etc/nginx/ssl:ro
+      - animagen_output:/var/www/output:ro
+    depends_on:
+      - animagen
+    networks:
+      - animagen-network
+    profiles:
+      - with-nginx
+
+# =============================================================================
+# Volumes
+# =============================================================================
+volumes:
+  animagen_output:
+    driver: local
+  animagen_uploads:
+    driver: local
+  animagen_logs:
+    driver: local
+  redis_data:
+    driver: local
+
+# =============================================================================
+# Networks
+# =============================================================================
+networks:
+  animagen-network:
+    driver: bridge
