@@ -1,0 +1,76 @@
+.errorBoundary {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  height: 100vh;
+  padding: var(--figma-space-20);
+  text-align: center;
+  background-color: var(--figma-color-bg);
+}
+
+.errorIcon {
+  font-size: 32px;
+  margin-bottom: var(--figma-space-16);
+}
+
+.errorTitle {
+  font-size: var(--figma-font-size-16);
+  font-weight: var(--figma-font-weight-semibold);
+  color: var(--figma-color-text);
+  margin: 0 0 var(--figma-space-8) 0;
+}
+
+.errorMessage {
+  font-size: var(--figma-font-size-12);
+  color: var(--figma-color-text-secondary);
+  margin: 0 0 var(--figma-space-16) 0;
+  line-height: 1.4;
+}
+
+.retryButton {
+  background-color: var(--figma-color-bg-brand);
+  color: var(--figma-color-text-onbrand);
+  border: none;
+  border-radius: var(--figma-border-radius-medium);
+  padding: var(--figma-space-8) var(--figma-space-16);
+  font-size: var(--figma-font-size-12);
+  font-weight: var(--figma-font-weight-medium);
+  cursor: pointer;
+  transition: background-color 0.2s ease;
+}
+
+.retryButton:hover {
+  background-color: var(--figma-color-bg-brand-hover);
+}
+
+.retryButton:focus {
+  outline: 2px solid var(--figma-color-bg-brand);
+  outline-offset: 2px;
+}
+
+.errorDetails {
+  margin-top: var(--figma-space-16);
+  text-align: left;
+  width: 100%;
+  max-width: 400px;
+}
+
+.errorDetails summary {
+  font-size: var(--figma-font-size-11);
+  color: var(--figma-color-text-tertiary);
+  cursor: pointer;
+  margin-bottom: var(--figma-space-8);
+}
+
+.errorStack {
+  font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', monospace;
+  font-size: var(--figma-font-size-11);
+  color: var(--figma-color-text-secondary);
+  background-color: var(--figma-color-bg-secondary);
+  padding: var(--figma-space-8);
+  border-radius: var(--figma-border-radius-small);
+  overflow-x: auto;
+  white-space: pre-wrap;
+  word-break: break-all;
+}

@@ -1,0 +1,264 @@
+// Simplified main plugin entry point for Figma compatibility
+console.log('🎬 AnimaGen Plugin Loading...');
+
+// Simple message handler
+function handleMessage(msg: any) {
+  console.log('📨 Received message:', msg.type);
+  
+  switch (msg.type) {
+    case 'initialize':
+      handleInitialize();
+      break;
+    case 'detect-frames':
+      handleDetectFrames();
+      break;
+    case 'authenticate':
+      handleAuthenticate(msg.data);
+      break;
+    case 'export-frames':
+      handleExportFrames(msg.data);
+      break;
+    default:
+      console.warn('⚠️ Unknown message type:', msg.type);
+  }
+}
+
+// Initialize plugin
+function handleInitialize() {
+  console.log('🔧 Initializing AnimaGen Plugin...');
+  
+  // Detect frames on current page
+  const frames = detectFrames();
+  
+  // Send initial data to UI
+  figma.ui.postMessage({
+    type: 'plugin-initialized',
+    data: {
+      frames,
+      currentPage: figma.currentPage.name,
+      pluginVersion: '2.0.0'
+    }
+  });
+}
+
+// Detect frames in current page
+function detectFrames() {
+  console.log('🔍 Detecting frames...');
+  
+  const frames = figma.currentPage.findAll(node => node.type === 'FRAME') as FrameNode[];
+  
+  const detectedFrames = frames.map((frame, index) => {
+    const complexity = estimateComplexity(frame);
+    
+    return {
+      id: frame.id,
+      name: frame.name,
+      width: Math.round(frame.width),
+      height: Math.round(frame.height),
+      x: Math.round(frame.x),
+      y: Math.round(frame.y),
+      order: index,
+      complexity,
+      isValidForExport: frame.width > 0 && frame.height > 0 && frame.visible,
+      estimatedSize: estimateFileSize(frame.width, frame.height, complexity)
+    };
+  });
+  
+  console.log(`✅ Found ${detectedFrames.length} frames`);
+  return detectedFrames;
+}
+
+// Simple complexity estimation
+function estimateComplexity(frame: FrameNode): 'low' | 'medium' | 'high' {
+  const childCount = frame.children.length;
+  const hasEffects = frame.effects && frame.effects.length > 0;
+  const hasComplexFills = frame.fills && frame.fills.some(fill => fill.type !== 'SOLID');
+  
+  let score = 0;
+  if (childCount > 10) score += 1;
+  if (childCount > 25) score += 1;
+  if (hasEffects) score += 1;
+  if (hasComplexFills) score += 1;
+  
+  if (score <= 1) return 'low';
+  if (score <= 2) return 'medium';
+  return 'high';
+}
+
+// Estimate file size
+function estimateFileSize(width: number, height: number, complexity: string): string {
+  const pixels = width * height;
+  let multiplier = 3; // Base RGB
+  
+  switch (complexity) {
+    case 'medium': multiplier = 4; break;
+    case 'high': multiplier = 6; break;
+  }
+  
+  const bytes = pixels * multiplier;
+  
+  if (bytes < 1024 * 1024) {
+    return `${Math.round(bytes / 1024)}KB`;
+  } else {
+    return `${Math.round(bytes / (1024 * 1024))}MB`;
+  }
+}
+
+// Handle authentication
+function handleAuthenticate(data: any) {
+  console.log('🔐 Handling authentication...');
+  
+  const { apiKey } = data;
+  
+  // Simple validation (in real implementation, this would call your API)
+  if (apiKey && apiKey.startsWith('ag_figma_test_')) {
+    console.log('✅ Authentication successful (test mode)');
+    
+    figma.ui.postMessage({
+      type: 'auth-success',
+      data: {
+        user: {
+          id: 'test_user_123',
+          email: 'test@animagen.com',
+          name: 'Test User',
+          plan: 'Pro'
+        }
+      }
+    });
+  } else {
+    console.log('❌ Authentication failed');
+    
+    figma.ui.postMessage({
+      type: 'auth-error',
+      data: {
+        error: 'Invalid API key'
+      }
+    });
+  }
+}
+
+// Handle frame export
+function handleExportFrames(data: any) {
+  console.log('📤 Starting frame export...');
+
+  let { frameIds, settings } = data;
+
+  // If no frameIds provided, use first 3 frames for testing
+  if (!frameIds || frameIds.length === 0) {
+    const allFrames = figma.currentPage.findAll(node => node.type === 'FRAME') as FrameNode[];
+    frameIds = allFrames.slice(0, 3).map(frame => frame.id);
+    console.log('🧪 Using first 3 frames for test export:', frameIds.length);
+  }
+
+  // Send progress update
+  figma.ui.postMessage({
+    type: 'export-progress',
+    data: {
+      stage: 'starting',
+      current: 0,
+      total: frameIds.length,
+      message: 'Preparing export...'
+    }
+  });
+
+  // Simulate export process
+  exportFramesSequentially(frameIds, settings);
+}
+
+// Export frames one by one
+async function exportFramesSequentially(frameIds: string[], settings: any) {
+  const results = [];
+  
+  for (let i = 0; i < frameIds.length; i++) {
+    const frameId = frameIds[i];
+    const frame = figma.getNodeById(frameId) as FrameNode;
+    
+    if (!frame || frame.type !== 'FRAME') {
+      console.warn(`⚠️ Frame ${frameId} not found or invalid`);
+      continue;
+    }
+    
+    // Send progress update
+    figma.ui.postMessage({
+      type: 'export-progress',
+      data: {
+        stage: 'exporting',
+        current: i + 1,
+        total: frameIds.length,
+        message: `Exporting "${frame.name}"...`,
+        frameName: frame.name
+      }
+    });
+    
+    try {
+      // Export frame
+      const imageData = await frame.exportAsync({
+        format: settings.format || 'PNG',
+        constraint: {
+          type: 'SCALE',
+          value: settings.scale || 2
+        }
+      });
+      
+      results.push({
+        frameId,
+        frameName: frame.name,
+        success: true,
+        imageData: Array.from(imageData), // Convert Uint8Array to regular array
+        fileSize: imageData.length
+      });
+      
+      console.log(`✅ Exported frame: ${frame.name}`);
+      
+    } catch (error) {
+      console.error(`❌ Failed to export frame ${frame.name}:`, error);
+      
+      results.push({
+        frameId,
+        frameName: frame.name,
+        success: false,
+        error: error.message
+      });
+    }
+    
+    // Small delay to prevent overwhelming Figma
+    await new Promise(resolve => setTimeout(resolve, 100));
+  }
+  
+  // Send completion
+  figma.ui.postMessage({
+    type: 'export-complete',
+    data: {
+      results,
+      successCount: results.filter(r => r.success).length,
+      totalCount: results.length
+    }
+  });
+  
+  console.log('🎉 Export completed!');
+}
+
+// Handle frame detection request
+function handleDetectFrames() {
+  const frames = detectFrames();
+  
+  figma.ui.postMessage({
+    type: 'frames-detected',
+    data: { frames }
+  });
+}
+
+// Set up message listener
+figma.ui.onmessage = handleMessage;
+
+// Show UI
+figma.showUI(__html__, {
+  width: 400,
+  height: 600,
+  title: 'AnimaGen Exporter'
+});
+
+// Initialize plugin
+handleInitialize();
+
+console.log('🚀 AnimaGen Plugin Ready!');

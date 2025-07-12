@@ -3,6 +3,7 @@ import { BrowserRouter as Router, Routes, Route, Link } from 'react-router-dom';
 import Header from './components/Header/Header';
 import SlideshowApp from './slideshow/SlideshowApp';
 import VideoEditorApp from './video-editor/VideoEditorApp';
+import SlideshowViewer from './components/SlideshowViewer/SlideshowViewer';
 // import { FFmpegTest } from './components/FFmpegTest'; // Removed - FFmpeg not available
 
 // SlideShow App Component  
@@ -118,6 +119,7 @@ const App: React.FC = () => {
       <Routes>
         <Route path="/" element={<ModeSelector />} />
         <Route path="/slideshow" element={<SlideShowRoute />} />
+        <Route path="/slideshow/:id" element={<SlideshowViewer />} />
         <Route path="/video-editor" element={<VideoEditorApp />} />
         {/* <Route path="/ffmpeg-test" element={<FFmpegTest />} /> */}
       </Routes>

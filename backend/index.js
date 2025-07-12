@@ -560,7 +560,8 @@ app.get('/api/status', (req, res) => {
       authValidate: 'POST /api/auth/validate',
       figmaImport: 'POST /api/figma/import',
       generateKey: 'POST /api/auth/generate-key',
-      keyManager: 'GET /api/keys'
+      keyManager: 'GET /api/keys',
+      slideshowViewer: 'GET /api/slideshow/:id'
     }
   });
 });
@@ -789,6 +790,86 @@ app.post('/api/figma/import', async (req, res) => {
       details: error.message
     });
   }
+});
+
+// Slideshow Viewer Endpoint
+app.get('/api/slideshow/:id', async (req, res) => {
+  try {
+    const { id } = req.params;
+    console.log('🎬 Slideshow data requested for ID:', id);
+
+    // For now, return mock data based on the slideshow ID
+    // In a real implementation, you'd fetch this from a database
+    const slideshowData = {
+      id: id,
+      title: `Slideshow ${id}`,
+      description: 'Generated from Figma frames',
+      createdAt: new Date().toISOString(),
+      frames: [
+        {
+          id: 'frame_0',
+          name: 'Frame 1',
+          order: 0,
+          duration: 3000,
+          transition: 'fade',
+          // In real implementation, this would be actual image URLs
+          imageUrl: '/api/placeholder-image/1920/1080?text=Frame+1',
+          dimensions: { width: 1920, height: 1080 }
+        },
+        {
+          id: 'frame_1',
+          name: 'Frame 2',
+          order: 1,
+          duration: 3000,
+          transition: 'fade',
+          imageUrl: '/api/placeholder-image/1920/1080?text=Frame+2',
+          dimensions: { width: 1920, height: 1080 }
+        }
+      ],
+      settings: {
+        totalDuration: 6000,
+        autoPlay: true,
+        loop: true,
+        quality: 'high',
+        format: 'slideshow'
+      },
+      metadata: {
+        source: 'figma-plugin',
+        pluginVersion: '2.0.0',
+        framesCount: 2
+      }
+    };
+
+    res.json({
+      success: true,
+      slideshow: slideshowData
+    });
+
+  } catch (error) {
+    console.error('❌ Failed to get slideshow data:', error);
+    res.status(500).json({
+      success: false,
+      error: 'Failed to retrieve slideshow data',
+      details: error.message
+    });
+  }
+});
+
+// Placeholder image endpoint for testing
+app.get('/api/placeholder-image/:width/:height', (req, res) => {
+  const { width, height } = req.params;
+  const text = req.query.text || 'Placeholder';
+
+  // Generate a simple SVG placeholder
+  const svg = `
+    <svg width="${width}" height="${height}" xmlns="http://www.w3.org/2000/svg">
+      <rect width="100%" height="100%" fill="#1a1a1b"/>
+      <text x="50%" y="50%" font-family="Arial, sans-serif" font-size="48" fill="#ec4899" text-anchor="middle" dy=".3em">${text}</text>
+    </svg>
+  `;
+
+  res.setHeader('Content-Type', 'image/svg+xml');
+  res.send(svg);
 });
 
 // API Key Management Page
