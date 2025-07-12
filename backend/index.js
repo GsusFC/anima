@@ -558,12 +558,103 @@ app.get('/api/status', (req, res) => {
       jobStatus: 'GET /api/export/status/:jobId',
       jobDownload: 'GET /api/export/download/:jobId',
       authValidate: 'POST /api/auth/validate',
-      figmaImport: 'POST /api/figma/import'
+      figmaImport: 'POST /api/figma/import',
+      generateKey: 'POST /api/auth/generate-key',
+      keyManager: 'GET /api/keys'
     }
   });
 });
 
+// Simple API Key storage (in production, use a proper database)
+const apiKeysFile = path.join(__dirname, 'api-keys.json');
+
+// Load existing API keys
+function loadAPIKeys() {
+  try {
+    if (fs.existsSync(apiKeysFile)) {
+      return JSON.parse(fs.readFileSync(apiKeysFile, 'utf8'));
+    }
+  } catch (error) {
+    console.error('❌ Error loading API keys:', error);
+  }
+  return {};
+}
+
+// Save API keys
+function saveAPIKeys(keys) {
+  try {
+    fs.writeFileSync(apiKeysFile, JSON.stringify(keys, null, 2));
+    return true;
+  } catch (error) {
+    console.error('❌ Error saving API keys:', error);
+    return false;
+  }
+}
+
+// Generate API key
+function generateAPIKey() {
+  const timestamp = Date.now().toString(36);
+  const random = Math.random().toString(36).substring(2, 15);
+  return `ag_figma_${timestamp}${random}`;
+}
+
 // Figma Plugin Authentication Endpoints
+app.post('/api/auth/generate-key', (req, res) => {
+  try {
+    console.log('🔑 API Key generation requested');
+
+    const { email, name, purpose } = req.body;
+
+    if (!email || !name) {
+      return res.status(400).json({
+        success: false,
+        error: 'Email and name are required'
+      });
+    }
+
+    // Generate new API key
+    const apiKey = generateAPIKey();
+    const keyData = {
+      key: apiKey,
+      email: email,
+      name: name,
+      purpose: purpose || 'Figma Plugin Access',
+      createdAt: new Date().toISOString(),
+      lastUsed: null,
+      active: true
+    };
+
+    // Load existing keys and add new one
+    const apiKeys = loadAPIKeys();
+    apiKeys[apiKey] = keyData;
+
+    if (saveAPIKeys(apiKeys)) {
+      console.log('✅ API Key generated successfully for:', email);
+
+      res.json({
+        success: true,
+        apiKey: apiKey,
+        user: {
+          email: email,
+          name: name
+        },
+        message: 'API key generated successfully',
+        instructions: 'Copy this key and paste it in the Figma plugin. Keep it secure!'
+      });
+    } else {
+      throw new Error('Failed to save API key');
+    }
+
+  } catch (error) {
+    console.error('❌ API Key generation error:', error);
+    res.status(500).json({
+      success: false,
+      error: 'Failed to generate API key',
+      details: error.message
+    });
+  }
+});
+
 app.post('/api/auth/validate', (req, res) => {
   try {
     console.log('🔐 API Key validation requested from Figma plugin');
@@ -580,23 +671,37 @@ app.post('/api/auth/validate', (req, res) => {
 
     const apiKey = authHeader.replace('Bearer ', '');
 
-    // Simple API key validation - check format
-    if (!apiKey.startsWith('ag_figma_')) {
+    // Load API keys and validate
+    const apiKeys = loadAPIKeys();
+    const keyData = apiKeys[apiKey];
+
+    if (!keyData) {
       return res.status(401).json({
         valid: false,
-        error: 'Invalid API key format. Must start with "ag_figma_"'
+        error: 'Invalid API key. Please generate a new key at /api/auth/generate-key'
       });
     }
 
-    // For demo purposes, accept any key with correct format
-    console.log('✅ API Key validation successful for:', apiKey.substring(0, 20) + '...');
+    if (!keyData.active) {
+      return res.status(401).json({
+        valid: false,
+        error: 'API key has been deactivated'
+      });
+    }
+
+    // Update last used timestamp
+    keyData.lastUsed = new Date().toISOString();
+    apiKeys[apiKey] = keyData;
+    saveAPIKeys(apiKeys);
+
+    console.log('✅ API Key validation successful for:', keyData.email);
 
     res.json({
       valid: true,
       user: {
-        id: 'user_' + Date.now(),
-        email: 'user@animagen.com',
-        name: 'AnimaGen User',
+        id: 'user_' + apiKey.substring(-8),
+        email: keyData.email,
+        name: keyData.name,
         plan: 'Pro',
         permissions: ['export', 'upload', 'create_slideshow']
       },
@@ -696,6 +801,200 @@ app.post('/api/figma/import', upload.array('images'), async (req, res) => {
       details: error.message
     });
   }
+});
+
+// API Key Management Page
+app.get('/api/keys', (req, res) => {
+  const html = `
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AnimaGen API Key Generator</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            max-width: 600px;
+            margin: 50px auto;
+            padding: 20px;
+            background: #f5f5f5;
+        }
+        .container {
+            background: white;
+            padding: 30px;
+            border-radius: 12px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        h1 {
+            color: #333;
+            text-align: center;
+            margin-bottom: 30px;
+        }
+        .form-group {
+            margin-bottom: 20px;
+        }
+        label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: 500;
+            color: #555;
+        }
+        input[type="text"], input[type="email"] {
+            width: 100%;
+            padding: 12px;
+            border: 1px solid #ddd;
+            border-radius: 6px;
+            font-size: 16px;
+            box-sizing: border-box;
+        }
+        button {
+            background: #007AFF;
+            color: white;
+            padding: 12px 24px;
+            border: none;
+            border-radius: 6px;
+            font-size: 16px;
+            cursor: pointer;
+            width: 100%;
+        }
+        button:hover {
+            background: #0056CC;
+        }
+        .result {
+            margin-top: 20px;
+            padding: 15px;
+            border-radius: 6px;
+            display: none;
+        }
+        .success {
+            background: #d4edda;
+            border: 1px solid #c3e6cb;
+            color: #155724;
+        }
+        .error {
+            background: #f8d7da;
+            border: 1px solid #f5c6cb;
+            color: #721c24;
+        }
+        .api-key {
+            background: #f8f9fa;
+            padding: 10px;
+            border-radius: 4px;
+            font-family: monospace;
+            word-break: break-all;
+            margin: 10px 0;
+            border: 1px solid #e9ecef;
+        }
+        .copy-btn {
+            background: #28a745;
+            padding: 5px 10px;
+            font-size: 12px;
+            margin-top: 5px;
+            width: auto;
+        }
+        .instructions {
+            background: #e7f3ff;
+            padding: 15px;
+            border-radius: 6px;
+            margin-bottom: 20px;
+            border-left: 4px solid #007AFF;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🔑 AnimaGen API Key Generator</h1>
+
+        <div class="instructions">
+            <strong>Para usar el plugin de Figma:</strong><br>
+            1. Genera tu API key aquí<br>
+            2. Copia la key generada<br>
+            3. Pégala en el plugin de Figma AnimaGen Exporter
+        </div>
+
+        <form id="keyForm">
+            <div class="form-group">
+                <label for="name">Nombre completo:</label>
+                <input type="text" id="name" name="name" required placeholder="Tu nombre">
+            </div>
+
+            <div class="form-group">
+                <label for="email">Email:</label>
+                <input type="email" id="email" name="email" required placeholder="tu@email.com">
+            </div>
+
+            <div class="form-group">
+                <label for="purpose">Propósito (opcional):</label>
+                <input type="text" id="purpose" name="purpose" placeholder="Ej: Plugin de Figma para presentaciones">
+            </div>
+
+            <button type="submit">Generar API Key</button>
+        </form>
+
+        <div id="result" class="result">
+            <div id="resultContent"></div>
+        </div>
+    </div>
+
+    <script>
+        document.getElementById('keyForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+
+            const formData = new FormData(e.target);
+            const data = Object.fromEntries(formData);
+
+            try {
+                const response = await fetch('/api/auth/generate-key', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify(data)
+                });
+
+                const result = await response.json();
+                const resultDiv = document.getElementById('result');
+                const contentDiv = document.getElementById('resultContent');
+
+                if (result.success) {
+                    contentDiv.innerHTML = \`
+                        <strong>✅ API Key generada exitosamente!</strong><br><br>
+                        <strong>Tu API Key:</strong>
+                        <div class="api-key" id="apiKey">\${result.apiKey}</div>
+                        <button class="copy-btn" onclick="copyToClipboard()">📋 Copiar</button>
+                        <br><br>
+                        <strong>⚠️ Importante:</strong> Guarda esta key en un lugar seguro. No la compartas con nadie.
+                    \`;
+                    resultDiv.className = 'result success';
+                } else {
+                    contentDiv.innerHTML = \`<strong>❌ Error:</strong> \${result.error}\`;
+                    resultDiv.className = 'result error';
+                }
+
+                resultDiv.style.display = 'block';
+
+            } catch (error) {
+                const resultDiv = document.getElementById('result');
+                const contentDiv = document.getElementById('resultContent');
+                contentDiv.innerHTML = \`<strong>❌ Error:</strong> \${error.message}\`;
+                resultDiv.className = 'result error';
+                resultDiv.style.display = 'block';
+            }
+        });
+
+        function copyToClipboard() {
+            const apiKey = document.getElementById('apiKey').textContent;
+            navigator.clipboard.writeText(apiKey).then(() => {
+                alert('API Key copiada al portapapeles!');
+            });
+        }
+    </script>
+</body>
+</html>
+  `;
+
+  res.send(html);
 });
 
 // Debug logger for export requests
