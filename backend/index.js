@@ -717,67 +717,55 @@ app.post('/api/auth/validate', (req, res) => {
   }
 });
 
-// Figma Import Endpoint
-app.post('/api/figma/import', upload.array('images'), async (req, res) => {
+// Figma Import Endpoint (JSON format for Figma compatibility)
+app.post('/api/figma/import', async (req, res) => {
   try {
     console.log('🎨 Figma import requested');
-    console.log('📁 Files received:', req.files?.length || 0);
     console.log('📋 Body data:', req.body);
 
-    if (!req.files || req.files.length === 0) {
+    const { source, pluginVersion, sessionId, frames } = req.body;
+
+    if (!frames || frames.length === 0) {
       return res.status(400).json({
         success: false,
-        error: 'No images provided'
+        error: 'No frames provided'
       });
     }
 
-    const sessionId = req.body.sessionId || `figma_${Date.now()}`;
-    const source = req.body.source || 'figma-plugin';
-    const pluginVersion = req.body.pluginVersion || '2.0.0';
-
-    // Process metadata if provided
-    const metadata = {};
-    Object.keys(req.body).forEach(key => {
-      if (key.startsWith('metadata[')) {
-        const index = key.match(/\[(\d+)\]/)[1];
-        try {
-          metadata[index] = JSON.parse(req.body[key]);
-        } catch (e) {
-          console.warn('⚠️ Failed to parse metadata for index:', index);
-        }
-      }
-    });
-
-    console.log('📊 Processed metadata for', Object.keys(metadata).length, 'frames');
+    console.log('📊 Processing', frames.length, 'frames from Figma');
 
     // Create slideshow URL (using existing slideshow functionality)
-    const slideshowId = `slideshow_${sessionId}`;
+    const slideshowId = `slideshow_${sessionId || Date.now()}`;
     const projectUrl = `https://anima-production-3dad.up.railway.app/slideshow/${slideshowId}`;
+
+    // Process frames (in a real implementation, you'd save the image data)
+    const processedFrames = frames.map((frame, index) => ({
+      id: `frame_${index}`,
+      name: frame.name,
+      order: frame.order,
+      dimensions: {
+        width: frame.metadata?.dimensions?.width || 1920,
+        height: frame.metadata?.dimensions?.height || 1080
+      },
+      format: frame.metadata?.format || 'PNG'
+    }));
 
     // Prepare response
     const response = {
       success: true,
-      sessionId: sessionId,
+      sessionId: sessionId || `figma_${Date.now()}`,
       projectId: slideshowId,
       projectUrl: projectUrl,
-      framesImported: req.files.length,
-      files: req.files.map((file, index) => ({
-        id: `frame_${index}`,
-        name: file.originalname,
-        order: index,
-        dimensions: {
-          width: metadata[index]?.dimensions?.width || 1920,
-          height: metadata[index]?.dimensions?.height || 1080
-        }
-      })),
+      framesImported: frames.length,
+      files: processedFrames,
       defaultSettings: {
-        transitions: req.files.map((_, index) => ({
+        transitions: frames.map((_, index) => ({
           type: 'fade',
           duration: 1000,
           fromFrameId: index > 0 ? `frame_${index - 1}` : null,
           toFrameId: `frame_${index}`
         })),
-        frameDurations: new Array(req.files.length).fill(3000), // 3 seconds per frame
+        frameDurations: new Array(frames.length).fill(3000), // 3 seconds per frame
         exportSettings: {
           quality: 'high',
           resolution: '1920x1080',
@@ -785,7 +773,7 @@ app.post('/api/figma/import', upload.array('images'), async (req, res) => {
           format: 'mp4'
         }
       },
-      message: `Successfully imported ${req.files.length} frames from Figma`
+      message: `Successfully imported ${frames.length} frames from Figma`
     };
 
     console.log('✅ Figma import completed successfully');
