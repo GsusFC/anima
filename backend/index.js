@@ -540,7 +540,7 @@ if (process.env.NODE_ENV === 'production') {
 
 // API Routes
 app.get('/api/status', (req, res) => {
-  res.json({ 
+  res.json({
     message: 'AnimaGen Backend Server',
     status: 'running',
     version: '1.0.0',
@@ -556,9 +556,146 @@ app.get('/api/status', (req, res) => {
       download: 'GET /download/:filename',
       queuedExport: 'POST /api/export/{slideshow|video|gif|trim|convert}',
       jobStatus: 'GET /api/export/status/:jobId',
-      jobDownload: 'GET /api/export/download/:jobId'
+      jobDownload: 'GET /api/export/download/:jobId',
+      authValidate: 'POST /api/auth/validate',
+      figmaImport: 'POST /api/figma/import'
     }
   });
+});
+
+// Figma Plugin Authentication Endpoints
+app.post('/api/auth/validate', (req, res) => {
+  try {
+    console.log('🔐 API Key validation requested from Figma plugin');
+
+    const authHeader = req.headers.authorization;
+    const { source, version } = req.body;
+
+    if (!authHeader || !authHeader.startsWith('Bearer ')) {
+      return res.status(401).json({
+        valid: false,
+        error: 'Missing or invalid authorization header'
+      });
+    }
+
+    const apiKey = authHeader.replace('Bearer ', '');
+
+    // Simple API key validation - check format
+    if (!apiKey.startsWith('ag_figma_')) {
+      return res.status(401).json({
+        valid: false,
+        error: 'Invalid API key format. Must start with "ag_figma_"'
+      });
+    }
+
+    // For demo purposes, accept any key with correct format
+    console.log('✅ API Key validation successful for:', apiKey.substring(0, 20) + '...');
+
+    res.json({
+      valid: true,
+      user: {
+        id: 'user_' + Date.now(),
+        email: 'user@animagen.com',
+        name: 'AnimaGen User',
+        plan: 'Pro',
+        permissions: ['export', 'upload', 'create_slideshow']
+      },
+      expiresAt: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString() // 30 days
+    });
+
+  } catch (error) {
+    console.error('❌ API Key validation error:', error);
+    res.status(500).json({
+      valid: false,
+      error: 'Internal server error during validation'
+    });
+  }
+});
+
+// Figma Import Endpoint
+app.post('/api/figma/import', upload.array('images'), async (req, res) => {
+  try {
+    console.log('🎨 Figma import requested');
+    console.log('📁 Files received:', req.files?.length || 0);
+    console.log('📋 Body data:', req.body);
+
+    if (!req.files || req.files.length === 0) {
+      return res.status(400).json({
+        success: false,
+        error: 'No images provided'
+      });
+    }
+
+    const sessionId = req.body.sessionId || `figma_${Date.now()}`;
+    const source = req.body.source || 'figma-plugin';
+    const pluginVersion = req.body.pluginVersion || '2.0.0';
+
+    // Process metadata if provided
+    const metadata = {};
+    Object.keys(req.body).forEach(key => {
+      if (key.startsWith('metadata[')) {
+        const index = key.match(/\[(\d+)\]/)[1];
+        try {
+          metadata[index] = JSON.parse(req.body[key]);
+        } catch (e) {
+          console.warn('⚠️ Failed to parse metadata for index:', index);
+        }
+      }
+    });
+
+    console.log('📊 Processed metadata for', Object.keys(metadata).length, 'frames');
+
+    // Create slideshow URL (using existing slideshow functionality)
+    const slideshowId = `slideshow_${sessionId}`;
+    const projectUrl = `https://anima-production-3dad.up.railway.app/slideshow/${slideshowId}`;
+
+    // Prepare response
+    const response = {
+      success: true,
+      sessionId: sessionId,
+      projectId: slideshowId,
+      projectUrl: projectUrl,
+      framesImported: req.files.length,
+      files: req.files.map((file, index) => ({
+        id: `frame_${index}`,
+        name: file.originalname,
+        order: index,
+        dimensions: {
+          width: metadata[index]?.dimensions?.width || 1920,
+          height: metadata[index]?.dimensions?.height || 1080
+        }
+      })),
+      defaultSettings: {
+        transitions: req.files.map((_, index) => ({
+          type: 'fade',
+          duration: 1000,
+          fromFrameId: index > 0 ? `frame_${index - 1}` : null,
+          toFrameId: `frame_${index}`
+        })),
+        frameDurations: new Array(req.files.length).fill(3000), // 3 seconds per frame
+        exportSettings: {
+          quality: 'high',
+          resolution: '1920x1080',
+          fps: 30,
+          format: 'mp4'
+        }
+      },
+      message: `Successfully imported ${req.files.length} frames from Figma`
+    };
+
+    console.log('✅ Figma import completed successfully');
+    console.log('🔗 Project URL:', projectUrl);
+
+    res.json(response);
+
+  } catch (error) {
+    console.error('❌ Figma import error:', error);
+    res.status(500).json({
+      success: false,
+      error: 'Failed to import frames from Figma',
+      details: error.message
+    });
+  }
 });
 
 // Debug logger for export requests
