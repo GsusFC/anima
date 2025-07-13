@@ -101,17 +101,18 @@ const SlideshowContent: React.FC = () => {
             </div>
           </div>
 
-        {/* Main Content - Viewer Layout */}
-        <div className="flex flex-col flex-1 min-h-0">
-          {/* Preview takes most space */}
-          <div className="flex-1 border-b border-dark-700 flex flex-col min-h-0">
-            <Preview />
-          </div>
+          {/* Main Content - Viewer Layout */}
+          <div className="flex flex-col flex-1 min-h-0">
+            {/* Preview takes most space */}
+            <div className="flex-1 border-b border-dark-700 flex flex-col min-h-0">
+              <Preview />
+            </div>
 
-          {/* Timeline at bottom */}
-          <div className="h-[200px] border-t border-dark-700 flex-shrink-0 relative">
-            <div className="h-full overflow-x-auto overflow-y-hidden">
-              <Timeline />
+            {/* Timeline at bottom */}
+            <div className="h-[200px] border-t border-dark-700 flex-shrink-0 relative">
+              <div className="h-full overflow-x-auto overflow-y-hidden">
+                <Timeline />
+              </div>
             </div>
           </div>
         </div>
@@ -134,28 +135,29 @@ const SlideshowContent: React.FC = () => {
 
         {/* Main Content */}
         <div className="flex flex-col flex-1 min-h-0">
-        {/* Top Section - Three Columns */}
-        <div className="flex flex-1 min-h-0">
-          {/* Left Sidebar - Image Upload */}
-          <div className="w-80 border-r border-dark-700 flex flex-col min-h-0">
-            <ImageUpload />
+          {/* Top Section - Three Columns */}
+          <div className="flex flex-1 min-h-0">
+            {/* Left Sidebar - Image Upload */}
+            <div className="w-80 border-r border-dark-700 flex flex-col min-h-0">
+              <ImageUpload />
+            </div>
+
+            {/* Center - Preview */}
+            <div className="flex-1 border-r border-dark-700 flex flex-col min-h-0">
+              <Preview />
+            </div>
+
+            {/* Right Sidebar - Export Controls */}
+            <div className="w-80 flex flex-col min-h-0">
+              <ExportControls />
+            </div>
           </div>
 
-          {/* Center - Preview */}
-          <div className="flex-1 border-r border-dark-700 flex flex-col min-h-0">
-            <Preview />
-          </div>
-
-          {/* Right Sidebar - Export Controls */}
-          <div className="w-80 flex flex-col min-h-0">
-            <ExportControls />
-          </div>
-        </div>
-
-        {/* Bottom Section - Enhanced Timeline */}
-        <div className="h-[300px] border-t border-dark-700 flex-shrink-0 relative">
-          <div className="h-full overflow-x-auto overflow-y-hidden">
-            <Timeline />
+          {/* Bottom Section - Enhanced Timeline */}
+          <div className="h-[300px] border-t border-dark-700 flex-shrink-0 relative">
+            <div className="h-full overflow-x-auto overflow-y-hidden">
+              <Timeline />
+            </div>
           </div>
         </div>
       </div>
