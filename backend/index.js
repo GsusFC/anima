@@ -229,6 +229,40 @@ app.use('/temp', express.static(tempDir));
 // Serve uploaded files statically for Figma plugin
 app.use('/uploads', express.static(tempDir));
 
+// Serve images from base64 data (Railway compatible)
+app.get('/api/image/:sessionId/:filename', (req, res) => {
+  try {
+    const { sessionId, filename } = req.params;
+
+    // Load composition to get base64 data
+    const compositionId = `slideshow_${sessionId}`;
+    const composition = loadComposition(compositionId);
+
+    if (!composition || !composition.images) {
+      return res.status(404).json({ error: 'Image not found' });
+    }
+
+    // Find the image by filename
+    const image = composition.images.find(img => img.filename === filename);
+
+    if (!image || !image.base64Data) {
+      return res.status(404).json({ error: 'Image data not found' });
+    }
+
+    // Convert base64 back to buffer and serve
+    const imageBuffer = Buffer.from(image.base64Data, 'base64');
+
+    res.setHeader('Content-Type', image.mimetype || 'image/jpeg');
+    res.setHeader('Content-Length', imageBuffer.length);
+    res.setHeader('Cache-Control', 'public, max-age=31536000'); // Cache for 1 year
+    res.send(imageBuffer);
+
+  } catch (error) {
+    console.error('❌ Error serving image:', error);
+    res.status(500).json({ error: 'Failed to serve image' });
+  }
+});
+
 // Serve output files with proper video headers for streaming
 app.use('/output', (req, res, next) => {
   const filename = path.basename(req.path);
@@ -834,24 +868,24 @@ app.post('/api/figma/import', handleFigmaUpload, async (req, res) => {
 
         if (frameData.imageData && Array.isArray(frameData.imageData)) {
           try {
-            // Convert array back to Uint8Array and save as file
+            // Convert array back to Uint8Array
             const imageBuffer = Buffer.from(frameData.imageData);
             const format = frameData.metadata?.format || 'jpg';
             const filename = `frame_${i}.${format.toLowerCase()}`;
-            const filepath = path.join(sessionDir, filename);
 
-            // Save the file
-            fs.writeFileSync(filepath, imageBuffer);
+            // For Railway compatibility: store as base64 instead of file
+            const base64Data = imageBuffer.toString('base64');
+            const mimeType = format === 'jpg' ? 'image/jpeg' : 'image/png';
 
-            console.log(`💾 Saved frame ${i}: ${filename} (${imageBuffer.length} bytes)`);
+            console.log(`💾 Processing frame ${i}: ${filename} (${imageBuffer.length} bytes)`);
 
             frames.push({
               id: `${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
               filename: filename,
               originalName: frameData.name || `frame_${i}`,
-              path: filepath,
+              base64Data: base64Data, // Store base64 data instead of file path
               size: imageBuffer.length,
-              mimetype: format === 'jpg' ? 'image/jpeg' : 'image/png',
+              mimetype: mimeType,
               metadata: frameData.metadata,
               order: i
             });
@@ -1000,7 +1034,7 @@ app.get('/api/slideshow/:id', async (req, res) => {
           order: index,
           duration: composition.frameDurations?.[index] || 3000,
           transition: composition.transitions?.[index]?.type || 'fade',
-          imageUrl: `/uploads/${composition.sessionId}/${img.filename}`,
+          imageUrl: img.base64Data ? `/api/image/${composition.sessionId}/${img.filename}` : `/uploads/${composition.sessionId}/${img.filename}`,
           dimensions: {
             width: img.metadata?.dimensions?.width || 1920,
             height: img.metadata?.dimensions?.height || 1080
