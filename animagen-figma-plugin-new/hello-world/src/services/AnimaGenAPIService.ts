@@ -7,8 +7,9 @@ export class AnimaGenAPIService {
   private timeout: number;
 
   constructor() {
-    // Use Railway for production
-    this.baseURL = 'https://anima-production-3dad.up.railway.app';
+    // Use local server for testing
+    this.baseURL = 'http://localhost:3001';
+    // For production, change to: 'https://anima-production-3dad.up.railway.app'
     this.timeout = 30000; // 30 seconds
   }
 
