@@ -1,6 +1,10 @@
 import React from 'react';
 
-const Header: React.FC = () => {
+interface HeaderProps {
+  onOpenAPIKeyModal?: () => void;
+}
+
+const Header: React.FC<HeaderProps> = ({ onOpenAPIKeyModal }) => {
   return (
     <header style={{
       height: '50px', // Reduced from 64px to save space
@@ -57,6 +61,41 @@ const Header: React.FC = () => {
         alignItems: 'center',
         gap: '16px'
       }}>
+        {/* API Key Button */}
+        {onOpenAPIKeyModal && (
+          <button
+            onClick={onOpenAPIKeyModal}
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: '6px',
+              padding: '6px 12px',
+              backgroundColor: 'rgba(236, 72, 153, 0.1)',
+              border: '1px solid rgba(236, 72, 153, 0.3)',
+              borderRadius: '6px',
+              color: '#ec4899',
+              fontSize: '12px',
+              fontFamily: '"Space Mono", monospace',
+              fontWeight: 'bold',
+              cursor: 'pointer',
+              transition: 'all 0.2s ease'
+            }}
+            onMouseEnter={(e) => {
+              e.currentTarget.style.backgroundColor = 'rgba(236, 72, 153, 0.2)';
+              e.currentTarget.style.borderColor = '#ec4899';
+            }}
+            onMouseLeave={(e) => {
+              e.currentTarget.style.backgroundColor = 'rgba(236, 72, 153, 0.1)';
+              e.currentTarget.style.borderColor = 'rgba(236, 72, 153, 0.3)';
+            }}
+          >
+            <svg style={{ width: '14px', height: '14px' }} fill="currentColor" viewBox="0 0 24 24">
+              <path d="M7 14c-1.66 0-3 1.34-3 3 0 1.31.84 2.41 2 2.83V22h2v-2.17c1.16-.42 2-1.52 2-2.83 0-1.66-1.34-3-3-3zM10.5 2C9 2 7.73 3.15 7.59 4.59L7.17 8.41C7.05 9.85 8.23 11 9.67 11h1.66c1.44 0 2.62-1.15 2.5-2.59L13.41 4.59C13.27 3.15 12 2 10.5 2z"/>
+            </svg>
+            API KEYS
+          </button>
+        )}
+
         <div style={{
           fontSize: '18px',
           color: '#ec4899',

@@ -6,6 +6,8 @@ import Preview from './components/Preview';
 import Timeline from './components/Timeline';
 import ExportControls from './components/ExportControls';
 import { useSlideshowContext } from './context/SlideshowContext';
+import APIKeyModal from '../components/APIKeyModal/APIKeyModal';
+import Header from '../components/Header/Header';
 
 // Internal component that uses the context
 const SlideshowContent: React.FC = () => {
@@ -13,6 +15,7 @@ const SlideshowContent: React.FC = () => {
   const { loadSlideshowFromAPI } = useSlideshowContext();
   const [isLoading, setIsLoading] = useState(false);
   const [loadError, setLoadError] = useState<string | null>(null);
+  const [isAPIKeyModalOpen, setIsAPIKeyModalOpen] = useState(false);
 
   const isViewerMode = !!id;
 
@@ -75,24 +78,28 @@ const SlideshowContent: React.FC = () => {
   // Viewer mode layout (simplified)
   if (isViewerMode) {
     return (
-      <div className="app-container custom-scrollbar">
-        {/* Header for viewer mode */}
-        <div className="bg-dark-800 border-b border-dark-700 px-6 py-4">
-          <div className="flex items-center justify-between">
-            <div>
-              <h1 className="text-2xl font-bold text-pink-500">Slideshow Viewer</h1>
-              <p className="text-gray-400 text-sm">Viewing slideshow: {id}</p>
-            </div>
-            <div className="flex items-center gap-4">
-              <button
-                onClick={() => window.location.href = '/'}
-                className="px-4 py-2 bg-dark-700 text-white rounded-lg hover:bg-dark-600 transition-colors"
-              >
-                ← Back to AnimaGen
-              </button>
+      <>
+        <div className="app-container custom-scrollbar">
+          {/* Header */}
+          <Header onOpenAPIKeyModal={() => setIsAPIKeyModalOpen(true)} />
+
+          {/* Viewer info */}
+          <div className="bg-dark-800 border-b border-dark-700 px-6 py-3">
+            <div className="flex items-center justify-between">
+              <div>
+                <h2 className="text-lg font-bold text-pink-500">Slideshow Viewer</h2>
+                <p className="text-gray-400 text-sm">Viewing slideshow: {id}</p>
+              </div>
+              <div className="flex items-center gap-4">
+                <button
+                  onClick={() => window.location.href = '/'}
+                  className="px-4 py-2 bg-dark-700 text-white rounded-lg hover:bg-dark-600 transition-colors"
+                >
+                  ← Back to AnimaGen
+                </button>
+              </div>
             </div>
           </div>
-        </div>
 
         {/* Main Content - Viewer Layout */}
         <div className="flex flex-col flex-1 min-h-0">
@@ -108,15 +115,25 @@ const SlideshowContent: React.FC = () => {
             </div>
           </div>
         </div>
-      </div>
+
+        {/* API Key Modal */}
+        <APIKeyModal
+          isOpen={isAPIKeyModalOpen}
+          onClose={() => setIsAPIKeyModalOpen(false)}
+        />
+      </>
     );
   }
 
   // Editor mode layout (original)
   return (
-    <div className="app-container custom-scrollbar">
-      {/* Main Content */}
-      <div className="flex flex-col flex-1 min-h-0">
+    <>
+      <div className="app-container custom-scrollbar">
+        {/* Header */}
+        <Header onOpenAPIKeyModal={() => setIsAPIKeyModalOpen(true)} />
+
+        {/* Main Content */}
+        <div className="flex flex-col flex-1 min-h-0">
         {/* Top Section - Three Columns */}
         <div className="flex flex-1 min-h-0">
           {/* Left Sidebar - Image Upload */}
@@ -142,7 +159,13 @@ const SlideshowContent: React.FC = () => {
           </div>
         </div>
       </div>
-    </div>
+
+      {/* API Key Modal */}
+      <APIKeyModal
+        isOpen={isAPIKeyModalOpen}
+        onClose={() => setIsAPIKeyModalOpen(false)}
+      />
+    </>
   );
 };
 

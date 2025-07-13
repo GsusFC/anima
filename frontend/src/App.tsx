@@ -1,11 +1,10 @@
 import React from 'react';
 import { BrowserRouter as Router, Routes, Route, Link } from 'react-router-dom';
-import Header from './components/Header/Header';
 import SlideshowApp from './slideshow/SlideshowApp';
 import VideoEditorApp from './video-editor/VideoEditorApp';
 // import { FFmpegTest } from './components/FFmpegTest'; // Removed - FFmpeg not available
 
-// SlideShow App Component  
+// SlideShow App Component
 const SlideShowRoute: React.FC = () => {
   return (
     <div style={{
@@ -17,13 +16,8 @@ const SlideShowRoute: React.FC = () => {
       fontFamily: '"Space Mono", monospace',
       overflow: 'hidden'
     }}>
-      {/* Header */}
-      <Header />
-      
-      {/* Slideshow Content */}
-      <div style={{ flex: 1, minHeight: 0 }}>
-        <SlideshowApp />
-      </div>
+      {/* SlideshowApp now includes its own Header with API Key modal */}
+      <SlideshowApp />
     </div>
   );
 };
