@@ -56,28 +56,30 @@ export function FrameList({
       <div style={{ marginBottom: '16px' }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
           <Text style={{ fontSize: '14px', fontWeight: '600' }}>
-            📋 Select Frames to Export
+            {totalCount > 0 ? '🎯 Selected Frames' : '📋 Select Frames'}
           </Text>
-          <Text style={{ 
-            fontSize: '12px', 
-            color: selectedCount > 0 ? '#ec4899' : '#6b7280',
-            fontWeight: selectedCount > 0 ? '600' : '400'
-          }}>
-            {selectedCount} of {totalCount} selected
-          </Text>
+          {totalCount > 0 && (
+            <Text style={{
+              fontSize: '12px',
+              color: selectedCount > 0 ? '#ec4899' : '#6b7280',
+              fontWeight: selectedCount > 0 ? '600' : '400'
+            }}>
+              {selectedCount} of {totalCount} selected
+            </Text>
+          )}
         </div>
 
         {/* Mostrar si hay selección de Figma */}
-        {figmaSelection.length > 0 && (
+        {figmaSelection.length > 0 && totalCount > 0 && (
           <div style={{
-            backgroundColor: '#eff6ff',
-            border: '1px solid #bfdbfe',
+            backgroundColor: '#f0fdf4',
+            border: '1px solid #bbf7d0',
             borderRadius: '4px',
             padding: '8px 12px',
             marginBottom: '12px'
           }}>
-            <Text style={{ fontSize: '11px', color: '#1e40af' }}>
-              🎯 {figmaSelection.length} frames were selected in Figma
+            <Text style={{ fontSize: '11px', color: '#166534' }}>
+              ✅ {figmaSelection.length} frames imported from your Figma selection
             </Text>
           </div>
         )}
@@ -112,11 +114,29 @@ export function FrameList({
         backgroundColor: '#ffffff'
       }}>
         {validFrames.length === 0 ? (
-          <div style={{ padding: '24px', textAlign: 'center' }}>
-            <Text style={{ color: '#6b7280', fontSize: '12px' }}>
-              📭 No valid frames found<br />
-              Select some frames in Figma first
+          <div style={{ padding: '32px', textAlign: 'center' }}>
+            <div style={{ fontSize: '32px', marginBottom: '12px' }}>📋</div>
+            <Text style={{ color: '#374151', fontSize: '14px', fontWeight: '600', marginBottom: '8px' }}>
+              No frames selected
             </Text>
+            <Text style={{ color: '#6b7280', fontSize: '12px', lineHeight: '1.4' }}>
+              Please select frames in Figma first,<br />
+              then return to this plugin to export them.
+            </Text>
+            <div style={{
+              backgroundColor: '#eff6ff',
+              border: '1px solid #bfdbfe',
+              borderRadius: '6px',
+              padding: '12px',
+              marginTop: '16px'
+            }}>
+              <Text style={{ fontSize: '11px', color: '#1e40af' }}>
+                💡 <strong>How to select frames:</strong><br />
+                1. Close this plugin<br />
+                2. Select frames in Figma<br />
+                3. Reopen the plugin
+              </Text>
+            </div>
           </div>
         ) : (
           validFrames.map((frame, index) => {

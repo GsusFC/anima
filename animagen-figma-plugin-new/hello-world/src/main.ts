@@ -98,31 +98,30 @@ async function initializePlugin() {
 }
 
 function detectAndSendFrames() {
-  console.log('🔍 Detecting frames and selection...')
+  console.log('🔍 Detecting selected frames...')
 
-  // Get all frames on the current page
-  const allFrames = figma.currentPage.findAll(node =>
-    node.type === 'FRAME' &&
-    node.width > 0 &&
-    node.height > 0
-  ) as FrameNode[]
-
-  // Get currently selected frames
+  // Get currently selected frames only
   const selectedFrames = figma.currentPage.selection.filter(node =>
     node.type === 'FRAME' &&
     node.width > 0 &&
     node.height > 0
   ) as FrameNode[]
 
-  console.log(`📋 Found ${allFrames.length} total frames on page`)
   console.log(`🎯 Found ${selectedFrames.length} selected frames`)
 
-  if (selectedFrames.length > 0) {
-    console.log('📋 Selected frame names:', selectedFrames.map(f => f.name))
+  if (selectedFrames.length === 0) {
+    console.log('⚠️ No frames selected. Please select frames in Figma to export.')
+    emit('frames-detected', {
+      frames: [],
+      figmaSelection: []
+    })
+    return
   }
 
-  // Map all frames for the UI
-  const detectedFrames = allFrames.map((frame, index) => {
+  console.log('📋 Selected frame names:', selectedFrames.map(f => f.name))
+
+  // Map only selected frames for the UI
+  const detectedFrames = selectedFrames.map((frame, index) => {
     const complexity = estimateComplexity(frame)
 
     return {
@@ -143,10 +142,10 @@ function detectAndSendFrames() {
     }
   })
 
-  // Get IDs of selected frames for pre-selection in UI
+  // All frames are pre-selected since they were selected in Figma
   const figmaSelection = selectedFrames.map(frame => frame.id)
 
-  console.log(`✅ Sending ${detectedFrames.length} frames with ${figmaSelection.length} pre-selected`)
+  console.log(`✅ Sending ${detectedFrames.length} frames (all pre-selected from Figma)`)
 
   emit('frames-detected', {
     frames: detectedFrames,
