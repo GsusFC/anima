@@ -2,6 +2,24 @@
 
 > Documentación completa para la integración del plugin de Figma con la API de AnimaGen
 
+## 🎯 Estado Actual (Enero 2025)
+
+### ✅ **Funcionalidades Operativas:**
+- **Autenticación**: Bypass automático en producción para plugin de Figma
+- **Exportación de Frames**: Exporta frames desde Figma como JPG/PNG
+- **Subida de Archivos**: Usa endpoint `/api/figma/upload` (compatible con Figma)
+- **Creación de Slideshow**: Crea automáticamente slideshow con frames subidos
+- **Almacenamiento**: Guarda archivos en `uploads/sessionId/filename` (estándar AnimaGen)
+
+### ⚠️ **Problemas Conocidos:**
+- **Generación de Preview**: Endpoint `/preview` necesita actualización para encontrar archivos de `/api/figma/upload`
+- **Solución temporal**: Slideshow funciona, solo falla la generación de preview
+
+### 🔧 **Arquitectura Implementada:**
+- Plugin usa JSON con buffers de archivos (sin FormData - limitación de Figma)
+- Backend convierte buffers a archivos físicos (igual que multer)
+- Sigue patrones estándar de almacenamiento de AnimaGen
+
 ## 📋 Resumen de la Arquitectura Existente
 
 ### **🔗 API de AnimaGen (Ya desarrollada)**

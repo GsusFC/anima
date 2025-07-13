@@ -806,6 +806,49 @@ const handleFigmaUpload = (req, res, next) => {
   }
 };
 
+// Debug endpoint to check uploaded files
+app.get('/api/debug/session/:sessionId', (req, res) => {
+  try {
+    const { sessionId } = req.params;
+    const sessionDir = path.join(tempDir, sessionId);
+
+    if (!fs.existsSync(sessionDir)) {
+      return res.json({
+        exists: false,
+        sessionId: sessionId,
+        path: sessionDir,
+        message: 'Session directory does not exist'
+      });
+    }
+
+    const files = fs.readdirSync(sessionDir);
+    const fileDetails = files.map(filename => {
+      const filepath = path.join(sessionDir, filename);
+      const stats = fs.statSync(filepath);
+      return {
+        filename,
+        size: stats.size,
+        created: stats.birthtime,
+        modified: stats.mtime
+      };
+    });
+
+    res.json({
+      exists: true,
+      sessionId: sessionId,
+      path: sessionDir,
+      fileCount: files.length,
+      files: fileDetails
+    });
+
+  } catch (error) {
+    res.status(500).json({
+      error: 'Failed to check session',
+      details: error.message
+    });
+  }
+});
+
 // Figma Upload Endpoint - mimics /upload behavior for Figma compatibility
 app.post('/api/figma/upload', async (req, res) => {
   try {
@@ -2259,6 +2302,12 @@ app.post('/export/from-master', async (req, res) => {
 // COMPATIBILITY: Legacy preview endpoint - simplified implementation
 app.post('/preview', async (req, res) => {
   console.log('⚠️  Legacy /preview endpoint called - implementing preview generation directly');
+  console.log('🔍 Preview request data:', {
+    sessionId: req.body.sessionId,
+    imagesCount: req.body.images?.length,
+    imageFilenames: req.body.images?.map(img => img.filename),
+    transitionsCount: req.body.transitions?.length
+  });
 
   try {
     const { images, transitions, sessionId } = req.body;
@@ -2314,10 +2363,21 @@ app.post('/preview', async (req, res) => {
 
       // Fallback to file system
       const imagePath = path.join(sessionDir, image.filename);
+      console.log(`🔍 Looking for file: ${imagePath}`);
+
       if (fs.existsSync(imagePath)) {
+        console.log(`✅ Found file: ${imagePath}`);
         validImages.push({ ...image, path: imagePath });
       } else {
         console.warn(`⚠️  Image not found: ${imagePath}`);
+
+        // Debug: List all files in session directory
+        if (fs.existsSync(sessionDir)) {
+          const allFiles = fs.readdirSync(sessionDir);
+          console.log(`📁 Files in session directory (${sessionDir}):`, allFiles);
+        } else {
+          console.log(`📁 Session directory does not exist: ${sessionDir}`);
+        }
       }
     }
 
