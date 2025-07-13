@@ -225,6 +225,62 @@ export const useSlideshow = () => {
     }));
   }, []);
 
+  // Load images from session directory (for Figma plugin uploads)
+  const loadImagesFromSession = useCallback(async (sessionId: string) => {
+    try {
+      console.log('📁 Loading images from session:', sessionId);
+
+      // Try to discover existing files in the session
+      const response = await fetch(`/api/debug/session/${sessionId}`);
+
+      if (response.ok) {
+        const sessionData = await response.json();
+        console.log('📁 Session data:', sessionData);
+
+        if (sessionData.exists && sessionData.files && sessionData.files.length > 0) {
+          // Convert session files to ImageFile format
+          const sessionImages: ImageFile[] = sessionData.files.map((file: any, index: number) => ({
+            id: `session_${index}_${Date.now()}`,
+            file: new File([], file.filename, { type: 'image/jpeg' }), // Placeholder file
+            name: file.filename.replace(/\.[^/.]+$/, ''), // Remove extension
+            preview: `/uploads/${sessionId}/${file.filename}`, // Direct URL to uploaded file
+            order: index
+          }));
+
+          // Set the sessionId and images in the project state
+          setState(prev => ({
+            ...prev,
+            project: {
+              ...prev.project,
+              sessionId: sessionId,
+              images: sessionImages
+            }
+          }));
+
+          console.log(`✅ Loaded ${sessionImages.length} images from session`);
+          return true;
+        }
+      }
+
+      // If no existing files, just set the sessionId for future uploads
+      setState(prev => ({
+        ...prev,
+        project: {
+          ...prev.project,
+          sessionId: sessionId,
+          images: []
+        }
+      }));
+
+      console.log('✅ Session initialized, ready for uploads');
+      return true;
+
+    } catch (error) {
+      console.error('❌ Failed to load session:', error);
+      return false;
+    }
+  }, []);
+
   // Load slideshow from API (for Figma-generated slideshows)
   const loadSlideshowFromAPI = useCallback(async (slideshowId: string) => {
     try {
@@ -414,6 +470,7 @@ export const useSlideshow = () => {
     setDragActive,
     clearProject,
     loadSlideshowFromAPI,
+    loadImagesFromSession,
     
     // Selection Actions
     toggleSelectionMode,

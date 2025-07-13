@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { useParams } from 'react-router-dom';
+import { useParams, useLocation } from 'react-router-dom';
 import { SlideshowProvider } from './context/SlideshowContext';
 import ImageUpload from './components/ImageUpload';
 import Preview from './components/Preview';
@@ -12,12 +12,17 @@ import Header from '../components/Header/Header';
 // Internal component that uses the context
 const SlideshowContent: React.FC = () => {
   const { id } = useParams<{ id: string }>();
-  const { loadSlideshowFromAPI } = useSlideshowContext();
+  const location = useLocation();
+  const { loadSlideshowFromAPI, loadImagesFromSession } = useSlideshowContext();
   const [isLoading, setIsLoading] = useState(false);
   const [loadError, setLoadError] = useState<string | null>(null);
   const [isAPIKeyModalOpen, setIsAPIKeyModalOpen] = useState(false);
 
   const isViewerMode = !!id;
+
+  // Extract sessionId from URL parameters
+  const urlParams = new URLSearchParams(location.search);
+  const sessionId = urlParams.get('sessionId');
 
   // Load slideshow from API if in viewer mode
   useEffect(() => {
@@ -39,6 +44,28 @@ const SlideshowContent: React.FC = () => {
         });
     }
   }, [id, isViewerMode, loadSlideshowFromAPI]);
+
+  // Load images from session if sessionId is provided (Figma plugin)
+  useEffect(() => {
+    if (!isViewerMode && sessionId) {
+      console.log('🎬 Figma plugin session detected:', sessionId);
+      setIsLoading(true);
+      setLoadError(null);
+
+      loadImagesFromSession(sessionId)
+        .then((success) => {
+          if (!success) {
+            setLoadError('Failed to load session images');
+          }
+        })
+        .catch((error) => {
+          setLoadError(error.message || 'Failed to load session images');
+        })
+        .finally(() => {
+          setIsLoading(false);
+        });
+    }
+  }, [sessionId, isViewerMode, loadImagesFromSession]);
 
   // Loading state
   if (isLoading) {

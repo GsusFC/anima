@@ -143,8 +143,8 @@ export class AnimaGenAPIService {
       if (response.success) {
         console.log('✅ Frames uploaded successfully');
 
-        // Create slideshow URL using the sessionId (same as AnimaGen)
-        const slideshowUrl = `${this.baseURL.replace('/api', '')}/slideshow/${sessionId}`;
+        // Use main slideshow interface with sessionId parameter (same as AnimaGen upload)
+        const slideshowUrl = `${this.baseURL.replace('/api', '')}/slideshow?sessionId=${sessionId}`;
 
         return {
           success: true,

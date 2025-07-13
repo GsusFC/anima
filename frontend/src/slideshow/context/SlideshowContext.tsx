@@ -29,6 +29,7 @@ interface SlideshowContextType {
   setDragActive: (active: boolean) => void;
   clearProject: () => void;
   loadSlideshowFromAPI: (slideshowId: string) => Promise<boolean>;
+  loadImagesFromSession: (sessionId: string) => Promise<boolean>;
   
   // Selection Actions
   toggleSelectionMode: () => void;
