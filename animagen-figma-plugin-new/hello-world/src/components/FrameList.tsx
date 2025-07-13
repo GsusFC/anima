@@ -110,26 +110,25 @@ export function FrameList({
         ) : (
           validFrames.map((frame, index) => {
             const isSelected = selectedFrames.includes(frame.id)
-            const wasSelectedInFigma = figmaSelection.includes(frame.id)
-            
+
             return (
               <div
                 key={frame.id}
                 style={{
                   display: 'flex',
                   alignItems: 'center',
-                  padding: '8px 16px',
+                  padding: '12px 16px',
                   borderBottom: index < validFrames.length - 1 ? '1px solid #f3f4f6' : 'none',
                   backgroundColor: isSelected ? '#fef7ff' : 'transparent',
                   borderLeft: isSelected ? '3px solid #ec4899' : '3px solid transparent',
                   cursor: 'pointer',
                   transition: 'all 0.15s ease',
-                  minHeight: '40px'
+                  minHeight: '48px'
                 }}
                 onClick={() => onFrameSelection(frame.id, !isSelected)}
               >
                 {/* Checkbox */}
-                <div style={{ marginRight: '10px' }}>
+                <div style={{ marginRight: '12px' }}>
                   <Checkbox
                     value={isSelected}
                     onValueChange={(checked) => onFrameSelection(frame.id, checked)}
@@ -138,33 +137,19 @@ export function FrameList({
                   </Checkbox>
                 </div>
 
-                {/* Frame info - minimal and clean */}
-                <div style={{ flex: 1, minWidth: 0, display: 'flex', alignItems: 'center', gap: '8px' }}>
+                {/* Frame info - clean and readable */}
+                <div style={{ flex: 1, minWidth: 0 }}>
                   <Text style={{
-                    fontSize: '13px',
+                    fontSize: '14px',
                     fontWeight: '500',
                     color: isSelected ? '#ec4899' : '#111827',
                     overflow: 'hidden',
                     textOverflow: 'ellipsis',
                     whiteSpace: 'nowrap',
-                    flex: 1
+                    lineHeight: '1.4'
                   }}>
                     {frame.name}
                   </Text>
-
-                  {wasSelectedInFigma && (
-                    <span style={{
-                      fontSize: '9px',
-                      backgroundColor: '#dbeafe',
-                      color: '#1e40af',
-                      padding: '2px 6px',
-                      borderRadius: '3px',
-                      fontWeight: '500',
-                      flexShrink: 0
-                    }}>
-                      Figma
-                    </span>
-                  )}
                 </div>
               </div>
             )
