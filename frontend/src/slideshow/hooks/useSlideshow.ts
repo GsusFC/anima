@@ -241,7 +241,7 @@ export const useSlideshow = () => {
       console.log('✅ Slideshow data loaded:', slideshow);
 
       // Convert API data to internal format
-      const images: ImageFile[] = slideshow.frames.map((frame: any, index: number) => ({
+      const images: ImageFile[] = slideshow.frames.map((frame: any) => ({
         id: frame.id,
         name: frame.name,
         file: null as any, // No actual file for API-loaded images
@@ -257,7 +257,7 @@ export const useSlideshow = () => {
         }
       }));
 
-      const timeline: TimelineItem[] = slideshow.frames.map((frame: any, index: number) => ({
+      const timeline: TimelineItem[] = slideshow.frames.map((frame: any) => ({
         id: `timeline_${frame.id}`,
         imageId: frame.id,
         duration: frame.duration,

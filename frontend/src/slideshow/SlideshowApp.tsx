@@ -10,7 +10,7 @@ import { useSlideshowContext } from './context/SlideshowContext';
 // Internal component that uses the context
 const SlideshowContent: React.FC = () => {
   const { id } = useParams<{ id: string }>();
-  const { loadSlideshowFromAPI, hasTimeline } = useSlideshowContext();
+  const { loadSlideshowFromAPI } = useSlideshowContext();
   const [isLoading, setIsLoading] = useState(false);
   const [loadError, setLoadError] = useState<string | null>(null);
 
