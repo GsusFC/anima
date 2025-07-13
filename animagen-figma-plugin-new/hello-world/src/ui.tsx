@@ -4,7 +4,7 @@ import { h } from 'preact'
 import { useState, useEffect } from 'preact/hooks'
 
 // Componentes UI mejorados
-import { Header, APIKeyPage, FrameList, ExportProgress, SuccessPage, ExportSettings } from './components'
+import { Header, APIKeyPage, FrameList, FrameGrid, ExportProgress, SuccessPage, ExportSettings } from './components'
 
 interface Frame {
   id: string
@@ -113,6 +113,11 @@ function Plugin() {
       setIsExporting(false)
       setExportProgress(null)
       setExportResult(data)
+    })
+
+    on('thumbnail-response', (data: any) => {
+      console.log('🖼️ Thumbnail response received:', data)
+      // The FrameGrid component will handle this via window message events
     })
 
     // Send UI ready message
@@ -252,9 +257,9 @@ function Plugin() {
         onOpenSettings={handleOpenSettings}
       />
 
-      {/* Frame List */}
+      {/* Frame Grid */}
       <div style={{ flex: 1, overflow: 'hidden' }}>
-        <FrameList
+        <FrameGrid
           frames={frames}
           selectedFrames={selectedFrames}
           onFrameSelection={handleFrameSelection}

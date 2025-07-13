@@ -62,6 +62,11 @@ function setupMessageHandlers() {
     handleFrameExport(data.frameIds, data.settings)
   })
 
+  // Handle thumbnail generation
+  on('generate-thumbnail', (data: { frameId: string, messageId: string }) => {
+    handleThumbnailGeneration(data.frameId, data.messageId)
+  })
+
   // Handle external URL opening
   on('open-external-url', (data: { url: string }) => {
     handleOpenExternalUrl(data.url)
@@ -151,6 +156,61 @@ function detectAndSendFrames() {
     frames: detectedFrames,
     figmaSelection: figmaSelection
   })
+}
+
+async function handleThumbnailGeneration(frameId: string, messageId: string) {
+  console.log(`🖼️ Generating thumbnail for frame: ${frameId}`)
+
+  try {
+    // Find the frame by ID
+    const frame = figma.getNodeById(frameId) as FrameNode
+
+    if (!frame || frame.type !== 'FRAME') {
+      console.error('❌ Frame not found or invalid type:', frameId)
+      emit('thumbnail-response', {
+        messageId,
+        success: false,
+        error: 'Frame not found'
+      })
+      return
+    }
+
+    console.log(`📸 Exporting frame: ${frame.name} (${frame.width}×${frame.height})`)
+
+    // Generate thumbnail
+    const imageData = await frame.exportAsync({
+      format: 'PNG',
+      constraint: {
+        type: 'WIDTH',
+        value: 210
+      }
+    })
+
+    // Convert to base64
+    const base64 = figma.base64Encode(imageData)
+
+    console.log(`✅ Thumbnail generated successfully for: ${frame.name}`)
+
+    emit('thumbnail-response', {
+      messageId,
+      success: true,
+      thumbnail: base64,
+      frameId,
+      dimensions: {
+        width: frame.width,
+        height: frame.height
+      }
+    })
+
+  } catch (error) {
+    console.error('❌ Failed to generate thumbnail:', error)
+    const errorMessage = error instanceof Error ? error.message : 'Unknown error'
+    emit('thumbnail-response', {
+      messageId,
+      success: false,
+      error: errorMessage
+    })
+  }
 }
 
 function estimateComplexity(frame: FrameNode): 'low' | 'medium' | 'high' {
