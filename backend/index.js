@@ -2205,11 +2205,42 @@ app.post('/preview', async (req, res) => {
       });
     }
 
-    // Validate images exist in session directory
-    const sessionDir = path.join(tempDir, sessionId);
+    // Try to load composition data for base64 images
+    const compositionId = `slideshow_${sessionId}`;
+    let composition = null;
+
+    try {
+      composition = loadComposition(compositionId);
+    } catch (e) {
+      console.warn(`⚠️  Could not load composition: ${compositionId}`);
+    }
+
     const validImages = [];
+    const sessionDir = path.join(tempDir, sessionId);
 
     for (const image of images) {
+      // First try to find in composition (base64 data)
+      if (composition && composition.images) {
+        const compositionImage = composition.images.find(img => img.filename === image.filename);
+        if (compositionImage && compositionImage.base64Data) {
+          // Create temporary file from base64 for FFmpeg
+          const tempImagePath = path.join(sessionDir, `temp_${image.filename}`);
+
+          // Ensure session directory exists
+          if (!fs.existsSync(sessionDir)) {
+            fs.mkdirSync(sessionDir, { recursive: true });
+          }
+
+          const imageBuffer = Buffer.from(compositionImage.base64Data, 'base64');
+          fs.writeFileSync(tempImagePath, imageBuffer);
+
+          validImages.push({ ...image, path: tempImagePath });
+          console.log(`✅ Created temp file from base64: ${tempImagePath}`);
+          continue;
+        }
+      }
+
+      // Fallback to file system
       const imagePath = path.join(sessionDir, image.filename);
       if (fs.existsSync(imagePath)) {
         validImages.push({ ...image, path: imagePath });
@@ -2220,7 +2251,7 @@ app.post('/preview', async (req, res) => {
 
     if (validImages.length === 0) {
       return res.status(400).json({
-        error: 'No valid images found in session directory'
+        error: 'No valid images found in session directory or composition'
       });
     }
 
