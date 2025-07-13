@@ -50,6 +50,8 @@ export function FrameGrid({
       return // Already cached or loading
     }
 
+    console.log(`🖼️ Requesting thumbnail for frame: ${frameId}`)
+
     setLoadingThumbnails(prev => {
       const newSet = new Set(prev)
       newSet.add(frameId)
@@ -57,49 +59,64 @@ export function FrameGrid({
     })
 
     try {
-      // Request thumbnail from main thread
-      const response = await new Promise<{ success: boolean, thumbnail?: string, error?: string }>((resolve) => {
-        const messageId = `thumbnail-${frameId}-${Date.now()}`
-        
-        const handleMessage = (event: MessageEvent) => {
-          if (event.data.pluginMessage?.type === 'thumbnail-response' && 
-              event.data.pluginMessage?.messageId === messageId) {
-            window.removeEventListener('message', handleMessage)
-            resolve(event.data.pluginMessage)
+      // Use emit instead of postMessage for better compatibility
+      const messageId = `thumbnail-${frameId}-${Date.now()}`
+
+      // Set up response listener
+      const handleResponse = (data: any) => {
+        if (data.messageId === messageId) {
+          console.log(`📸 Thumbnail response received for ${frameId}:`, data)
+
+          if (data.success && data.thumbnail) {
+            setThumbnailCache(prev => ({
+              ...prev,
+              [frameId]: {
+                data: data.thumbnail,
+                timestamp: Date.now(),
+                dimensions: data.dimensions || { width: 210, height: 140 }
+              }
+            }))
+            console.log(`✅ Thumbnail cached for ${frameId}`)
+          } else {
+            console.error(`❌ Thumbnail generation failed for ${frameId}:`, data.error)
           }
+
+          setLoadingThumbnails(prev => {
+            const newSet = new Set(prev)
+            newSet.delete(frameId)
+            return newSet
+          })
         }
+      }
 
-        window.addEventListener('message', handleMessage)
-        
-        // Send request to main thread
-        parent.postMessage({
-          pluginMessage: {
-            type: 'generate-thumbnail',
-            frameId,
-            messageId
-          }
-        }, '*')
-
-        // Timeout after 10 seconds
-        setTimeout(() => {
-          window.removeEventListener('message', handleMessage)
-          resolve({ success: false, error: 'Timeout' })
-        }, 10000)
+      // Listen for response
+      window.addEventListener('message', (event) => {
+        if (event.data.pluginMessage?.type === 'thumbnail-response') {
+          handleResponse(event.data.pluginMessage)
+        }
       })
 
-      if (response.success && response.thumbnail) {
-        setThumbnailCache(prev => ({
-          ...prev,
-          [frameId]: {
-            data: response.thumbnail!,
-            timestamp: Date.now(),
-            dimensions: { width: 210, height: 140 } // Will be calculated properly
-          }
-        }))
-      }
+      // Send request using emit
+      parent.postMessage({
+        pluginMessage: {
+          type: 'generate-thumbnail',
+          frameId,
+          messageId
+        }
+      }, '*')
+
+      // Timeout fallback
+      setTimeout(() => {
+        console.warn(`⏰ Thumbnail generation timeout for ${frameId}`)
+        setLoadingThumbnails(prev => {
+          const newSet = new Set(prev)
+          newSet.delete(frameId)
+          return newSet
+        })
+      }, 15000)
+
     } catch (error) {
       console.error('Failed to generate thumbnail:', error)
-    } finally {
       setLoadingThumbnails(prev => {
         const newSet = new Set(prev)
         newSet.delete(frameId)

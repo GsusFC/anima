@@ -62,10 +62,12 @@ function setupMessageHandlers() {
     handleFrameExport(data.frameIds, data.settings)
   })
 
-  // Handle thumbnail generation
-  on('generate-thumbnail', (data: { frameId: string, messageId: string }) => {
-    handleThumbnailGeneration(data.frameId, data.messageId)
-  })
+  // Handle thumbnail generation via message
+  figma.ui.onmessage = (msg) => {
+    if (msg.type === 'generate-thumbnail') {
+      handleThumbnailGeneration(msg.frameId, msg.messageId)
+    }
+  }
 
   // Handle external URL opening
   on('open-external-url', (data: { url: string }) => {
@@ -167,7 +169,8 @@ async function handleThumbnailGeneration(frameId: string, messageId: string) {
 
     if (!frame || frame.type !== 'FRAME') {
       console.error('❌ Frame not found or invalid type:', frameId)
-      emit('thumbnail-response', {
+      figma.ui.postMessage({
+        type: 'thumbnail-response',
         messageId,
         success: false,
         error: 'Frame not found'
@@ -191,7 +194,8 @@ async function handleThumbnailGeneration(frameId: string, messageId: string) {
 
     console.log(`✅ Thumbnail generated successfully for: ${frame.name}`)
 
-    emit('thumbnail-response', {
+    figma.ui.postMessage({
+      type: 'thumbnail-response',
       messageId,
       success: true,
       thumbnail: base64,
@@ -205,7 +209,8 @@ async function handleThumbnailGeneration(frameId: string, messageId: string) {
   } catch (error) {
     console.error('❌ Failed to generate thumbnail:', error)
     const errorMessage = error instanceof Error ? error.message : 'Unknown error'
-    emit('thumbnail-response', {
+    figma.ui.postMessage({
+      type: 'thumbnail-response',
       messageId,
       success: false,
       error: errorMessage
@@ -278,10 +283,17 @@ async function handleAuthValidation() {
 
 function handleOpenExternalUrl(url: string) {
   try {
-    console.log('🔗 Opening external URL:', url)
-    figma.openExternal(url)
+    console.log('🌐 Opening external URL:', url)
+
+    // Ensure URL is properly formatted
+    const finalUrl = url.startsWith('http') ? url : `https://${url}`
+    console.log('🔗 Final URL:', finalUrl)
+
+    figma.openExternal(finalUrl)
+    console.log('✅ Successfully opened external URL:', finalUrl)
   } catch (error) {
     console.error('❌ Failed to open external URL:', error)
+    console.error('URL was:', url)
   }
 }
 

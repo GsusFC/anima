@@ -178,11 +178,28 @@ function Plugin() {
   }
 
   const openExternalUrl = (url: string) => {
+    console.log(`🔗 Emitting open-external-url event for: ${url}`)
     emit('open-external-url', { url })
   }
 
   const handleOpenProject = (url: string) => {
-    openExternalUrl(url)
+    console.log(`🌐 Opening AnimaGen project: ${url}`)
+
+    // Ensure URL is properly formatted
+    const finalUrl = url.startsWith('http') ? url : `https://${url}`
+
+    try {
+      openExternalUrl(finalUrl)
+      console.log(`✅ Successfully opened: ${finalUrl}`)
+    } catch (error) {
+      console.error('❌ Failed to open external URL:', error)
+      // Fallback: try to open in new window
+      try {
+        window.open(finalUrl, '_blank')
+      } catch (fallbackError) {
+        console.error('❌ Fallback also failed:', fallbackError)
+      }
+    }
   }
 
   const handleStartNew = () => {

@@ -38,10 +38,13 @@ export function SuccessPage({ result, onOpenProject, onStartNew }: SuccessPagePr
   useEffect(() => {
     if (!autoRedirect || !projectUrl) return
 
+    console.log(`🚀 Starting auto-redirect countdown to: ${projectUrl}`)
+
     const timer = setInterval(() => {
       setCountdown(prev => {
         if (prev <= 1) {
           clearInterval(timer)
+          console.log(`🌐 Auto-redirecting to AnimaGen: ${projectUrl}`)
           onOpenProject(projectUrl)
           return 0
         }
