@@ -3,6 +3,9 @@ import { emit, on } from '@create-figma-plugin/utilities'
 import { h } from 'preact'
 import { useState, useEffect } from 'preact/hooks'
 
+// Componentes UI mejorados
+import { Header, APIKeyPage, FrameList, ExportProgress, SuccessPage } from './components'
+
 interface Frame {
   id: string
   name: string
@@ -60,6 +63,7 @@ function Plugin() {
   })
   const [frames, setFrames] = useState<Frame[]>([])
   const [selectedFrames, setSelectedFrames] = useState<string[]>([])
+  const [figmaSelection, setFigmaSelection] = useState<string[]>([]) // Frames seleccionados en Figma
   const [apiKey, setApiKey] = useState('')
   const [exportFormat, setExportFormat] = useState('JPG') // Changed to JPG for smaller file sizes
   const [exportScale, setExportScale] = useState('1') // Changed to 1x scale to reduce file size
@@ -77,9 +81,18 @@ function Plugin() {
       console.log('🔐 Auth state set successfully')
     })
 
-    on('frames-detected', (data: { frames: Frame[] }) => {
+    on('frames-detected', (data: { frames: Frame[], figmaSelection?: string[] }) => {
       console.log('🖼️ Frames detected:', data)
       setFrames(data.frames)
+
+      // Si hay selección de Figma, pre-seleccionar esos frames
+      if (data.figmaSelection && data.figmaSelection.length > 0) {
+        console.log('🎯 Figma selection detected:', data.figmaSelection)
+        setFigmaSelection(data.figmaSelection)
+        setSelectedFrames(data.figmaSelection)
+      } else {
+        setFigmaSelection([])
+      }
     })
 
     on('export-progress', (data: ExportProgress) => {
@@ -126,6 +139,15 @@ function Plugin() {
     }
   }
 
+  const handleSelectAll = () => {
+    const validFrames = frames.filter(frame => frame.isValidForExport)
+    setSelectedFrames(validFrames.map(frame => frame.id))
+  }
+
+  const handleClearAll = () => {
+    setSelectedFrames([])
+  }
+
   const handleExport = () => {
     if (selectedFrames.length === 0) {
       return
@@ -153,6 +175,17 @@ function Plugin() {
     emit('open-external-url', { url })
   }
 
+  const handleOpenProject = (url: string) => {
+    openExternalUrl(url)
+  }
+
+  const handleStartNew = () => {
+    setExportResult(null)
+    setSelectedFrames([])
+    setExportProgress(null)
+    handleRefreshFrames()
+  }
+
   if (authState.loading) {
     return (
       <Container space="medium">
@@ -167,255 +200,162 @@ function Plugin() {
 
   if (!authState.authenticated) {
     return (
-      <Container space="medium">
-        <VerticalSpace space="medium" />
-        <Text><strong>AnimaGen Exporter</strong></Text>
-        <Text>Export Figma frames to AnimaGen slideshows</Text>
-        <VerticalSpace space="medium" />
-        
-        <Divider />
-        <VerticalSpace space="medium" />
-        
-        <Text><strong>Authentication</strong></Text>
-        <VerticalSpace space="small" />
-        
-        {authState.error && (
-          <div>
-            <Text style={{ color: 'red' }}>{authState.error}</Text>
-            <VerticalSpace space="small" />
-          </div>
-        )}
-        
-        <Textbox
-          placeholder="ag_figma_..."
-          value={apiKey}
-          onValueInput={setApiKey}
-          password
-        />
-        <VerticalSpace space="small" />
-        
-        <Button
-          fullWidth
-          onClick={handleAuthenticate}
-          disabled={!apiKey.trim()}
-        >
-          Connect to AnimaGen
-        </Button>
-        <VerticalSpace space="medium" />
-      </Container>
+      <APIKeyPage
+        apiKey={apiKey}
+        onApiKeyChange={setApiKey}
+        onAuthenticate={handleAuthenticate}
+        error={authState.error}
+        isLoading={authState.loading}
+      />
+    )
+  }
+
+  // Mostrar página de éxito si hay resultado
+  if (exportResult) {
+    return (
+      <SuccessPage
+        result={exportResult}
+        onOpenProject={handleOpenProject}
+        onStartNew={handleStartNew}
+      />
+    )
+  }
+
+  // Mostrar progreso de exportación
+  if (isExporting && exportProgress) {
+    return (
+      <ExportProgress
+        stage={exportProgress.stage}
+        current={exportProgress.current}
+        total={exportProgress.total}
+        message={exportProgress.message}
+        percentage={exportProgress.percentage}
+      />
     )
   }
 
   return (
-    <Container space="medium">
-      <VerticalSpace space="medium" />
-      <Text><strong>AnimaGen Exporter</strong></Text>
-      <Text>Export Figma frames to AnimaGen slideshows</Text>
-      <VerticalSpace space="medium" />
-      
-      {/* User Info */}
-      {authState.user && (
-        <div>
-          <Text style={{ color: 'green' }}>
-            ✅ {authState.user.name} ({authState.user.plan})
-          </Text>
-          <VerticalSpace space="medium" />
-        </div>
-      )}
-      
-      <Divider />
-      <VerticalSpace space="medium" />
-      
-      {/* Frame Detection */}
-      <Text><strong>Selected Frames ({frames.length})</strong></Text>
-      <VerticalSpace space="small" />
-
-      <Button secondary onClick={handleRefreshFrames}>
-        Refresh Selection
-      </Button>
-      <VerticalSpace space="small" />
+    <div style={{ height: '100vh', display: 'flex', flexDirection: 'column' }}>
+      {/* Header */}
+      <Header
+        user={authState.user}
+        onLogout={handleLogout}
+      />
 
       {/* Frame List */}
-      {frames.length === 0 ? (
-        <div>
-          <Text style={{ color: '#666' }}>No frames selected</Text>
-          <VerticalSpace space="small" />
-          <Text style={{ fontSize: '11px', color: '#999' }}>
-            Please select frames in Figma to export them
+      <div style={{ flex: 1, overflow: 'hidden' }}>
+        <FrameList
+          frames={frames}
+          selectedFrames={selectedFrames}
+          onFrameSelection={handleFrameSelection}
+          onSelectAll={handleSelectAll}
+          onClearAll={handleClearAll}
+          figmaSelection={figmaSelection}
+        />
+      </div>
+
+      {/* Export Settings y Botón */}
+      <div style={{
+        borderTop: '1px solid #e5e7eb',
+        padding: '16px',
+        backgroundColor: '#f9fafb'
+      }}>
+        {/* Export Settings */}
+        <div style={{ marginBottom: '16px' }}>
+          <Text style={{ fontSize: '12px', fontWeight: '600', marginBottom: '8px' }}>
+            ⚙️ Export Settings
           </Text>
-        </div>
-      ) : (
-        <div style={{ maxHeight: '200px', overflowY: 'auto' }}>
-          {frames.map(frame => (
-            <div key={frame.id} style={{ marginBottom: '8px' }}>
-              <Checkbox
-                value={selectedFrames.includes(frame.id)}
-                onValueChange={(checked) => handleFrameSelection(frame.id, checked)}
-              >
-                <Text>{frame.name}</Text>
-                <br />
-                <Text style={{ fontSize: '10px', color: '#666' }}>
-                  {frame.width}×{frame.height} • {frame.estimatedSize} • {frame.complexity}
-                </Text>
-              </Checkbox>
+
+          <div style={{ display: 'flex', gap: '8px', marginBottom: '8px' }}>
+            <div style={{ flex: 1 }}>
+              <Text style={{ fontSize: '10px', color: '#6b7280', marginBottom: '2px' }}>
+                Format
+              </Text>
+              <Dropdown
+                value={exportFormat}
+                onValueChange={setExportFormat}
+                options={[
+                  { value: 'PNG', text: 'PNG' },
+                  { value: 'JPG', text: 'JPG' }
+                ]}
+                style={{ fontSize: '11px' }}
+              />
             </div>
-          ))}
-        </div>
-      )}
-      
-      <VerticalSpace space="medium" />
-      <Divider />
-      <VerticalSpace space="medium" />
-      
-      {/* Export Settings */}
-      <Text><strong>Export Settings</strong></Text>
-      <VerticalSpace space="small" />
-      
-      <Text>Format</Text>
-      <Dropdown
-        value={exportFormat}
-        onValueChange={setExportFormat}
-        options={[
-          { value: 'PNG', text: 'PNG' },
-          { value: 'JPG', text: 'JPG' }
-        ]}
-      />
-      <VerticalSpace space="small" />
-      
-      <Text>Scale</Text>
-      <Dropdown
-        value={exportScale}
-        onValueChange={setExportScale}
-        options={[
-          { value: '1', text: '1x' },
-          { value: '2', text: '2x' },
-          { value: '3', text: '3x' }
-        ]}
-      />
-      <VerticalSpace space="small" />
 
-      {/* Quality setting for JPG */}
-      {exportFormat === 'JPG' && (
-        <div>
-          <Text>Quality (JPG)</Text>
-          <Dropdown
-            value={exportQuality}
-            onValueChange={setExportQuality}
-            options={[
-              { value: '0.6', text: '60% (Smaller files)' },
-              { value: '0.8', text: '80% (Recommended)' },
-              { value: '0.9', text: '90% (High quality)' },
-              { value: '1.0', text: '100% (Maximum)' }
-            ]}
-          />
-          <VerticalSpace space="small" />
-        </div>
-      )}
+            <div style={{ flex: 1 }}>
+              <Text style={{ fontSize: '10px', color: '#6b7280', marginBottom: '2px' }}>
+                Scale
+              </Text>
+              <Dropdown
+                value={exportScale}
+                onValueChange={setExportScale}
+                options={[
+                  { value: '1', text: '1x' },
+                  { value: '2', text: '2x' },
+                  { value: '3', text: '3x' }
+                ]}
+                style={{ fontSize: '11px' }}
+              />
+            </div>
+          </div>
 
-      <VerticalSpace space="medium" />
-
-      {/* Export Progress */}
-      {isExporting && exportProgress && (
-        <div>
-          <LoadingIndicator />
-          <VerticalSpace space="small" />
-          <Text>{exportProgress.message}</Text>
-          <Text style={{ fontSize: '10px' }}>
-            {exportProgress.current}/{exportProgress.total} ({exportProgress.percentage}%)
-          </Text>
-          <VerticalSpace space="medium" />
+          {/* Quality setting for JPG */}
+          {exportFormat === 'JPG' && (
+            <div>
+              <Text style={{ fontSize: '10px', color: '#6b7280', marginBottom: '2px' }}>
+                Quality
+              </Text>
+              <Dropdown
+                value={exportQuality}
+                onValueChange={setExportQuality}
+                options={[
+                  { value: '0.6', text: '60% (Smaller)' },
+                  { value: '0.8', text: '80% (Recommended)' },
+                  { value: '0.9', text: '90% (High)' },
+                  { value: '1.0', text: '100% (Max)' }
+                ]}
+                style={{ fontSize: '11px' }}
+              />
+            </div>
+          )}
         </div>
-      )}
-      
-      {/* Export Result */}
-      {exportResult && (
-        <div style={{
-          padding: '12px',
-          borderRadius: '6px',
-          backgroundColor: exportResult.success ? '#f0f9ff' : '#fef2f2',
-          border: `1px solid ${exportResult.success ? '#bfdbfe' : '#fecaca'}`
-        }}>
+
+        {/* Export Button */}
+        <Button
+          fullWidth
+          onClick={handleExport}
+          disabled={selectedFrames.length === 0 || isExporting}
+          style={{
+            backgroundColor: selectedFrames.length > 0 ? '#ec4899' : '#d1d5db',
+            borderColor: selectedFrames.length > 0 ? '#ec4899' : '#d1d5db',
+            minHeight: '40px',
+            fontSize: '14px',
+            fontWeight: '600'
+          }}
+        >
+          {isExporting ? (
+            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+              <LoadingIndicator />
+              <span>Exporting...</span>
+            </div>
+          ) : (
+            `🚀 Export ${selectedFrames.length} Frame${selectedFrames.length !== 1 ? 's' : ''} to AnimaGen`
+          )}
+        </Button>
+
+        {/* Info text */}
+        {selectedFrames.length === 0 && (
           <Text style={{
-            color: exportResult.success ? '#059669' : '#dc2626',
-            fontWeight: 'bold'
+            fontSize: '11px',
+            color: '#6b7280',
+            textAlign: 'center',
+            marginTop: '8px'
           }}>
-            {exportResult.success ? '✅ Export Successful!' : '❌ Export Failed'}
+            Select frames above to enable export
           </Text>
-          <VerticalSpace space="small" />
-
-          <Text style={{ fontSize: '12px' }}>
-            {exportResult.framesExported} of {exportResult.framesTotal} frames processed
-          </Text>
-
-          {exportResult.success && exportResult.projectUrl && (
-            <div>
-              <VerticalSpace space="small" />
-              <Button
-                fullWidth
-                onClick={() => openExternalUrl(exportResult.projectUrl!)}
-                style={{ backgroundColor: '#3b82f6' }}
-              >
-                🎬 Open Slideshow
-              </Button>
-              <VerticalSpace space="small" />
-
-              {exportResult.uploadResult && (
-                <div style={{ fontSize: '11px', color: '#6b7280' }}>
-                  <Text>Session ID: {exportResult.uploadResult.sessionId}</Text>
-                  <br />
-                  <Text>Project ID: {exportResult.uploadResult.projectId}</Text>
-                  {exportResult.uploadResult.message && (
-                    <div>
-                      <br />
-                      <Text>{exportResult.uploadResult.message}</Text>
-                    </div>
-                  )}
-                </div>
-              )}
-            </div>
-          )}
-
-          {!exportResult.success && exportResult.error && (
-            <div>
-              <VerticalSpace space="small" />
-              <Text style={{ fontSize: '11px', color: '#dc2626' }}>
-                Error: {exportResult.error}
-              </Text>
-            </div>
-          )}
-
-          {exportResult.failedFrames && exportResult.failedFrames.length > 0 && (
-            <div>
-              <VerticalSpace space="small" />
-              <Text style={{ fontSize: '11px', color: '#f59e0b' }}>
-                Failed frames: {exportResult.failedFrames.join(', ')}
-              </Text>
-            </div>
-          )}
-
-          <VerticalSpace space="medium" />
-        </div>
-      )}
-      
-      {/* Export Button */}
-      <Button
-        fullWidth
-        onClick={handleExport}
-        disabled={isExporting || selectedFrames.length === 0}
-      >
-        {isExporting ? 'Exporting...' : 'Export Selected Frames'}
-      </Button>
-      <VerticalSpace space="medium" />
-      
-      <Divider />
-      <VerticalSpace space="small" />
-      
-      {/* Logout */}
-      <Button secondary fullWidth onClick={handleLogout}>
-        Disconnect
-      </Button>
-      <VerticalSpace space="medium" />
-    </Container>
+        )}
+      </div>
+    </div>
   )
 }
 

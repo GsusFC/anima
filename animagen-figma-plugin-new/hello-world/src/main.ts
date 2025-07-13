@@ -98,25 +98,31 @@ async function initializePlugin() {
 }
 
 function detectAndSendFrames() {
-  console.log('🔍 Detecting selected frames...')
+  console.log('🔍 Detecting frames and selection...')
 
-  // Only get frames that are currently selected by the user
-  const frames = figma.currentPage.selection.filter(node =>
+  // Get all frames on the current page
+  const allFrames = figma.currentPage.findAll(node =>
     node.type === 'FRAME' &&
     node.width > 0 &&
     node.height > 0
   ) as FrameNode[]
 
-  console.log(`👆 User has ${figma.currentPage.selection.length} items selected`)
-  console.log(`🎯 Found ${frames.length} selected frames`)
+  // Get currently selected frames
+  const selectedFrames = figma.currentPage.selection.filter(node =>
+    node.type === 'FRAME' &&
+    node.width > 0 &&
+    node.height > 0
+  ) as FrameNode[]
 
-  if (frames.length === 0) {
-    console.log('⚠️ No frames selected. Please select frames to export.')
-  } else {
-    console.log('📋 Selected frame names:', frames.map(f => f.name))
+  console.log(`📋 Found ${allFrames.length} total frames on page`)
+  console.log(`🎯 Found ${selectedFrames.length} selected frames`)
+
+  if (selectedFrames.length > 0) {
+    console.log('📋 Selected frame names:', selectedFrames.map(f => f.name))
   }
 
-  const detectedFrames = frames.map((frame, index) => {
+  // Map all frames for the UI
+  const detectedFrames = allFrames.map((frame, index) => {
     const complexity = estimateComplexity(frame)
 
     return {
@@ -128,7 +134,7 @@ function detectAndSendFrames() {
       y: Math.round(frame.y),
       order: index,
       complexity,
-      isValidForExport: true, // Already filtered above
+      isValidForExport: true,
       estimatedSize: estimateFileSize(frame.width, frame.height, complexity),
       selected: false,
       visible: frame.visible,
@@ -137,9 +143,15 @@ function detectAndSendFrames() {
     }
   })
 
-  console.log(`✅ Found ${detectedFrames.length} frames`)
+  // Get IDs of selected frames for pre-selection in UI
+  const figmaSelection = selectedFrames.map(frame => frame.id)
 
-  emit('frames-detected', { frames: detectedFrames })
+  console.log(`✅ Sending ${detectedFrames.length} frames with ${figmaSelection.length} pre-selected`)
+
+  emit('frames-detected', {
+    frames: detectedFrames,
+    figmaSelection: figmaSelection
+  })
 }
 
 function estimateComplexity(frame: FrameNode): 'low' | 'medium' | 'high' {
