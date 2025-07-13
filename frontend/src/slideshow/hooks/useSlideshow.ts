@@ -242,7 +242,7 @@ export const useSlideshow = () => {
           const sessionImages: ImageFile[] = sessionData.files.map((file: any, index: number) => ({
             id: `session_${index}_${Date.now()}`,
             file: new File([], file.filename, { type: 'image/jpeg' }), // Placeholder file
-            name: file.filename.replace(/\.[^/.]+$/, ''), // Remove extension
+            name: file.filename, // Use actual filename for preview endpoint compatibility
             preview: `/uploads/${sessionId}/${file.filename}`, // Direct URL to uploaded file
             order: index
           }));
