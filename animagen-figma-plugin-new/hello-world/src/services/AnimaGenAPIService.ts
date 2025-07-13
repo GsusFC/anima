@@ -105,45 +105,71 @@ export class AnimaGenAPIService {
   ): Promise<AnimaGenUploadResponse> {
     try {
       console.log(`📤 Uploading ${frameResults.length} frames to AnimaGen...`);
-      
-      // Create JSON payload instead of FormData (Figma compatibility)
-      const payload = {
-        source: 'figma-plugin',
-        pluginVersion: '2.0.0',
-        sessionId: `session_${Date.now()}`,
-        frames: frameResults
-          .filter(result => result.success && result.imageData)
-          .map((result, index) => ({
-            name: result.frameName,
-            order: result.order,
-            imageData: result.imageData ? Array.from(result.imageData) : [], // Convert Uint8Array to regular array
-            metadata: {
-              originalName: result.frameName,
-              order: result.order,
-              dimensions: {
-                width: result.metadata?.width || 0,
-                height: result.metadata?.height || 0
-              },
-              format: settings.format,
-              figmaFrameId: result.frameId,
-              exportSettings: settings
-            }
-          }))
-      };
 
-      const response = await this.makeRequest('/api/figma/import', {
+      // Use the SAME upload flow as AnimaGen frontend
+      const sessionId = `session_${Date.now()}`;
+      const formData = new FormData();
+
+      // Convert image data to Blob files (same as frontend)
+      frameResults
+        .filter(result => result.success && result.imageData)
+        .forEach((result, index) => {
+          if (result.imageData) {
+            // Create Blob from Uint8Array
+            const blob = new Blob([result.imageData], {
+              type: settings.format === 'JPG' ? 'image/jpeg' : 'image/png'
+            });
+
+            // Create File object (same as frontend file upload)
+            const filename = `${result.frameName.replace(/[^a-zA-Z0-9]/g, '_')}.${settings.format.toLowerCase()}`;
+            const file = new File([blob], filename, {
+              type: blob.type
+            });
+
+            // Append to FormData exactly like frontend
+            formData.append('images', file);
+          }
+        });
+
+      // Use the SAME endpoint as AnimaGen frontend
+      const response = await this.makeRequest(`/upload?sessionId=${sessionId}`, {
         method: 'POST',
         headers: {
-          'Content-Type': 'application/json',
           'X-Plugin-Version': '2.0.0',
           'X-Plugin-Source': 'figma'
+          // Don't set Content-Type for FormData
         },
-        body: JSON.stringify(payload)
+        body: formData
       });
 
       if (response.success) {
         console.log('✅ Frames uploaded successfully');
-        return response;
+
+        // Create slideshow URL using the sessionId (same as AnimaGen)
+        const slideshowUrl = `${this.baseURL.replace('/api', '')}/slideshow/${sessionId}`;
+
+        return {
+          success: true,
+          sessionId: response.sessionId || sessionId,
+          files: response.files || [],
+          projectUrl: slideshowUrl,
+          projectId: sessionId,
+          framesImported: response.files?.length || 0,
+          defaultSettings: {
+            transitions: [{
+              type: 'fade',
+              duration: 1000
+            }],
+            frameDurations: [3000],
+            exportSettings: {
+              quality: 'high',
+              resolution: '1920x1080',
+              fps: 30,
+              format: 'mp4'
+            }
+          },
+          message: response.message || 'Frames uploaded successfully'
+        };
       } else {
         throw new Error(response.error || 'Upload failed');
       }
