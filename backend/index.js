@@ -806,6 +806,78 @@ const handleFigmaUpload = (req, res, next) => {
   }
 };
 
+// Figma Upload Endpoint - mimics /upload behavior for Figma compatibility
+app.post('/api/figma/upload', async (req, res) => {
+  try {
+    console.log('📤 Figma upload request received');
+    const { sessionId, files, source } = req.body;
+
+    if (!sessionId || !files || !Array.isArray(files)) {
+      return res.status(400).json({
+        success: false,
+        error: 'Missing sessionId or files'
+      });
+    }
+
+    // Create session directory (same as /upload endpoint)
+    const sessionDir = path.join(tempDir, sessionId);
+    if (!fs.existsSync(sessionDir)) {
+      fs.mkdirSync(sessionDir, { recursive: true });
+    }
+
+    const uploadedFiles = [];
+
+    // Process each file (same logic as multer but from JSON)
+    for (let i = 0; i < files.length; i++) {
+      const fileData = files[i];
+
+      if (fileData.buffer && Array.isArray(fileData.buffer)) {
+        try {
+          // Convert array back to buffer and save (same as multer)
+          const imageBuffer = Buffer.from(fileData.buffer);
+          const filename = fileData.filename || `image_${i}.jpg`;
+          const filepath = path.join(sessionDir, filename);
+
+          // Save file to disk (exactly like multer does)
+          fs.writeFileSync(filepath, imageBuffer);
+
+          console.log(`💾 Saved file: ${filename} (${imageBuffer.length} bytes)`);
+
+          // Create file object that matches multer's structure
+          uploadedFiles.push({
+            fieldname: 'images',
+            originalname: fileData.originalname || filename,
+            encoding: '7bit',
+            mimetype: fileData.mimetype || 'image/jpeg',
+            destination: sessionDir,
+            filename: filename,
+            path: filepath,
+            size: imageBuffer.length
+          });
+
+        } catch (error) {
+          console.error(`❌ Failed to save file ${i}:`, error);
+        }
+      }
+    }
+
+    // Return same response format as /upload endpoint
+    res.json({
+      success: true,
+      sessionId: sessionId,
+      files: uploadedFiles,
+      message: `Successfully uploaded ${uploadedFiles.length} files`
+    });
+
+  } catch (error) {
+    console.error('❌ Figma upload error:', error);
+    res.status(500).json({
+      success: false,
+      error: 'Upload failed'
+    });
+  }
+});
+
 // Figma Import Endpoint (supports both FormData and JSON for compatibility)
 app.post('/api/figma/import', handleFigmaUpload, async (req, res) => {
   try {

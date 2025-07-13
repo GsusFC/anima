@@ -106,40 +106,38 @@ export class AnimaGenAPIService {
     try {
       console.log(`📤 Uploading ${frameResults.length} frames to AnimaGen...`);
 
-      // Use the SAME upload flow as AnimaGen frontend
+      // Figma environment doesn't support FormData/File APIs
+      // Use JSON approach but with AnimaGen-compatible structure
       const sessionId = `session_${Date.now()}`;
-      const formData = new FormData();
 
-      // Convert image data to Blob files (same as frontend)
-      frameResults
+      // Prepare files data in the format AnimaGen expects
+      const files = frameResults
         .filter(result => result.success && result.imageData)
-        .forEach((result, index) => {
-          if (result.imageData) {
-            // Create Blob from Uint8Array
-            const blob = new Blob([result.imageData], {
-              type: settings.format === 'JPG' ? 'image/jpeg' : 'image/png'
-            });
-
-            // Create File object (same as frontend file upload)
-            const filename = `${result.frameName.replace(/[^a-zA-Z0-9]/g, '_')}.${settings.format.toLowerCase()}`;
-            const file = new File([blob], filename, {
-              type: blob.type
-            });
-
-            // Append to FormData exactly like frontend
-            formData.append('images', file);
-          }
+        .map((result, index) => {
+          const filename = `${result.frameName.replace(/[^a-zA-Z0-9]/g, '_')}.${settings.format.toLowerCase()}`;
+          return {
+            filename: filename,
+            originalname: result.frameName,
+            mimetype: settings.format === 'JPG' ? 'image/jpeg' : 'image/png',
+            size: result.imageData?.length || 0,
+            buffer: Array.from(result.imageData || []), // Convert Uint8Array to regular array
+            fieldname: 'images'
+          };
         });
 
-      // Use the SAME endpoint as AnimaGen frontend
-      const response = await this.makeRequest(`/upload?sessionId=${sessionId}`, {
+      // Use a custom endpoint that mimics the /upload behavior for Figma
+      const response = await this.makeRequest('/api/figma/upload', {
         method: 'POST',
         headers: {
+          'Content-Type': 'application/json',
           'X-Plugin-Version': '2.0.0',
           'X-Plugin-Source': 'figma'
-          // Don't set Content-Type for FormData
         },
-        body: formData
+        body: JSON.stringify({
+          sessionId: sessionId,
+          files: files,
+          source: 'figma-plugin'
+        })
       });
 
       if (response.success) {
