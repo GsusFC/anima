@@ -4,7 +4,7 @@ import { h } from 'preact'
 import { useState, useEffect } from 'preact/hooks'
 
 // Componentes UI mejorados
-import { Header, APIKeyPage, FrameList, ExportProgress, SuccessPage } from './components'
+import { Header, APIKeyPage, FrameList, ExportProgress, SuccessPage, ExportSettings } from './components'
 
 interface Frame {
   id: string
@@ -71,6 +71,7 @@ function Plugin() {
   const [isExporting, setIsExporting] = useState(false)
   const [exportProgress, setExportProgress] = useState<ExportProgress | null>(null)
   const [exportResult, setExportResult] = useState<ExportResult | null>(null)
+  const [isSettingsOpen, setIsSettingsOpen] = useState(false)
 
   useEffect(() => {
     // Set up message listeners
@@ -186,6 +187,14 @@ function Plugin() {
     handleRefreshFrames()
   }
 
+  const handleOpenSettings = () => {
+    setIsSettingsOpen(true)
+  }
+
+  const handleCloseSettings = () => {
+    setIsSettingsOpen(false)
+  }
+
   if (authState.loading) {
     return (
       <Container space="medium">
@@ -240,6 +249,7 @@ function Plugin() {
       <Header
         user={authState.user}
         onLogout={handleLogout}
+        onOpenSettings={handleOpenSettings}
       />
 
       {/* Frame List */}
@@ -254,71 +264,12 @@ function Plugin() {
         />
       </div>
 
-      {/* Export Settings y Botón */}
+      {/* Export Button */}
       <div style={{
         borderTop: '1px solid #e5e7eb',
         padding: '16px',
-        backgroundColor: '#f9fafb'
+        backgroundColor: '#ffffff'
       }}>
-        {/* Export Settings */}
-        <div style={{ marginBottom: '16px' }}>
-          <Text style={{ fontSize: '12px', fontWeight: '600', marginBottom: '8px' }}>
-            ⚙️ Export Settings
-          </Text>
-
-          <div style={{ display: 'flex', gap: '8px', marginBottom: '8px' }}>
-            <div style={{ flex: 1 }}>
-              <Text style={{ fontSize: '10px', color: '#6b7280', marginBottom: '2px' }}>
-                Format
-              </Text>
-              <Dropdown
-                value={exportFormat}
-                onValueChange={setExportFormat}
-                options={[
-                  { value: 'PNG', text: 'PNG' },
-                  { value: 'JPG', text: 'JPG' }
-                ]}
-                style={{ fontSize: '11px' }}
-              />
-            </div>
-
-            <div style={{ flex: 1 }}>
-              <Text style={{ fontSize: '10px', color: '#6b7280', marginBottom: '2px' }}>
-                Scale
-              </Text>
-              <Dropdown
-                value={exportScale}
-                onValueChange={setExportScale}
-                options={[
-                  { value: '1', text: '1x' },
-                  { value: '2', text: '2x' },
-                  { value: '3', text: '3x' }
-                ]}
-                style={{ fontSize: '11px' }}
-              />
-            </div>
-          </div>
-
-          {/* Quality setting for JPG */}
-          {exportFormat === 'JPG' && (
-            <div>
-              <Text style={{ fontSize: '10px', color: '#6b7280', marginBottom: '2px' }}>
-                Quality
-              </Text>
-              <Dropdown
-                value={exportQuality}
-                onValueChange={setExportQuality}
-                options={[
-                  { value: '0.6', text: '60% (Smaller)' },
-                  { value: '0.8', text: '80% (Recommended)' },
-                  { value: '0.9', text: '90% (High)' },
-                  { value: '1.0', text: '100% (Max)' }
-                ]}
-                style={{ fontSize: '11px' }}
-              />
-            </div>
-          )}
-        </div>
 
         {/* Export Button */}
         <Button
@@ -355,6 +306,18 @@ function Plugin() {
           </Text>
         )}
       </div>
+
+      {/* Export Settings Modal */}
+      <ExportSettings
+        exportFormat={exportFormat}
+        exportScale={exportScale}
+        exportQuality={exportQuality}
+        onFormatChange={setExportFormat}
+        onScaleChange={setExportScale}
+        onQualityChange={setExportQuality}
+        isOpen={isSettingsOpen}
+        onClose={handleCloseSettings}
+      />
     </div>
   )
 }

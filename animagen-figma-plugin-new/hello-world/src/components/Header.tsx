@@ -8,9 +8,10 @@ interface HeaderProps {
     plan: string
   }
   onLogout: () => void
+  onOpenSettings: () => void
 }
 
-export function Header({ user, onLogout }: HeaderProps) {
+export function Header({ user, onLogout, onOpenSettings }: HeaderProps) {
   return (
     <div style={{
       display: 'flex',
@@ -41,19 +42,26 @@ export function Header({ user, onLogout }: HeaderProps) {
         </Text>
       </div>
 
-      {/* Info del usuario y logout */}
-      <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+      {/* Controles del header */}
+      <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
         {user && (
-          <div style={{ textAlign: 'right' }}>
-            <Text style={{ fontSize: '12px', fontWeight: '500' }}>
-              {user.name}
-            </Text>
-            <Text style={{ fontSize: '11px', color: '#6b7280' }}>
-              {user.plan}
-            </Text>
-          </div>
+          <Text style={{ fontSize: '12px', fontWeight: '500', color: '#374151' }}>
+            {user.name}
+          </Text>
         )}
-        
+
+        <Button
+          secondary
+          onClick={onOpenSettings}
+          style={{
+            padding: '4px 8px',
+            fontSize: '11px',
+            minHeight: '24px'
+          }}
+        >
+          ⚙️ Settings
+        </Button>
+
         <Button
           secondary
           onClick={onLogout}

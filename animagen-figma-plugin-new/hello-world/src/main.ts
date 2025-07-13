@@ -15,7 +15,7 @@ export default function () {
 
   // Show UI
   showUI({
-    width: 400,
+    width: 500,
     height: 600,
     title: 'AnimaGen Exporter'
   })
