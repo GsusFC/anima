@@ -226,6 +226,8 @@ const logsDir = path.join(__dirname, 'logs');
 
 // Serve uploaded videos and processed files
 app.use('/temp', express.static(tempDir));
+// Serve uploaded files statically for Figma plugin
+app.use('/uploads', express.static(tempDir));
 
 // Serve output files with proper video headers for streaming
 app.use('/output', (req, res, next) => {
@@ -718,18 +720,134 @@ app.post('/api/auth/validate', (req, res) => {
   }
 });
 
-// Figma Import Endpoint (JSON format for Figma compatibility)
-app.post('/api/figma/import', async (req, res) => {
+// Multer configuration specifically for Figma plugin uploads
+const figmaUpload = multer({
+  storage: storage,
+  limits: {
+    fileSize: parseInt(process.env.MAX_FILE_SIZE) || 50 * 1024 * 1024, // 50MB limit per file
+    files: parseInt(process.env.MAX_FILES) || 50 // Max 50 files
+  },
+  fileFilter: (req, file, cb) => {
+    const allowedTypes = /jpeg|jpg|png|gif|bmp|webp/;
+    const extname = allowedTypes.test(path.extname(file.originalname).toLowerCase());
+    const mimetype = allowedTypes.test(file.mimetype);
+
+    if (mimetype && extname) {
+      return cb(null, true);
+    } else {
+      cb(new Error('Only image files are allowed!'));
+    }
+  }
+});
+
+// Middleware to handle both FormData and JSON for Figma import
+const handleFigmaUpload = (req, res, next) => {
+  const contentType = req.headers['content-type'] || '';
+
+  if (contentType.includes('multipart/form-data')) {
+    // Use multer for FormData
+    figmaUpload.array('images', 50)(req, res, next);
+  } else {
+    // Skip multer for JSON
+    next();
+  }
+};
+
+// Figma Import Endpoint (supports both FormData and JSON for compatibility)
+app.post('/api/figma/import', handleFigmaUpload, async (req, res) => {
   try {
     console.log('🎨 Figma import requested');
     console.log('📋 Body data:', req.body);
+    console.log('📁 Files received:', req.files ? req.files.length : 0);
 
-    const { source, pluginVersion, sessionId, frames } = req.body;
+    // Handle both FormData (with files) and JSON (legacy) formats
+    let frames = [];
+    let sessionId = req.body.sessionId;
+    const source = req.body.source || 'figma-plugin';
+    const pluginVersion = req.body.pluginVersion || '2.0.0';
 
-    if (!frames || frames.length === 0) {
+    if (req.files && req.files.length > 0) {
+      // FormData format - process uploaded files
+      console.log('📤 Processing FormData upload with', req.files.length, 'files');
+
+      frames = req.files.map((file, index) => {
+        // Try to parse metadata if provided
+        let metadata = {};
+        try {
+          const metadataKey = `metadata[${index}]`;
+          if (req.body[metadataKey]) {
+            metadata = JSON.parse(req.body[metadataKey]);
+          }
+        } catch (e) {
+          console.warn('⚠️ Failed to parse metadata for file', index);
+        }
+
+        return {
+          id: `${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
+          filename: file.filename,
+          originalName: file.originalname || metadata.originalName || `frame_${index}`,
+          path: file.path,
+          size: file.size,
+          mimetype: file.mimetype,
+          metadata: metadata,
+          order: index
+        };
+      });
+
+      sessionId = sessionId || req.sessionId || `figma_${Date.now()}`;
+
+    } else if (req.body.frames) {
+      // JSON format - process image data and save as files
+      console.log('📋 Processing JSON format with', req.body.frames.length, 'frames');
+
+      sessionId = sessionId || `figma_${Date.now()}`;
+      const sessionDir = path.join(tempDir, sessionId);
+
+      // Create session directory
+      if (!fs.existsSync(sessionDir)) {
+        fs.mkdirSync(sessionDir, { recursive: true });
+      }
+
+      frames = [];
+
+      for (let i = 0; i < req.body.frames.length; i++) {
+        const frameData = req.body.frames[i];
+
+        if (frameData.imageData && Array.isArray(frameData.imageData)) {
+          try {
+            // Convert array back to Uint8Array and save as file
+            const imageBuffer = Buffer.from(frameData.imageData);
+            const format = frameData.metadata?.format || 'jpg';
+            const filename = `frame_${i}.${format.toLowerCase()}`;
+            const filepath = path.join(sessionDir, filename);
+
+            // Save the file
+            fs.writeFileSync(filepath, imageBuffer);
+
+            console.log(`💾 Saved frame ${i}: ${filename} (${imageBuffer.length} bytes)`);
+
+            frames.push({
+              id: `${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
+              filename: filename,
+              originalName: frameData.name || `frame_${i}`,
+              path: filepath,
+              size: imageBuffer.length,
+              mimetype: format === 'jpg' ? 'image/jpeg' : 'image/png',
+              metadata: frameData.metadata,
+              order: i
+            });
+
+          } catch (error) {
+            console.error(`❌ Failed to save frame ${i}:`, error);
+          }
+        } else {
+          console.warn(`⚠️ Frame ${i} has no valid image data`);
+        }
+      }
+    } else {
       return res.status(400).json({
         success: false,
-        error: 'No frames provided'
+        error: 'No frames or files provided'
       });
     }
 
@@ -739,17 +857,64 @@ app.post('/api/figma/import', async (req, res) => {
     const slideshowId = `slideshow_${sessionId || Date.now()}`;
     const projectUrl = `https://anima-production-3dad.up.railway.app/slideshow/${slideshowId}`;
 
-    // Process frames (in a real implementation, you'd save the image data)
-    const processedFrames = frames.map((frame, index) => ({
-      id: `frame_${index}`,
-      name: frame.name,
-      order: frame.order,
-      dimensions: {
-        width: frame.metadata?.dimensions?.width || 1920,
-        height: frame.metadata?.dimensions?.height || 1080
-      },
-      format: frame.metadata?.format || 'PNG'
-    }));
+    // Save composition using existing system
+    const compositionId = slideshowId;
+    const composition = {
+      id: compositionId,
+      sessionId: sessionId,
+      images: frames,
+      transitions: frames.map((_, index) => ({
+        type: 'fade',
+        duration: 1000,
+        fromFrameId: index > 0 ? `frame_${index - 1}` : null,
+        toFrameId: `frame_${index}`
+      })),
+      frameDurations: new Array(frames.length).fill(3000), // 3 seconds per frame
+      quality: 'high',
+      type: 'figma-import',
+      metadata: {
+        source: source,
+        pluginVersion: pluginVersion,
+        createdAt: new Date().toISOString(),
+        framesCount: frames.length
+      }
+    };
+
+    console.log('💾 Saving composition:', compositionId);
+    const savedComposition = saveComposition(composition);
+
+    // Process frames - handle both file uploads and JSON data
+    const processedFrames = frames.map((frame, index) => {
+      // For uploaded files
+      if (frame.path) {
+        return {
+          id: frame.id || `frame_${index}`,
+          filename: frame.filename,
+          originalName: frame.originalName,
+          path: frame.path,
+          size: frame.size,
+          mimetype: frame.mimetype,
+          order: frame.order || index,
+          dimensions: {
+            width: frame.metadata?.dimensions?.width || 1920,
+            height: frame.metadata?.dimensions?.height || 1080
+          },
+          format: frame.metadata?.format || (frame.mimetype?.includes('jpeg') ? 'JPG' : 'PNG')
+        };
+      } else {
+        // For JSON data (legacy)
+        return {
+          id: `frame_${index}`,
+          name: frame.name,
+          order: frame.order || index,
+          dimensions: {
+            width: frame.metadata?.dimensions?.width || 1920,
+            height: frame.metadata?.dimensions?.height || 1080
+          },
+          format: frame.metadata?.format || 'PNG'
+        };
+      }
+    });
 
     // Prepare response
     const response = {
@@ -798,52 +963,86 @@ app.get('/api/slideshow/:id', async (req, res) => {
     const { id } = req.params;
     console.log('🎬 Slideshow data requested for ID:', id);
 
-    // For now, return mock data based on the slideshow ID
-    // In a real implementation, you'd fetch this from a database
-    const slideshowData = {
-      id: id,
-      title: `Slideshow ${id}`,
-      description: 'Generated from Figma frames',
-      createdAt: new Date().toISOString(),
-      frames: [
-        {
-          id: 'frame_0',
-          name: 'Frame 1',
-          order: 0,
-          duration: 3000,
-          transition: 'fade',
-          // In real implementation, this would be actual image URLs
-          imageUrl: '/api/placeholder-image/1920/1080?text=Frame+1',
-          dimensions: { width: 1920, height: 1080 }
-        },
-        {
-          id: 'frame_1',
-          name: 'Frame 2',
-          order: 1,
-          duration: 3000,
-          transition: 'fade',
-          imageUrl: '/api/placeholder-image/1920/1080?text=Frame+2',
-          dimensions: { width: 1920, height: 1080 }
-        }
-      ],
-      settings: {
-        totalDuration: 6000,
-        autoPlay: true,
-        loop: true,
-        quality: 'high',
-        format: 'slideshow'
-      },
-      metadata: {
-        source: 'figma-plugin',
-        pluginVersion: '2.0.0',
-        framesCount: 2
-      }
-    };
+    try {
+      // Try to load real composition data
+      const composition = loadComposition(id);
 
-    res.json({
-      success: true,
-      slideshow: slideshowData
-    });
+      console.log('✅ Loaded composition:', id);
+
+      // Convert composition to slideshow format
+      const slideshowData = {
+        id: id,
+        title: `Slideshow ${id}`,
+        description: composition.metadata?.source === 'figma-plugin' ? 'Generated from Figma frames' : 'AnimaGen Slideshow',
+        createdAt: composition.metadata?.createdAt || new Date().toISOString(),
+        frames: composition.images.map((img, index) => ({
+          id: img.id || `frame_${index}`,
+          name: img.originalName || img.filename || `Frame ${index + 1}`,
+          order: index,
+          duration: composition.frameDurations?.[index] || 3000,
+          transition: composition.transitions?.[index]?.type || 'fade',
+          imageUrl: `/uploads/${composition.sessionId}/${img.filename}`,
+          dimensions: {
+            width: img.metadata?.dimensions?.width || 1920,
+            height: img.metadata?.dimensions?.height || 1080
+          }
+        })),
+        settings: {
+          totalDuration: (composition.frameDurations || []).reduce((sum, duration) => sum + duration, 0),
+          autoPlay: true,
+          loop: true,
+          quality: composition.quality || 'high',
+          format: 'slideshow'
+        },
+        metadata: composition.metadata || {
+          source: 'unknown',
+          framesCount: composition.images.length
+        }
+      };
+
+      res.json({
+        success: true,
+        slideshow: slideshowData
+      });
+
+    } catch (loadError) {
+      console.warn('⚠️ Could not load composition, using fallback data:', loadError.message);
+
+      // Fallback to mock data if composition not found
+      const slideshowData = {
+        id: id,
+        title: `Slideshow ${id}`,
+        description: 'Generated slideshow',
+        createdAt: new Date().toISOString(),
+        frames: [
+          {
+            id: 'frame_0',
+            name: 'Frame 1',
+            order: 0,
+            duration: 3000,
+            transition: 'fade',
+            imageUrl: '/api/placeholder-image/1920/1080?text=Frame+1',
+            dimensions: { width: 1920, height: 1080 }
+          }
+        ],
+        settings: {
+          totalDuration: 3000,
+          autoPlay: true,
+          loop: true,
+          quality: 'high',
+          format: 'slideshow'
+        },
+        metadata: {
+          source: 'fallback',
+          framesCount: 1
+        }
+      };
+
+      res.json({
+        success: true,
+        slideshow: slideshowData
+      });
+    }
 
   } catch (error) {
     console.error('❌ Failed to get slideshow data:', error);
