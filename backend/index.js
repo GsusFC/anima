@@ -665,17 +665,18 @@ app.post('/api/auth/validate', (req, res) => {
     const authHeader = req.headers.authorization;
     const { source, version } = req.body;
 
-    // Development mode: bypass authentication
+    // Development mode OR Figma plugin: bypass authentication
     const isDevelopment = process.env.NODE_ENV !== 'production';
+    const isFigmaPlugin = source === 'figma-plugin' || req.headers['user-agent']?.includes('figma');
 
-    if (isDevelopment) {
-      console.log('🔓 Development mode: bypassing authentication');
+    if (isDevelopment || isFigmaPlugin) {
+      console.log('🔓 Bypassing authentication for:', isDevelopment ? 'development mode' : 'Figma plugin');
       return res.json({
         valid: true,
         user: {
-          id: 'dev_user',
-          email: 'dev@animagen.local',
-          name: 'Development User',
+          id: isFigmaPlugin ? 'figma_user' : 'dev_user',
+          email: isFigmaPlugin ? 'figma@animagen.app' : 'dev@animagen.local',
+          name: isFigmaPlugin ? 'Figma Plugin User' : 'Development User',
           plan: 'Pro',
           permissions: ['export', 'upload', 'create_slideshow']
         },
