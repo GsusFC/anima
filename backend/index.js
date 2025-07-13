@@ -665,6 +665,24 @@ app.post('/api/auth/validate', (req, res) => {
     const authHeader = req.headers.authorization;
     const { source, version } = req.body;
 
+    // Development mode: bypass authentication
+    const isDevelopment = process.env.NODE_ENV !== 'production';
+
+    if (isDevelopment) {
+      console.log('🔓 Development mode: bypassing authentication');
+      return res.json({
+        valid: true,
+        user: {
+          id: 'dev_user',
+          email: 'dev@animagen.local',
+          name: 'Development User',
+          plan: 'Pro',
+          permissions: ['export', 'upload', 'create_slideshow']
+        },
+        expiresAt: new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString() // 24 hours
+      });
+    }
+
     if (!authHeader || !authHeader.startsWith('Bearer ')) {
       return res.status(401).json({
         valid: false,
