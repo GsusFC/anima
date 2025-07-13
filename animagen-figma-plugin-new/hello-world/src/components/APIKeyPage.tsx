@@ -124,6 +124,19 @@ export function APIKeyPage({
         </Text>
       </div>
 
+      {/* Development key for testing */}
+      <div style={{
+        backgroundColor: '#fef3c7',
+        border: '1px solid #fbbf24',
+        borderRadius: '6px',
+        padding: '12px',
+        marginTop: '8px'
+      }}>
+        <Text style={{ fontSize: '11px', color: '#92400e' }}>
+          <strong>For testing:</strong> ag_figma_dev_local_testing_key
+        </Text>
+      </div>
+
       <VerticalSpace space="medium" />
     </Container>
   )

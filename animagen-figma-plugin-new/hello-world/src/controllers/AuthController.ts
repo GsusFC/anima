@@ -104,6 +104,30 @@ export class AuthController {
         throw new Error('API key is too short');
       }
 
+      // Development bypass for local testing
+      if (apiKey === 'ag_figma_dev_local_testing_key') {
+        console.log('🔧 Using development bypass for local testing');
+        const mockUser = {
+          id: 'dev-user-123',
+          name: 'Development User',
+          email: 'dev@animagen.local',
+          plan: 'Pro'
+        };
+
+        await this.storeCredentials(apiKey, mockUser);
+
+        this.updateAuthState({
+          authenticated: true,
+          loading: false,
+          user: mockUser,
+          apiKey,
+          expiresAt: new Date(Date.now() + 24 * 60 * 60 * 1000) // 24 hours
+        });
+
+        console.log('✅ Development authentication successful');
+        return this.currentAuthState;
+      }
+
       // Validate with AnimaGen API
       const validation = await this.apiService.validateAPIKey(apiKey);
 
