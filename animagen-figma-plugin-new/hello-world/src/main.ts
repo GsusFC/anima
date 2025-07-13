@@ -75,18 +75,26 @@ function setupMessageHandlers() {
   })
 }
 
-function sendInitialData() {
+async function sendInitialData() {
   console.log('📤 Sending initial data to UI...')
 
   // Detect frames immediately
   detectAndSendFrames()
 
-  // Send initial auth state (not authenticated, not loading)
-  emit('auth-state-changed', {
-    authenticated: false,
-    loading: false,
-    requiresSetup: true
-  })
+  // Initialize auth controller and send real auth state
+  try {
+    const authState = await authController.initialize()
+    console.log('📤 Sending initial auth state:', authState)
+    emit('auth-state-changed', authState)
+  } catch (error) {
+    console.error('❌ Failed to initialize auth:', error)
+    emit('auth-state-changed', {
+      authenticated: false,
+      loading: false,
+      requiresSetup: true,
+      error: 'Failed to initialize authentication'
+    })
+  }
 }
 
 async function initializePlugin() {
@@ -254,8 +262,10 @@ function estimateFileSize(width: number, height: number, complexity: string): st
 
 async function handleAuthentication(apiKey: string) {
   try {
-    console.log('🔐 Handling authentication with real API...')
-    await authController.authenticateWithAPIKey(apiKey)
+    console.log('🔐 Handling authentication request for key:', apiKey.substring(0, 15) + '...')
+    const authState = await authController.authenticateWithAPIKey(apiKey)
+    console.log('✅ Authentication successful, state:', authState)
+    console.log('📤 Auth state should be automatically emitted by AuthController')
   } catch (error) {
     console.error('❌ Authentication failed:', error)
     // Error is already handled by AuthController and sent to UI
