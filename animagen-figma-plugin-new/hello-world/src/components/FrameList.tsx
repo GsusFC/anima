@@ -117,13 +117,13 @@ export function FrameList({
                 style={{
                   display: 'flex',
                   alignItems: 'center',
-                  padding: '12px 16px',
+                  padding: '14px 16px',
                   borderBottom: index < validFrames.length - 1 ? '1px solid #f3f4f6' : 'none',
                   backgroundColor: isSelected ? '#fef7ff' : 'transparent',
                   borderLeft: isSelected ? '3px solid #ec4899' : '3px solid transparent',
                   cursor: 'pointer',
                   transition: 'all 0.15s ease',
-                  minHeight: '48px'
+                  minHeight: '52px'
                 }}
                 onClick={() => onFrameSelection(frame.id, !isSelected)}
               >
@@ -146,7 +146,9 @@ export function FrameList({
                     overflow: 'hidden',
                     textOverflow: 'ellipsis',
                     whiteSpace: 'nowrap',
-                    lineHeight: '1.4'
+                    lineHeight: '1.5',
+                    display: 'block',
+                    verticalAlign: 'baseline'
                   }}>
                     {frame.name}
                   </Text>
