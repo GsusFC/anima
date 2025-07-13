@@ -8,7 +8,7 @@ const VideoPreview: React.FC = () => {
   // Register video ref with context when component mounts
   useEffect(() => {
     if (localVideoRef.current) {
-      setVideoRef(localVideoRef);
+      setVideoRef(localVideoRef as React.RefObject<HTMLVideoElement>);
     }
   }, [hasVideo, setVideoRef]);
 
