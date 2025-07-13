@@ -1,5 +1,5 @@
 import { useState, useCallback } from 'react';
-import { ImageFile, TimelineItem, ExportSettings, PreviewState, ExportState } from '../types/slideshow.types';
+import { ImageFile, TimelineItem, ExportSettings, PreviewState, ExportState, TransitionType } from '../types/slideshow.types';
 import { useImageManagement } from './useImageManagement';
 import { usePreviewGeneration } from './usePreviewGeneration';
 import { useExportManagement } from './useExportManagement';
@@ -225,6 +225,98 @@ export const useSlideshow = () => {
     }));
   }, []);
 
+  // Load slideshow from API (for Figma-generated slideshows)
+  const loadSlideshowFromAPI = useCallback(async (slideshowId: string) => {
+    try {
+      console.log('🎬 Loading slideshow from API:', slideshowId);
+
+      const response = await fetch(`/api/slideshow/${slideshowId}`);
+      const data = await response.json();
+
+      if (!data.success) {
+        throw new Error(data.error || 'Failed to load slideshow');
+      }
+
+      const slideshow = data.slideshow;
+      console.log('✅ Slideshow data loaded:', slideshow);
+
+      // Convert API data to internal format
+      const images: ImageFile[] = slideshow.frames.map((frame: any, index: number) => ({
+        id: frame.id,
+        name: frame.name,
+        file: null as any, // No actual file for API-loaded images
+        size: 0,
+        preview: frame.imageUrl, // Use the API image URL as preview
+        addedAt: new Date(),
+        uploadedInfo: {
+          filename: frame.name,
+          originalName: frame.name,
+          path: frame.imageUrl,
+          size: 0,
+          mimetype: 'image/png'
+        }
+      }));
+
+      const timeline: TimelineItem[] = slideshow.frames.map((frame: any, index: number) => ({
+        id: `timeline_${frame.id}`,
+        imageId: frame.id,
+        duration: frame.duration,
+        position: frame.order,
+        transition: {
+          type: frame.transition as TransitionType,
+          duration: 500
+        }
+      }));
+
+      // Update state with loaded data
+      setState(prev => ({
+        ...prev,
+        project: {
+          id: slideshow.id,
+          images,
+          timeline,
+          exportSettings: {
+            ...prev.project.exportSettings,
+            format: slideshow.settings.format === 'slideshow' ? 'gif' : slideshow.settings.format as any,
+            loop: slideshow.settings.loop
+          },
+          sessionId: slideshow.id
+        },
+        preview: {
+          url: null,
+          isGenerating: false,
+          error: null
+        },
+        export: {
+          isExporting: false,
+          progress: 0,
+          lastResult: null,
+          error: null,
+          isCompleted: false,
+          downloadUrl: undefined
+        },
+        selection: {
+          selectedImages: [],
+          isSelectionMode: false
+        }
+      }));
+
+      console.log('✅ Slideshow loaded successfully into context');
+      return true;
+
+    } catch (error) {
+      console.error('❌ Failed to load slideshow from API:', error);
+      setState(prev => ({
+        ...prev,
+        preview: {
+          ...prev.preview,
+          error: error instanceof Error ? error.message : 'Failed to load slideshow'
+        }
+      }));
+      return false;
+    }
+  }, []);
+
   // Selection Management
   const toggleSelectionMode = useCallback(() => {
     setState(prev => ({
@@ -321,6 +413,7 @@ export const useSlideshow = () => {
     // General Actions
     setDragActive,
     clearProject,
+    loadSlideshowFromAPI,
     
     // Selection Actions
     toggleSelectionMode,

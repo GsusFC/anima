@@ -28,6 +28,7 @@ interface SlideshowContextType {
   updateExportState: (updates: any) => void;
   setDragActive: (active: boolean) => void;
   clearProject: () => void;
+  loadSlideshowFromAPI: (slideshowId: string) => Promise<boolean>;
   
   // Selection Actions
   toggleSelectionMode: () => void;

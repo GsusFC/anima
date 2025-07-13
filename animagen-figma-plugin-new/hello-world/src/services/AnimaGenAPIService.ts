@@ -7,8 +7,8 @@ export class AnimaGenAPIService {
   private timeout: number;
 
   constructor() {
-    // Use localhost for testing the new slideshow viewer functionality
-    this.baseURL = 'http://localhost:3001';
+    // Use Railway for production
+    this.baseURL = 'https://anima-production-3dad.up.railway.app';
     this.timeout = 30000; // 30 seconds
   }
 

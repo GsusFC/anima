@@ -543,7 +543,7 @@ app.get('/api/status', (req, res) => {
   res.json({
     message: 'AnimaGen Backend Server',
     status: 'running',
-    version: '1.0.0',
+    version: '1.0.1',
     jobQueue: {
       enabled: jobQueueEnabled,
       status: jobQueueEnabled ? workerManager.getStatus() : 'disabled'
