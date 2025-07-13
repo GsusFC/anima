@@ -24,10 +24,10 @@ export function APIKeyPage({
 
   return (
     <Container space="medium">
-      <VerticalSpace space="large" />
+      <VerticalSpace space="medium" />
       
       {/* Header con logo */}
-      <div style={{ textAlign: 'center', marginBottom: '24px' }}>
+      <div style={{ textAlign: 'center', marginBottom: '32px' }}>
         <div style={{
           width: '48px',
           height: '48px',
@@ -39,15 +39,12 @@ export function APIKeyPage({
           color: 'white',
           fontSize: '24px',
           fontWeight: 'bold',
-          margin: '0 auto 12px'
+          margin: '0 auto 16px'
         }}>
           A
         </div>
-        <Text style={{ fontSize: '18px', fontWeight: '600', marginBottom: '4px' }}>
-          AnimaGen Exporter
-        </Text>
-        <Text style={{ fontSize: '14px', color: '#6b7280' }}>
-          Export Figma frames to AnimaGen slideshows
+        <Text style={{ fontSize: '18px', fontWeight: '600' }}>
+          AnimaGen
         </Text>
       </div>
 
@@ -59,12 +56,6 @@ export function APIKeyPage({
         padding: '20px',
         marginBottom: '16px'
       }}>
-        <Text style={{ fontSize: '14px', fontWeight: '600', marginBottom: '8px' }}>
-          🔐 Authentication Required
-        </Text>
-        <Text style={{ fontSize: '12px', color: '#6b7280', marginBottom: '16px' }}>
-          Enter your AnimaGen API key to get started
-        </Text>
 
         {/* Input de API key */}
         <div style={{ marginBottom: '12px' }}>
@@ -81,16 +72,7 @@ export function APIKeyPage({
             }}
           />
           
-          {/* Indicador de formato */}
-          {apiKey && (
-            <div style={{ 
-              marginTop: '4px', 
-              fontSize: '11px',
-              color: isValidFormat ? '#10b981' : '#ef4444'
-            }}>
-              {isValidFormat ? '✓ Valid format' : '⚠ Should start with ag_figma_'}
-            </div>
-          )}
+
         </div>
 
         {/* Error message */}
@@ -122,10 +104,10 @@ export function APIKeyPage({
           {isLoading ? (
             <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
               <LoadingIndicator />
-              <span>Validating...</span>
+              <span>Connecting...</span>
             </div>
           ) : (
-            'Connect to AnimaGen'
+            'Connect'
           )}
         </Button>
       </div>
@@ -138,12 +120,11 @@ export function APIKeyPage({
         padding: '12px'
       }}>
         <Text style={{ fontSize: '11px', color: '#1e40af' }}>
-          💡 <strong>Where to find your API key:</strong><br />
-          Go to AnimaGen → Settings → API Keys → Generate new key
+          Get your API key from AnimaGen Settings
         </Text>
       </div>
 
-      <VerticalSpace space="large" />
+      <VerticalSpace space="medium" />
     </Container>
   )
 }
