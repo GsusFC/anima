@@ -61,8 +61,9 @@ function Plugin() {
   const [frames, setFrames] = useState<Frame[]>([])
   const [selectedFrames, setSelectedFrames] = useState<string[]>([])
   const [apiKey, setApiKey] = useState('')
-  const [exportFormat, setExportFormat] = useState('PNG')
-  const [exportScale, setExportScale] = useState('2')
+  const [exportFormat, setExportFormat] = useState('JPG') // Changed to JPG for smaller file sizes
+  const [exportScale, setExportScale] = useState('1') // Changed to 1x scale to reduce file size
+  const [exportQuality, setExportQuality] = useState('0.8') // JPG quality (0.1-1.0)
   const [isExporting, setIsExporting] = useState(false)
   const [exportProgress, setExportProgress] = useState<ExportProgress | null>(null)
   const [exportResult, setExportResult] = useState<ExportResult | null>(null)
@@ -135,7 +136,8 @@ function Plugin() {
 
     const settings = {
       format: exportFormat,
-      scale: parseInt(exportScale)
+      scale: parseInt(exportScale),
+      quality: parseFloat(exportQuality) // Add quality setting for JPG compression
     }
 
     emit('export-frames', { frameIds: selectedFrames, settings })
@@ -290,8 +292,28 @@ function Plugin() {
           { value: '3', text: '3x' }
         ]}
       />
+      <VerticalSpace space="small" />
+
+      {/* Quality setting for JPG */}
+      {exportFormat === 'JPG' && (
+        <div>
+          <Text>Quality (JPG)</Text>
+          <Dropdown
+            value={exportQuality}
+            onValueChange={setExportQuality}
+            options={[
+              { value: '0.6', text: '60% (Smaller files)' },
+              { value: '0.8', text: '80% (Recommended)' },
+              { value: '0.9', text: '90% (High quality)' },
+              { value: '1.0', text: '100% (Maximum)' }
+            ]}
+          />
+          <VerticalSpace space="small" />
+        </div>
+      )}
+
       <VerticalSpace space="medium" />
-      
+
       {/* Export Progress */}
       {isExporting && exportProgress && (
         <div>

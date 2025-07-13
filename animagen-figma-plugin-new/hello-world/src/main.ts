@@ -273,14 +273,18 @@ async function handleFrameExport(frameIds: string[], settings: any) {
     })
 
     try {
-      // Export frame
-      const imageData = await frame.exportAsync({
-        format: settings.format || 'PNG',
+      // Export frame with optimized settings for smaller file sizes
+      const exportSettings = {
+        format: settings.format || 'JPG', // Use JPG by default for smaller files
         constraint: {
           type: 'SCALE',
-          value: settings.scale || 2
+          value: settings.scale || 1 // Use 1x scale by default to reduce file size
         }
-      })
+      };
+
+      console.log(`📸 Exporting frame "${frame.name}" with settings:`, exportSettings);
+
+      const imageData = await frame.exportAsync(exportSettings)
 
       frameResults.push({
         success: true,
