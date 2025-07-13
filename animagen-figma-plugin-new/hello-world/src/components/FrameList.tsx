@@ -32,23 +32,7 @@ export function FrameList({
   const selectedCount = selectedFrames.length
   const totalCount = validFrames.length
 
-  const getComplexityColor = (complexity: string) => {
-    switch (complexity) {
-      case 'low': return '#10b981'
-      case 'medium': return '#f59e0b'
-      case 'high': return '#ef4444'
-      default: return '#6b7280'
-    }
-  }
 
-  const getComplexityIcon = (complexity: string) => {
-    switch (complexity) {
-      case 'low': return '🟢'
-      case 'medium': return '🟡'
-      case 'high': return '🔴'
-      default: return '⚪'
-    }
-  }
 
   return (
     <div style={{ padding: '16px' }}>
@@ -134,17 +118,18 @@ export function FrameList({
                 style={{
                   display: 'flex',
                   alignItems: 'center',
-                  padding: '12px 16px',
+                  padding: '8px 16px',
                   borderBottom: index < validFrames.length - 1 ? '1px solid #f3f4f6' : 'none',
                   backgroundColor: isSelected ? '#fef7ff' : 'transparent',
                   borderLeft: isSelected ? '3px solid #ec4899' : '3px solid transparent',
                   cursor: 'pointer',
-                  transition: 'all 0.2s ease'
+                  transition: 'all 0.15s ease',
+                  minHeight: '40px'
                 }}
                 onClick={() => onFrameSelection(frame.id, !isSelected)}
               >
                 {/* Checkbox */}
-                <div style={{ marginRight: '12px' }}>
+                <div style={{ marginRight: '10px' }}>
                   <Checkbox
                     value={isSelected}
                     onValueChange={(checked) => onFrameSelection(frame.id, checked)}
@@ -153,49 +138,33 @@ export function FrameList({
                   </Checkbox>
                 </div>
 
-                {/* Frame info */}
-                <div style={{ flex: 1, minWidth: 0 }}>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginBottom: '2px' }}>
-                    <Text style={{ 
-                      fontSize: '12px', 
+                {/* Frame info - minimal and clean */}
+                <div style={{ flex: 1, minWidth: 0, display: 'flex', alignItems: 'center', gap: '8px' }}>
+                  <Text style={{
+                    fontSize: '13px',
+                    fontWeight: '500',
+                    color: isSelected ? '#ec4899' : '#111827',
+                    overflow: 'hidden',
+                    textOverflow: 'ellipsis',
+                    whiteSpace: 'nowrap',
+                    flex: 1
+                  }}>
+                    {frame.name}
+                  </Text>
+
+                  {wasSelectedInFigma && (
+                    <span style={{
+                      fontSize: '9px',
+                      backgroundColor: '#dbeafe',
+                      color: '#1e40af',
+                      padding: '2px 6px',
+                      borderRadius: '3px',
                       fontWeight: '500',
-                      color: isSelected ? '#ec4899' : '#111827',
-                      overflow: 'hidden',
-                      textOverflow: 'ellipsis',
-                      whiteSpace: 'nowrap'
+                      flexShrink: 0
                     }}>
-                      {frame.name}
-                    </Text>
-                    {wasSelectedInFigma && (
-                      <span style={{ 
-                        fontSize: '10px', 
-                        backgroundColor: '#dbeafe', 
-                        color: '#1e40af',
-                        padding: '1px 4px',
-                        borderRadius: '2px'
-                      }}>
-                        Figma
-                      </span>
-                    )}
-                  </div>
-                  
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                    <Text style={{ fontSize: '10px', color: '#6b7280' }}>
-                      {frame.width}×{frame.height}
-                    </Text>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '2px' }}>
-                      <span style={{ fontSize: '8px' }}>
-                        {getComplexityIcon(frame.complexity)}
-                      </span>
-                      <Text style={{ 
-                        fontSize: '10px', 
-                        color: getComplexityColor(frame.complexity),
-                        fontWeight: '500'
-                      }}>
-                        {frame.estimatedSize}
-                      </Text>
-                    </div>
-                  </div>
+                      Figma
+                    </span>
+                  )}
                 </div>
               </div>
             )
