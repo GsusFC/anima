@@ -5,6 +5,7 @@ import { useState, useEffect } from 'preact/hooks'
 
 // Componentes UI mejorados
 import { Header, APIKeyPage, FrameList, FrameGrid, ExportProgress, SuccessPage, ExportSettings } from './components'
+import { ExportButton } from './components/ExportButton'
 
 interface Frame {
   id: string
@@ -56,6 +57,14 @@ interface ExportResult {
   message?: string
 }
 
+interface ExportProgressState {
+  stage: 'thumbnails' | 'uploading' | 'creating' | 'completed' | 'error'
+  current: number
+  total: number
+  message: string
+  percentage: number
+}
+
 function Plugin() {
   const [authState, setAuthState] = useState<AuthState>({
     authenticated: false,
@@ -70,6 +79,7 @@ function Plugin() {
   const [exportQuality, setExportQuality] = useState('0.8') // JPG quality (0.1-1.0)
   const [isExporting, setIsExporting] = useState(false)
   const [exportProgress, setExportProgress] = useState<ExportProgress | null>(null)
+  const [exportProgressState, setExportProgressState] = useState<ExportProgressState | null>(null)
   const [exportResult, setExportResult] = useState<ExportResult | null>(null)
   const [isSettingsOpen, setIsSettingsOpen] = useState(false)
 
@@ -99,20 +109,50 @@ function Plugin() {
     on('export-progress', (data: ExportProgress) => {
       console.log('📊 Export progress:', data)
       setExportProgress(data)
+
+      // Convert to detailed progress state
+      const progressState: ExportProgressState = {
+        stage: data.stage === 'generating' ? 'thumbnails' :
+               data.stage === 'uploading' ? 'uploading' :
+               data.stage === 'processing' ? 'creating' : 'uploading',
+        current: data.current,
+        total: data.total,
+        message: data.stage === 'generating' ? `Generating thumbnails... (${data.current}/${data.total})` :
+                 data.stage === 'uploading' ? `Uploading frames to AnimaGen... (${data.current}/${data.total})` :
+                 data.stage === 'processing' ? 'Creating slideshow...' :
+                 `Processing... (${data.current}/${data.total})`,
+        percentage: Math.round((data.current / data.total) * 100)
+      }
+      setExportProgressState(progressState)
     })
 
     on('export-complete', (data: ExportResult) => {
       console.log('✅ Export complete:', data)
       setIsExporting(false)
       setExportProgress(null)
-      setExportResult(data)
+      setExportProgressState(null)
+
+      // Add slideshow URL to result
+      const resultWithUrl = {
+        ...data,
+        slideshowUrl: data.projectUrl || `https://anima-production-3dad.up.railway.app/slideshow?sessionId=${data.sessionId}`
+      }
+      setExportResult(resultWithUrl)
     })
 
     on('export-error', (data: ExportResult) => {
       console.error('❌ Export error:', data)
       setIsExporting(false)
       setExportProgress(null)
-      setExportResult(data)
+
+      // Set error state in progress
+      setExportProgressState({
+        stage: 'error',
+        current: 0,
+        total: 0,
+        message: data.error || data.message || 'Export failed',
+        percentage: 0
+      })
     })
 
     on('thumbnail-response', (data: any) => {
@@ -206,7 +246,19 @@ function Plugin() {
     setExportResult(null)
     setSelectedFrames([])
     setExportProgress(null)
+    setExportProgressState(null)
     handleRefreshFrames()
+  }
+
+  const handleOpenSlideshow = (url: string) => {
+    console.log('🎬 Opening slideshow:', url)
+    emit('open-external-url', { url })
+  }
+
+  const handleRetryExport = () => {
+    setExportProgressState(null)
+    setExportResult(null)
+    handleExport()
   }
 
   const handleOpenSettings = () => {
@@ -329,29 +381,16 @@ function Plugin() {
       }}>
 
         {/* Export Button */}
-        <Button
-          fullWidth
-          onClick={handleExport}
-          disabled={selectedFrames.length === 0 || isExporting || !authState.authenticated}
-          style={{
-            backgroundColor: (selectedFrames.length > 0 && authState.authenticated) ? '#ec4899' : '#d1d5db',
-            borderColor: (selectedFrames.length > 0 && authState.authenticated) ? '#ec4899' : '#d1d5db',
-            minHeight: '40px',
-            fontSize: '14px',
-            fontWeight: '600'
-          }}
-        >
-          {isExporting ? (
-            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-              <LoadingIndicator />
-              <span>Exporting...</span>
-            </div>
-          ) : !authState.authenticated ? (
-            '🔐 Authentication Required to Export'
-          ) : (
-            `🚀 Export ${selectedFrames.length} Frame${selectedFrames.length !== 1 ? 's' : ''} to AnimaGen`
-          )}
-        </Button>
+        <ExportButton
+          selectedFrames={selectedFrames}
+          isAuthenticated={authState.authenticated}
+          isExporting={isExporting}
+          exportProgress={exportProgressState}
+          exportResult={exportResult}
+          onExport={handleExport}
+          onOpenSlideshow={handleOpenSlideshow}
+          onRetry={handleRetryExport}
+        />
 
         {/* Info text */}
         {selectedFrames.length === 0 && (
