@@ -18,10 +18,7 @@ interface FrameGridProps {
   onFrameSelection: (frameId: string, checked: boolean) => void
   onSelectAll: () => void
   onClearAll: () => void
-  onRefreshFrames: () => void
   figmaSelection?: string[]
-  hasPreSelection?: boolean
-  showingAllFrames?: boolean
 }
 
 interface ThumbnailCache {
@@ -38,10 +35,7 @@ export function FrameGrid({
   onFrameSelection,
   onSelectAll,
   onClearAll,
-  onRefreshFrames,
-  figmaSelection = [],
-  hasPreSelection = false,
-  showingAllFrames = false
+  figmaSelection = []
 }: FrameGridProps) {
   const [thumbnailCache, setThumbnailCache] = useState<ThumbnailCache>({})
   const [loadingThumbnails, setLoadingThumbnails] = useState<Set<string>>(new Set())
@@ -156,29 +150,12 @@ export function FrameGrid({
         }}>
           📋
         </div>
-        <div style={{ marginBottom: '16px' }}>
-          <div style={{ fontSize: '14px', fontWeight: '600', marginBottom: '8px', color: '#374151' }}>
-            No frames found
-          </div>
-          <div style={{ fontSize: '12px', color: '#6b7280' }}>
-            No frames available on this page
-          </div>
+        <div style={{ fontSize: '14px', fontWeight: '600', marginBottom: '8px', color: '#374151' }}>
+          No frames selected
         </div>
-        <button
-          onClick={onRefreshFrames}
-          style={{
-            padding: '8px 16px',
-            fontSize: '12px',
-            backgroundColor: '#ec4899',
-            color: 'white',
-            border: 'none',
-            borderRadius: '6px',
-            cursor: 'pointer',
-            fontWeight: '500'
-          }}
-        >
-          🔄 Refresh
-        </button>
+        <div style={{ fontSize: '12px', color: '#6b7280' }}>
+          Select frames in Figma to get started
+        </div>
       </div>
     )
   }
@@ -190,25 +167,7 @@ export function FrameGrid({
       maxWidth: '500px',
       boxSizing: 'border-box'
     }}>
-      {/* Context indicator */}
-      {(hasPreSelection || showingAllFrames) && (
-        <div style={{
-          backgroundColor: hasPreSelection ? '#f0fdf4' : '#eff6ff',
-          border: `1px solid ${hasPreSelection ? '#bbf7d0' : '#bfdbfe'}`,
-          borderRadius: '6px',
-          padding: '8px 12px',
-          marginBottom: '12px',
-          fontSize: '11px',
-          color: hasPreSelection ? '#166534' : '#1e40af'
-        }}>
-          {hasPreSelection
-            ? `🎯 Showing ${totalCount} frames selected in Figma`
-            : `📋 Showing all ${totalCount} frames on this page`
-          }
-        </div>
-      )}
-
-      {/* Control buttons */}
+      {/* Control buttons - minimal */}
       <div style={{
         display: 'flex',
         gap: '8px',
@@ -246,21 +205,6 @@ export function FrameGrid({
           }}
         >
           Clear All
-        </button>
-        <button
-          onClick={onRefreshFrames}
-          style={{
-            padding: '6px 12px',
-            fontSize: '11px',
-            backgroundColor: '#f3f4f6',
-            color: '#374151',
-            border: '1px solid #d1d5db',
-            borderRadius: '4px',
-            cursor: 'pointer',
-            fontWeight: '500'
-          }}
-        >
-          🔄 Refresh
         </button>
       </div>
 

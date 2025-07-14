@@ -64,8 +64,6 @@ function Plugin() {
   const [frames, setFrames] = useState<Frame[]>([])
   const [selectedFrames, setSelectedFrames] = useState<string[]>([])
   const [figmaSelection, setFigmaSelection] = useState<string[]>([]) // Frames seleccionados en Figma
-  const [hasPreSelection, setHasPreSelection] = useState(false)
-  const [showingAllFrames, setShowingAllFrames] = useState(false)
   const [apiKey, setApiKey] = useState('')
   const [exportFormat, setExportFormat] = useState('JPG') // Changed to JPG for smaller file sizes
   const [exportScale, setExportScale] = useState('1') // Changed to 1x scale to reduce file size
@@ -84,16 +82,9 @@ function Plugin() {
       console.log('🔐 Auth state set successfully')
     })
 
-    on('frames-detected', (data: {
-      frames: Frame[],
-      figmaSelection?: string[],
-      hasPreSelection?: boolean,
-      showingAllFrames?: boolean
-    }) => {
+    on('frames-detected', (data: { frames: Frame[], figmaSelection?: string[] }) => {
       console.log('🖼️ Frames detected:', data)
       setFrames(data.frames)
-      setHasPreSelection(data.hasPreSelection || false)
-      setShowingAllFrames(data.showingAllFrames || false)
 
       // Si hay selección de Figma, pre-seleccionar esos frames
       if (data.figmaSelection && data.figmaSelection.length > 0) {
@@ -102,10 +93,6 @@ function Plugin() {
         setSelectedFrames(data.figmaSelection)
       } else {
         setFigmaSelection([])
-        // Si no hay pre-selección pero hay frames, no seleccionar ninguno inicialmente
-        if (!data.hasPreSelection) {
-          setSelectedFrames([])
-        }
       }
     })
 
@@ -295,10 +282,7 @@ function Plugin() {
           onFrameSelection={handleFrameSelection}
           onSelectAll={handleSelectAll}
           onClearAll={handleClearAll}
-          onRefreshFrames={handleRefreshFrames}
           figmaSelection={figmaSelection}
-          hasPreSelection={hasPreSelection}
-          showingAllFrames={showingAllFrames}
         />
       </div>
 
