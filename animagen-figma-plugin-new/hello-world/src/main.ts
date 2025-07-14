@@ -23,6 +23,12 @@ export default function () {
   // Set up message handlers
   setupMessageHandlers()
 
+  // Listen for selection changes in Figma
+  figma.on('selectionchange', () => {
+    console.log('🎯 Selection changed in Figma, detecting frames...')
+    detectAndSendFrames()
+  })
+
   // Send initial data immediately (don't wait for auth)
   sendInitialData()
 }

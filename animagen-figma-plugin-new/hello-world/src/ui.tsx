@@ -230,15 +230,21 @@ function Plugin() {
   }
 
   if (!authState.authenticated) {
-    return (
-      <APIKeyPage
-        apiKey={apiKey}
-        onApiKeyChange={setApiKey}
-        onAuthenticate={handleAuthenticate}
-        error={authState.error}
-        isLoading={authState.loading}
-      />
-    )
+    // Si hay frames detectados, mostrar la interfaz principal con autenticación requerida para export
+    if (frames.length > 0) {
+      // Continuar al flujo principal pero deshabilitar export
+    } else {
+      // Si no hay frames, mostrar página de autenticación
+      return (
+        <APIKeyPage
+          apiKey={apiKey}
+          onApiKeyChange={setApiKey}
+          onAuthenticate={handleAuthenticate}
+          error={authState.error}
+          isLoading={authState.loading}
+        />
+      )
+    }
   }
 
   // Mostrar página de éxito si hay resultado
@@ -267,6 +273,35 @@ function Plugin() {
 
   return (
     <div style={{ height: '100vh', display: 'flex', flexDirection: 'column' }}>
+      {/* Authentication Required Banner */}
+      {!authState.authenticated && (
+        <div style={{
+          backgroundColor: '#fef3c7',
+          border: '1px solid #fbbf24',
+          padding: '12px 16px',
+          fontSize: '12px',
+          color: '#92400e',
+          textAlign: 'center'
+        }}>
+          🔐 <strong>Authentication required to export frames</strong>
+          <button
+            onClick={() => {/* Show auth modal or redirect */}}
+            style={{
+              marginLeft: '8px',
+              padding: '4px 8px',
+              fontSize: '11px',
+              backgroundColor: '#ec4899',
+              color: 'white',
+              border: 'none',
+              borderRadius: '4px',
+              cursor: 'pointer'
+            }}
+          >
+            Authenticate
+          </button>
+        </div>
+      )}
+
       {/* Header */}
       <Header
         user={authState.user}
@@ -297,10 +332,10 @@ function Plugin() {
         <Button
           fullWidth
           onClick={handleExport}
-          disabled={selectedFrames.length === 0 || isExporting}
+          disabled={selectedFrames.length === 0 || isExporting || !authState.authenticated}
           style={{
-            backgroundColor: selectedFrames.length > 0 ? '#ec4899' : '#d1d5db',
-            borderColor: selectedFrames.length > 0 ? '#ec4899' : '#d1d5db',
+            backgroundColor: (selectedFrames.length > 0 && authState.authenticated) ? '#ec4899' : '#d1d5db',
+            borderColor: (selectedFrames.length > 0 && authState.authenticated) ? '#ec4899' : '#d1d5db',
             minHeight: '40px',
             fontSize: '14px',
             fontWeight: '600'
@@ -311,6 +346,8 @@ function Plugin() {
               <LoadingIndicator />
               <span>Exporting...</span>
             </div>
+          ) : !authState.authenticated ? (
+            '🔐 Authentication Required to Export'
           ) : (
             `🚀 Export ${selectedFrames.length} Frame${selectedFrames.length !== 1 ? 's' : ''} to AnimaGen`
           )}
