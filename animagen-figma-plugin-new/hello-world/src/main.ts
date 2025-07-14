@@ -63,6 +63,11 @@ function setupMessageHandlers() {
     detectAndSendFrames()
   })
 
+  // Test event handler
+  on('test-event', (data: any) => {
+    console.log('🧪 Test event received in main.ts:', data)
+  })
+
   // Handle frame export
   on('export-frames', (data: { frameIds: string[], settings: any }) => {
     console.log('📨 Received export-frames event in main.ts:', data)
@@ -315,7 +320,10 @@ function handleOpenExternalUrl(url: string) {
 }
 
 async function handleFrameExport(frameIds: string[], settings: any) {
+  console.log('🚀 handleFrameExport called!')
   console.log('📤 Starting frame export and upload to AnimaGen...')
+  console.log('🎯 Frame IDs to export:', frameIds)
+  console.log('⚙️ Export settings:', settings)
 
   // Check authentication first
   const authState = authController.getCurrentAuthState()

@@ -220,6 +220,11 @@ function Plugin() {
     }
 
     console.log('📤 Emitting export-frames event with settings:', settings)
+
+    // Test emit system
+    console.log('🧪 Testing emit system...')
+    emit('test-event', { test: 'data' })
+
     emit('export-frames', { frameIds: selectedFrames, settings })
   }
 
