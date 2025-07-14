@@ -195,10 +195,21 @@ function Plugin() {
   }
 
   const handleExport = () => {
+    console.log('🚀 Export button clicked!')
+    console.log('📋 Selected frames:', selectedFrames)
+    console.log('🔐 Auth state:', authState)
+
     if (selectedFrames.length === 0) {
+      console.log('⚠️ No frames selected, aborting export')
       return
     }
 
+    if (!authState.authenticated) {
+      console.log('⚠️ Not authenticated, aborting export')
+      return
+    }
+
+    console.log('✅ Starting export process...')
     setIsExporting(true)
     setExportResult(null)
 
@@ -208,6 +219,7 @@ function Plugin() {
       quality: parseFloat(exportQuality) // Add quality setting for JPG compression
     }
 
+    console.log('📤 Emitting export-frames event with settings:', settings)
     emit('export-frames', { frameIds: selectedFrames, settings })
   }
 

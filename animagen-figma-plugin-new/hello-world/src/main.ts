@@ -65,6 +65,7 @@ function setupMessageHandlers() {
 
   // Handle frame export
   on('export-frames', (data: { frameIds: string[], settings: any }) => {
+    console.log('📨 Received export-frames event in main.ts:', data)
     handleFrameExport(data.frameIds, data.settings)
   })
 
