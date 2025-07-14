@@ -193,7 +193,7 @@ async function handleThumbnailGeneration(frameId: string, messageId: string) {
       format: 'PNG',
       constraint: {
         type: 'WIDTH',
-        value: 210
+        value: 190
       }
     })
 

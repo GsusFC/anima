@@ -73,7 +73,7 @@ export function FrameGrid({
               [frameId]: {
                 data: data.thumbnail,
                 timestamp: Date.now(),
-                dimensions: data.dimensions || { width: 210, height: 140 }
+                dimensions: data.dimensions || { width: 190, height: 120 }
               }
             }))
             console.log(`✅ Thumbnail cached for ${frameId}`)
@@ -155,7 +155,12 @@ export function FrameGrid({
   }
 
   return (
-    <div style={{ padding: '16px' }}>
+    <div style={{
+      padding: '12px 16px',
+      width: '100%',
+      maxWidth: '500px',
+      boxSizing: 'border-box'
+    }}>
       {/* Control buttons - minimal */}
       <div style={{ 
         display: 'flex', 
@@ -201,9 +206,12 @@ export function FrameGrid({
       <div style={{
         display: 'grid',
         gridTemplateColumns: '1fr 1fr',
-        gap: '16px',
+        gap: '12px',
         maxHeight: '400px',
-        overflowY: 'auto'
+        overflowY: 'auto',
+        width: '100%',
+        maxWidth: '452px',
+        margin: '0 auto'
       }}>
         {validFrames.map((frame) => {
           const isSelected = selectedFrames.includes(frame.id)
@@ -237,12 +245,12 @@ interface FrameGridItemProps {
 
 function FrameGridItem({ frame, isSelected, isLoading, thumbnail, onSelect }: FrameGridItemProps) {
   const aspectRatio = frame.width / frame.height
-  const maxWidth = 210
-  const maxHeight = 140
-  
+  const maxWidth = 190  // Reduced from 210px to fit better
+  const maxHeight = 120 // Reduced from 140px to fit better
+
   let thumbnailWidth = maxWidth
   let thumbnailHeight = maxWidth / aspectRatio
-  
+
   if (thumbnailHeight > maxHeight) {
     thumbnailHeight = maxHeight
     thumbnailWidth = maxHeight * aspectRatio
@@ -255,10 +263,12 @@ function FrameGridItem({ frame, isSelected, isLoading, thumbnail, onSelect }: Fr
         backgroundColor: isSelected ? '#fef7ff' : '#ffffff',
         border: isSelected ? '2px solid #ec4899' : '2px solid #e5e7eb',
         borderRadius: '8px',
-        padding: '8px',
+        padding: '6px',
         cursor: 'pointer',
         transition: 'all 0.2s ease',
-        boxShadow: isSelected ? '0 4px 12px rgba(236, 72, 153, 0.15)' : '0 1px 3px rgba(0, 0, 0, 0.1)'
+        boxShadow: isSelected ? '0 4px 12px rgba(236, 72, 153, 0.15)' : '0 1px 3px rgba(0, 0, 0, 0.1)',
+        width: '100%',
+        maxWidth: '220px'
       }}
       onClick={() => onSelect(frame.id, !isSelected)}
     >
@@ -283,7 +293,7 @@ function FrameGridItem({ frame, isSelected, isLoading, thumbnail, onSelect }: Fr
       {/* Thumbnail area */}
       <div style={{
         width: '100%',
-        height: '140px',
+        height: '120px',
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'center',
