@@ -106,53 +106,58 @@ function Plugin() {
       }
     })
 
-    on('export-progress', (data: ExportProgress) => {
-      console.log('📊 Export progress:', data)
-      setExportProgress(data)
+    // Listen for export progress via native messaging
+    window.addEventListener('message', (event) => {
+      const msg = event.data.pluginMessage
+      if (!msg) return
 
-      // Convert to detailed progress state
-      const progressState: ExportProgressState = {
-        stage: data.stage === 'generating' ? 'thumbnails' :
-               data.stage === 'uploading' ? 'uploading' :
-               data.stage === 'processing' ? 'creating' : 'uploading',
-        current: data.current,
-        total: data.total,
-        message: data.stage === 'generating' ? `Generating thumbnails... (${data.current}/${data.total})` :
-                 data.stage === 'uploading' ? `Uploading frames to AnimaGen... (${data.current}/${data.total})` :
-                 data.stage === 'processing' ? 'Creating slideshow...' :
-                 `Processing... (${data.current}/${data.total})`,
-        percentage: Math.round((data.current / data.total) * 100)
+      if (msg.type === 'export-progress') {
+        console.log('📊 Export progress:', msg)
+        setExportProgress(msg.data || msg)
+
+        // Convert to detailed progress state
+        const data = msg.data || msg
+        const progressState: ExportProgressState = {
+          stage: data.stage === 'generating' ? 'thumbnails' :
+                 data.stage === 'uploading' ? 'uploading' :
+                 data.stage === 'processing' ? 'creating' : 'uploading',
+          current: data.current,
+          total: data.total,
+          message: data.stage === 'generating' ? `Generating thumbnails... (${data.current}/${data.total})` :
+                   data.stage === 'uploading' ? `Uploading frames to AnimaGen... (${data.current}/${data.total})` :
+                   data.stage === 'processing' ? 'Creating slideshow...' :
+                   `Processing... (${data.current}/${data.total})`,
+          percentage: Math.round((data.current / data.total) * 100)
+        }
+        setExportProgressState(progressState)
+      } else if (msg.type === 'export-complete') {
+        console.log('✅ Export complete:', msg)
+        setIsExporting(false)
+        setExportProgress(null)
+        setExportProgressState(null)
+
+        // Add slideshow URL to result
+        const data = msg.data || msg
+        const resultWithUrl = {
+          ...data,
+          slideshowUrl: data.projectUrl || `https://anima-production-3dad.up.railway.app/slideshow?sessionId=${data.sessionId}`
+        }
+        setExportResult(resultWithUrl)
+      } else if (msg.type === 'export-error') {
+        console.error('❌ Export error:', msg)
+        setIsExporting(false)
+        setExportProgress(null)
+
+        // Set error state in progress
+        const data = msg.data || msg
+        setExportProgressState({
+          stage: 'error',
+          current: 0,
+          total: 0,
+          message: data.error || data.message || 'Export failed',
+          percentage: 0
+        })
       }
-      setExportProgressState(progressState)
-    })
-
-    on('export-complete', (data: ExportResult) => {
-      console.log('✅ Export complete:', data)
-      setIsExporting(false)
-      setExportProgress(null)
-      setExportProgressState(null)
-
-      // Add slideshow URL to result
-      const resultWithUrl = {
-        ...data,
-        slideshowUrl: data.projectUrl || `https://anima-production-3dad.up.railway.app/slideshow?sessionId=${data.sessionId}`
-      }
-      setExportResult(resultWithUrl)
-    })
-
-    on('export-error', (data: ExportResult) => {
-      console.error('❌ Export error:', data)
-      setIsExporting(false)
-      setExportProgress(null)
-
-      // Set error state in progress
-      setExportProgressState({
-        stage: 'error',
-        current: 0,
-        total: 0,
-        message: data.error || data.message || 'Export failed',
-        percentage: 0
-      })
     })
 
     on('thumbnail-response', (data: any) => {

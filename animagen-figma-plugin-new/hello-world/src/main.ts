@@ -325,6 +325,15 @@ async function handleFrameExport(frameIds: string[], settings: any) {
   console.log('🎯 Frame IDs to export:', frameIds)
   console.log('⚙️ Export settings:', settings)
 
+  // Send export started message
+  figma.ui.postMessage({
+    type: 'export-progress',
+    stage: 'generating',
+    current: 0,
+    total: frameIds.length,
+    message: 'Starting export...'
+  })
+
   // Check authentication first
   const authState = authController.getCurrentAuthState()
   if (!authState.authenticated) {
