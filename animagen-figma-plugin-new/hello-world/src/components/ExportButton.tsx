@@ -147,14 +147,34 @@ export function ExportButton({
 
   // Default export button
   const canExport = selectedFrames.length > 0 && isAuthenticated
-  const buttonText = !isAuthenticated 
+  const buttonText = !isAuthenticated
     ? '🔐 Authentication Required to Export'
     : `🚀 Export ${selectedFrames.length} Frame${selectedFrames.length !== 1 ? 's' : ''} to AnimaGen`
+
+  // Debug logging
+  console.log('🔧 ExportButton props:', {
+    selectedFrames: selectedFrames.length,
+    isAuthenticated,
+    canExport,
+    isExporting,
+    exportProgress,
+    exportResult
+  })
+
+  const handleClick = () => {
+    console.log('🔧 ExportButton clicked! canExport:', canExport)
+    if (canExport) {
+      console.log('🔧 Calling onExport...')
+      onExport()
+    } else {
+      console.log('🔧 Export disabled - canExport is false')
+    }
+  }
 
   return (
     <Button
       fullWidth
-      onClick={onExport}
+      onClick={handleClick}
       disabled={!canExport}
       style={{
         backgroundColor: canExport ? '#ec4899' : '#d1d5db',
