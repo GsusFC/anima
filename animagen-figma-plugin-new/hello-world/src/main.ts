@@ -63,21 +63,21 @@ function setupMessageHandlers() {
     detectAndSendFrames()
   })
 
-  // Test event handler
-  on('test-event', (data: any) => {
-    console.log('🧪 Test event received in main.ts:', data)
-  })
-
-  // Handle frame export
-  on('export-frames', (data: { frameIds: string[], settings: any }) => {
-    console.log('📨 Received export-frames event in main.ts:', data)
-    handleFrameExport(data.frameIds, data.settings)
-  })
-
-  // Handle thumbnail generation via message
+  // Handle all UI messages via native messaging
   figma.ui.onmessage = (msg) => {
-    if (msg.type === 'generate-thumbnail') {
+    console.log('📨 Received message in main.ts:', msg)
+
+    if (msg.type === 'export-frames') {
+      console.log('📨 Processing export-frames message:', msg)
+      handleFrameExport(msg.frameIds, msg.settings)
+    } else if (msg.type === 'detect-frames') {
+      console.log('🔍 Processing detect-frames message')
+      detectAndSendFrames()
+    } else if (msg.type === 'generate-thumbnail') {
+      console.log('📸 Processing thumbnail generation:', msg)
       handleThumbnailGeneration(msg.frameId, msg.messageId)
+    } else {
+      console.log('❓ Unknown message type:', msg.type)
     }
   }
 

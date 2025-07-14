@@ -174,7 +174,11 @@ function Plugin() {
   }
 
   const handleRefreshFrames = () => {
-    emit('detect-frames')
+    parent.postMessage({
+      pluginMessage: {
+        type: 'detect-frames'
+      }
+    }, '*')
   }
 
   const handleFrameSelection = (frameId: string, checked: boolean) => {
@@ -219,13 +223,16 @@ function Plugin() {
       quality: parseFloat(exportQuality) // Add quality setting for JPG compression
     }
 
-    console.log('📤 Emitting export-frames event with settings:', settings)
+    console.log('📤 Sending export-frames message with settings:', settings)
 
-    // Test emit system
-    console.log('🧪 Testing emit system...')
-    emit('test-event', { test: 'data' })
-
-    emit('export-frames', { frameIds: selectedFrames, settings })
+    // Use native Figma messaging system instead of emit/on
+    parent.postMessage({
+      pluginMessage: {
+        type: 'export-frames',
+        frameIds: selectedFrames,
+        settings: settings
+      }
+    }, '*')
   }
 
   const handleLogout = () => {
