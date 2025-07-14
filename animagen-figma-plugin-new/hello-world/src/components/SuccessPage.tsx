@@ -58,11 +58,41 @@ export function SuccessPage({ result, onOpenProject, onStartNew }: SuccessPagePr
   const handleCopyLink = async () => {
     if (projectUrl) {
       try {
-        await navigator.clipboard.writeText(projectUrl)
-        // Mostrar feedback visual (podrías agregar un toast aquí)
+        console.log('📋 Attempting to copy link:', projectUrl)
+
+        // Try modern clipboard API first
+        if (navigator.clipboard && navigator.clipboard.writeText) {
+          await navigator.clipboard.writeText(projectUrl)
+          console.log('✅ Link copied successfully with clipboard API')
+        } else {
+          // Fallback for older browsers or restricted contexts
+          const textArea = document.createElement('textarea')
+          textArea.value = projectUrl
+          textArea.style.position = 'fixed'
+          textArea.style.left = '-999999px'
+          textArea.style.top = '-999999px'
+          document.body.appendChild(textArea)
+          textArea.focus()
+          textArea.select()
+
+          const successful = document.execCommand('copy')
+          document.body.removeChild(textArea)
+
+          if (successful) {
+            console.log('✅ Link copied successfully with fallback method')
+          } else {
+            throw new Error('Fallback copy method failed')
+          }
+        }
+
+        // TODO: Add visual feedback (toast notification)
       } catch (err) {
-        console.error('Failed to copy link:', err)
+        console.error('❌ Failed to copy link:', err)
+        console.error('URL was:', projectUrl)
+        // TODO: Show error message to user
       }
+    } else {
+      console.error('❌ No project URL available to copy')
     }
   }
 

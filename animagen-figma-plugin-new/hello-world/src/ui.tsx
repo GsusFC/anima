@@ -281,7 +281,12 @@ function Plugin() {
 
   const handleOpenSlideshow = (url: string) => {
     console.log('🎬 Opening slideshow:', url)
-    emit('open-external-url', { url })
+    parent.postMessage({
+      pluginMessage: {
+        type: 'open-external-url',
+        url: url
+      }
+    }, '*')
   }
 
   const handleRetryExport = () => {

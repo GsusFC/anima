@@ -76,6 +76,9 @@ function setupMessageHandlers() {
     } else if (msg.type === 'generate-thumbnail') {
       console.log('📸 Processing thumbnail generation:', msg)
       handleThumbnailGeneration(msg.frameId, msg.messageId)
+    } else if (msg.type === 'open-external-url') {
+      console.log('🔗 Processing open external URL:', msg)
+      handleOpenExternalUrl(msg.url)
     } else {
       console.log('❓ Unknown message type:', msg.type)
     }

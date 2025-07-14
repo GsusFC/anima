@@ -111,8 +111,26 @@ export class AnimaGenAPIService {
       const sessionId = `session_${Date.now()}`;
 
       // Prepare files data in the format AnimaGen expects
+      console.log('🔍 Analyzing frame results before filtering:')
+      frameResults.forEach((result, index) => {
+        console.log(`Frame ${index + 1}: ${result.frameName}`, {
+          success: result.success,
+          hasImageData: !!result.imageData,
+          imageDataLength: result.imageData?.length || 0
+        })
+      })
+
       const files = frameResults
-        .filter(result => result.success && result.imageData)
+        .filter(result => {
+          const isValid = result.success && result.imageData
+          if (!isValid) {
+            console.log(`❌ Filtering out frame: ${result.frameName}`, {
+              success: result.success,
+              hasImageData: !!result.imageData
+            })
+          }
+          return isValid
+        })
         .map((result, index) => {
           const filename = `${result.frameName.replace(/[^a-zA-Z0-9]/g, '_')}.${settings.format.toLowerCase()}`;
           return {
