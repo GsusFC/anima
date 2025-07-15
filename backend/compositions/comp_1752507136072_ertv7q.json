@@ -1,0 +1,42 @@
+{
+  "id": "comp_1752507136072_ertv7q",
+  "sessionId": "test-session-api",
+  "images": [
+    {
+      "filename": "image_0_1752507135170_frame1.png",
+      "originalFilename": "1752507135170_frame1.png"
+    },
+    {
+      "filename": "image_1_1752507135171_frame2.png",
+      "originalFilename": "1752507135171_frame2.png"
+    },
+    {
+      "filename": "image_2_1752507135171_frame3.png",
+      "originalFilename": "1752507135171_frame3.png"
+    }
+  ],
+  "transitions": [
+    {
+      "type": "fade",
+      "duration": 0.5
+    },
+    {
+      "type": "fade",
+      "duration": 0.5
+    }
+  ],
+  "frameDurations": [],
+  "quality": "medium",
+  "type": "auto-saved",
+  "createdAt": "2025-07-14T15:32:16.073Z",
+  "exports": [
+    {
+      "format": "gif",
+      "filename": "animagen_1752507135188.gif",
+      "settings": {
+        "quality": "medium"
+      },
+      "timestamp": "2025-07-14T15:32:16.074Z"
+    }
+  ]
+}

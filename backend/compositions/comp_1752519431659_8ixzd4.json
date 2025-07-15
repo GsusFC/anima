@@ -1,0 +1,42 @@
+{
+  "id": "comp_1752519431659_8ixzd4",
+  "sessionId": "test-transitions",
+  "images": [
+    {
+      "filename": "image_0_slide1.png",
+      "originalFilename": "slide1.png"
+    },
+    {
+      "filename": "image_1_slide2.png",
+      "originalFilename": "slide2.png"
+    },
+    {
+      "filename": "image_2_slide3.png",
+      "originalFilename": "slide3.png"
+    }
+  ],
+  "transitions": [
+    {
+      "type": "zoomin",
+      "duration": 800
+    },
+    {
+      "type": "pixelize",
+      "duration": 600
+    }
+  ],
+  "frameDurations": [],
+  "quality": "standard",
+  "type": "auto-saved",
+  "createdAt": "2025-07-14T18:57:11.660Z",
+  "exports": [
+    {
+      "format": "mp4",
+      "filename": "animagen_1752519429935.mp4",
+      "settings": {
+        "quality": "standard"
+      },
+      "timestamp": "2025-07-14T18:57:11.660Z"
+    }
+  ]
+}

@@ -853,7 +853,12 @@ app.get('/api/debug/session/:sessionId', (req, res) => {
 app.post('/api/figma/upload', async (req, res) => {
   try {
     console.log('📤 Figma upload request received');
-    const { sessionId, files, source } = req.body;
+    const { sessionId, files, source, batchInfo } = req.body;
+
+    // Log batch information if provided
+    if (batchInfo) {
+      console.log(`📦 Processing batch ${batchInfo.current}/${batchInfo.total} (${files.length} files)`);
+    }
 
     if (!sessionId || !files || !Array.isArray(files)) {
       return res.status(400).json({
@@ -904,13 +909,25 @@ app.post('/api/figma/upload', async (req, res) => {
       }
     }
 
-    // Return same response format as /upload endpoint
-    res.json({
+    // Return same response format as /upload endpoint with batch info
+    const response = {
       success: true,
       sessionId: sessionId,
       files: uploadedFiles,
       message: `Successfully uploaded ${uploadedFiles.length} files`
-    });
+    };
+
+    // Add batch information if provided
+    if (batchInfo) {
+      response.batchInfo = batchInfo;
+      response.message = `Successfully uploaded batch ${batchInfo.current}/${batchInfo.total} (${uploadedFiles.length} files)`;
+
+      if (batchInfo.isLastBatch) {
+        console.log(`✅ Final batch ${batchInfo.current}/${batchInfo.total} completed for session ${sessionId}`);
+      }
+    }
+
+    res.json(response);
 
   } catch (error) {
     console.error('❌ Figma upload error:', error);

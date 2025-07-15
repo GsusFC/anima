@@ -217,43 +217,38 @@ function buildUnifiedTransitionChain(validImages, transitions, frameDurations, d
   return lastLabel;
 }
 
-// Unificar el mapa de transiciones global
+// Mapeo completo de transiciones FFmpeg xfade (58 transiciones oficiales)
 const transitionEffects = {
+  // Transiciones básicas
   none: 'fade',
   cut: 'fade',
   fade: 'fade',
-  fadeblack: 'fadeblack',
-  fadewhite: 'fadewhite',
-  dissolve: 'dissolve',
-  slideleft: 'slideleft',
-  slideright: 'slideright',
-  slideup: 'slideup',
-  slidedown: 'slidedown',
   wipeleft: 'wipeleft',
   wiperight: 'wiperight',
   wipeup: 'wipeup',
   wipedown: 'wipedown',
-  wipetl: 'wipetl',
-  wipetr: 'wipetr',
-  wipebl: 'wipebl',
-  wipebr: 'wipebr',
+  slideleft: 'slideleft',
+  slideright: 'slideright',
+  slideup: 'slideup',
+  slidedown: 'slidedown',
+  circlecrop: 'circlecrop',
+  rectcrop: 'rectcrop',
+  distance: 'distance',
+  fadeblack: 'fadeblack',
+  fadewhite: 'fadewhite',
+  radial: 'radial',
   smoothleft: 'smoothleft',
   smoothright: 'smoothright',
   smoothup: 'smoothup',
   smoothdown: 'smoothdown',
-  circlecrop: 'circlecrop',
-  rectcrop: 'rectcrop',
   circleopen: 'circleopen',
   circleclose: 'circleclose',
-  zoomin: 'zoomin',
-  zoomout: 'zoomin', // fallback
-  radial: 'circleclose', // fallback
+  vertopen: 'vertopen',
+  vertclose: 'vertclose',
+  horzopen: 'horzopen',
+  horzclose: 'horzclose',
+  dissolve: 'dissolve',
   pixelize: 'pixelize',
-  hblur: 'hblur',
-  vblur: 'hblur', // fallback
-  distance: 'distance',
-  fadefast: 'fade',
-  fadeslow: 'fade',
   diagtl: 'diagtl',
   diagtr: 'diagtr',
   diagbl: 'diagbl',
@@ -261,7 +256,35 @@ const transitionEffects = {
   hlslice: 'hlslice',
   hrslice: 'hrslice',
   vuslice: 'vuslice',
-  vdslice: 'vdslice'
+  vdslice: 'vdslice',
+  hblur: 'hblur',
+  fadegrays: 'fadegrays',
+  wipetl: 'wipetl',
+  wipetr: 'wipetr',
+  wipebl: 'wipebl',
+  wipebr: 'wipebr',
+  squeezeh: 'squeezeh',
+  squeezev: 'squeezev',
+  zoomin: 'zoomin',
+  fadefast: 'fadefast',
+  fadeslow: 'fadeslow',
+  hlwind: 'hlwind',
+  hrwind: 'hrwind',
+  vuwind: 'vuwind',
+  vdwind: 'vdwind',
+  coverleft: 'coverleft',
+  coverright: 'coverright',
+  coverup: 'coverup',
+  coverdown: 'coverdown',
+  revealleft: 'revealleft',
+  revealright: 'revealright',
+  revealup: 'revealup',
+  revealdown: 'revealdown',
+  // Aliases y fallbacks
+  zoomout: 'zoomin', // fallback: no existe zoomout en FFmpeg
+  vblur: 'hblur', // fallback: no existe vblur en FFmpeg
+  slide: 'slideleft', // alias genérico
+  zoom: 'zoomin' // alias genérico
 };
 
 class ExportWorker {

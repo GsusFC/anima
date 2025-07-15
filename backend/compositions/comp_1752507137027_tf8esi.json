@@ -1,0 +1,42 @@
+{
+  "id": "comp_1752507137027_tf8esi",
+  "sessionId": "test-session-api",
+  "images": [
+    {
+      "filename": "image_0_1752507136090_frame1.png",
+      "originalFilename": "1752507136090_frame1.png"
+    },
+    {
+      "filename": "image_1_1752507136090_frame2.png",
+      "originalFilename": "1752507136090_frame2.png"
+    },
+    {
+      "filename": "image_2_1752507136091_frame3.png",
+      "originalFilename": "1752507136091_frame3.png"
+    }
+  ],
+  "transitions": [
+    {
+      "type": "fade",
+      "duration": 0.5
+    },
+    {
+      "type": "fade",
+      "duration": 0.5
+    }
+  ],
+  "frameDurations": [],
+  "quality": "standard",
+  "type": "auto-saved",
+  "createdAt": "2025-07-14T15:32:17.028Z",
+  "exports": [
+    {
+      "format": "mp4",
+      "filename": "animagen_1752507136162.mp4",
+      "settings": {
+        "quality": "standard"
+      },
+      "timestamp": "2025-07-14T15:32:17.029Z"
+    }
+  ]
+}
