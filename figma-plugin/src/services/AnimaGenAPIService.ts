@@ -172,12 +172,23 @@ export class AnimaGenAPIService {
       throw new Error('No valid frames to upload')
     }
 
-    console.log(`📦 Uploading ${successfulFrames.length} frames in batches of ${batchSize}`)
+    // Sort frames by selection order to preserve user's intended sequence
+    const sortedFrames = successfulFrames.sort((a, b) => {
+      const indexA = a.selectionIndex ?? a.order ?? 999999
+      const indexB = b.selectionIndex ?? b.order ?? 999999
+      return indexA - indexB
+    })
+
+    console.log(`📦 Uploading ${sortedFrames.length} frames in batches of ${batchSize}`)
+    console.log('🔢 Frames sorted by selection order:', sortedFrames.map(f => `${f.frameName} (${f.selectionIndex})`))
+
+    // Use sorted frames for processing
+    const framesToProcess = sortedFrames
 
     // Split frames into batches
     const batches = []
-    for (let i = 0; i < successfulFrames.length; i += batchSize) {
-      batches.push(successfulFrames.slice(i, i + batchSize))
+    for (let i = 0; i < framesToProcess.length; i += batchSize) {
+      batches.push(framesToProcess.slice(i, i + batchSize))
     }
 
     console.log(`📦 Created ${batches.length} batches`)
@@ -191,10 +202,10 @@ export class AnimaGenAPIService {
 
       try {
         const batchFiles = batch.map((result, index) => {
-          // Add global index to filename to prevent duplicates across batches
-          const globalIndex = successfulFrames.indexOf(result)
+          // Use selection index for filename to preserve user's intended order
+          const selectionIndex = result.selectionIndex ?? framesToProcess.indexOf(result)
           const cleanName = result.frameName.replace(/[^a-zA-Z0-9]/g, '_')
-          const filename = `${String(globalIndex + 1).padStart(2, '0')}_${cleanName}.${settings.format.toLowerCase()}`
+          const filename = `${String(selectionIndex + 1).padStart(2, '0')}_${cleanName}.${settings.format.toLowerCase()}`
 
           return {
             filename: filename,
@@ -202,7 +213,8 @@ export class AnimaGenAPIService {
             mimetype: settings.format === 'JPG' ? 'image/jpeg' : 'image/png',
             size: result.imageData?.length || 0,
             buffer: Array.from(result.imageData || []),
-            fieldname: 'images'
+            fieldname: 'images',
+            selectionIndex: selectionIndex // Include selection index in upload data
           }
         })
 

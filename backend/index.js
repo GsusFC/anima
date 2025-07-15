@@ -873,11 +873,20 @@ app.post('/api/figma/upload', async (req, res) => {
       fs.mkdirSync(sessionDir, { recursive: true });
     }
 
+    // Sort files by selection index to preserve user's intended order
+    const sortedFiles = files.sort((a, b) => {
+      const indexA = a.selectionIndex ?? 999999
+      const indexB = b.selectionIndex ?? 999999
+      return indexA - indexB
+    })
+
+    console.log('🔢 Files sorted by selection order:', sortedFiles.map(f => `${f.originalname} (${f.selectionIndex})`))
+
     const uploadedFiles = [];
 
-    // Process each file (same logic as multer but from JSON)
-    for (let i = 0; i < files.length; i++) {
-      const fileData = files[i];
+    // Process each file in selection order
+    for (let i = 0; i < sortedFiles.length; i++) {
+      const fileData = sortedFiles[i];
 
       if (fileData.buffer && Array.isArray(fileData.buffer)) {
         try {
@@ -900,7 +909,8 @@ app.post('/api/figma/upload', async (req, res) => {
             destination: sessionDir,
             filename: filename,
             path: filepath,
-            size: imageBuffer.length
+            size: imageBuffer.length,
+            selectionIndex: fileData.selectionIndex ?? i // Preserve selection order
           });
 
         } catch (error) {

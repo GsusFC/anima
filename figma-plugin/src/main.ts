@@ -6,6 +6,11 @@ import { AnimaGenAPIService } from './services/AnimaGenAPIService'
 let authController: AuthController
 let apiService: AnimaGenAPIService
 
+// Selection order tracking
+let selectionOrderMap = new Map<string, number>()
+let selectionCounter = 0
+let lastSelectionIds = new Set<string>()
+
 export default function () {
   console.log('🚀 AnimaGen Plugin Starting...')
 
@@ -25,7 +30,8 @@ export default function () {
 
   // Listen for selection changes in Figma
   figma.on('selectionchange', () => {
-    console.log('🎯 Selection changed in Figma, detecting frames...')
+    console.log('🎯 Selection changed in Figma, updating selection order...')
+    updateSelectionOrder()
     detectAndSendFrames()
   })
 
@@ -134,6 +140,40 @@ async function initializePlugin() {
   }
 }
 
+function updateSelectionOrder() {
+  console.log('📋 Updating selection order tracking...')
+
+  // Get current selection IDs (only frames)
+  const currentSelectionIds = new Set(
+    figma.currentPage.selection
+      .filter(node => node.type === 'FRAME')
+      .map(node => node.id)
+  )
+
+  // Find newly selected frames (not in previous selection)
+  const newlySelected = [...currentSelectionIds].filter(id => !lastSelectionIds.has(id))
+
+  // Find deselected frames (in previous selection but not current)
+  const deselected = [...lastSelectionIds].filter(id => !currentSelectionIds.has(id))
+
+  // Remove deselected frames from order map
+  deselected.forEach(id => {
+    selectionOrderMap.delete(id)
+    console.log(`🗑️ Removed frame ${id} from selection order`)
+  })
+
+  // Add newly selected frames to order map
+  newlySelected.forEach(id => {
+    selectionOrderMap.set(id, selectionCounter++)
+    console.log(`➕ Added frame ${id} to selection order with index ${selectionCounter - 1}`)
+  })
+
+  // Update last selection for next comparison
+  lastSelectionIds = new Set(currentSelectionIds)
+
+  console.log(`📊 Selection order map now has ${selectionOrderMap.size} frames`)
+}
+
 function detectAndSendFrames() {
   console.log('🔍 Detecting selected frames...')
 
@@ -157,9 +197,19 @@ function detectAndSendFrames() {
 
   console.log('📋 Selected frame names:', selectedFrames.map(f => f.name))
 
-  // Map only selected frames for the UI
-  const detectedFrames = selectedFrames.map((frame, index) => {
+  // Sort frames by selection order
+  const sortedFrames = selectedFrames.sort((a, b) => {
+    const orderA = selectionOrderMap.get(a.id) ?? 999999
+    const orderB = selectionOrderMap.get(b.id) ?? 999999
+    return orderA - orderB
+  })
+
+  console.log('🔢 Frames sorted by selection order:', sortedFrames.map(f => `${f.name} (${selectionOrderMap.get(f.id)})`))
+
+  // Map frames with both display order and selection order
+  const detectedFrames = sortedFrames.map((frame, displayIndex) => {
     const complexity = estimateComplexity(frame)
+    const selectionIndex = selectionOrderMap.get(frame.id) ?? displayIndex
 
     return {
       id: frame.id,
@@ -168,7 +218,8 @@ function detectAndSendFrames() {
       height: Math.round(frame.height),
       x: Math.round(frame.x),
       y: Math.round(frame.y),
-      order: index,
+      order: displayIndex, // Display order (0, 1, 2, ...)
+      selectionIndex: selectionIndex, // Original selection order
       complexity,
       isValidForExport: true,
       estimatedSize: estimateFileSize(frame.width, frame.height, complexity),
@@ -383,13 +434,25 @@ async function handleFrameExport(frameIds: string[], settings: any) {
     }
   })
 
+  // Sort frame IDs by selection order before processing
+  const sortedFrameIds = frameIds.sort((a, b) => {
+    const orderA = selectionOrderMap.get(a) ?? 999999
+    const orderB = selectionOrderMap.get(b) ?? 999999
+    return orderA - orderB
+  })
+
+  console.log('🔢 Frame IDs sorted by selection order:', sortedFrameIds.map(id => {
+    const frame = figma.getNodeById(id) as FrameNode
+    return `${frame?.name || id} (${selectionOrderMap.get(id)})`
+  }))
+
   const frameResults = []
 
-  // Phase 1: Export frames from Figma
-  console.log(`🎯 Starting export of ${frameIds.length} frames:`, frameIds)
+  // Phase 1: Export frames from Figma (in selection order)
+  console.log(`🎯 Starting export of ${sortedFrameIds.length} frames in selection order:`, sortedFrameIds)
 
-  for (let i = 0; i < frameIds.length; i++) {
-    const frameId = frameIds[i]
+  for (let i = 0; i < sortedFrameIds.length; i++) {
+    const frameId = sortedFrameIds[i]
     console.log(`📸 Processing frame ${i + 1}/${frameIds.length}: ${frameId}`)
 
     const frame = figma.getNodeById(frameId) as FrameNode
@@ -441,6 +504,8 @@ async function handleFrameExport(frameIds: string[], settings: any) {
 
       const imageData = await frame.exportAsync(exportSettings)
 
+      const selectionIndex = selectionOrderMap.get(frameId) ?? i
+
       frameResults.push({
         success: true,
         frameId,
@@ -450,7 +515,8 @@ async function handleFrameExport(frameIds: string[], settings: any) {
           width: frame.width,
           height: frame.height
         },
-        order: i,
+        order: i, // Processing order (0, 1, 2, ...)
+        selectionIndex: selectionIndex, // Original selection order
         exportTime: Date.now(),
         fileSize: imageData.length
       })
@@ -460,12 +526,15 @@ async function handleFrameExport(frameIds: string[], settings: any) {
     } catch (error) {
       console.error(`❌ Failed to export frame ${frame.name}:`, error)
 
+      const selectionIndex = selectionOrderMap.get(frameId) ?? i
+
       frameResults.push({
         success: false,
         frameId,
         frameName: frame.name,
         error: (error as Error).message,
-        order: i,
+        order: i, // Processing order
+        selectionIndex: selectionIndex, // Original selection order
         exportTime: Date.now()
       })
     }

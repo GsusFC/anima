@@ -728,13 +728,21 @@ router.post('/unified-export/:format', async (req, res) => {
           });
         }
 
+        // Sort images by selection index to preserve user's intended order
+        const sortedImages = validImages.sort((a, b) => {
+          const indexA = a.selectionIndex ?? 999999
+          const indexB = b.selectionIndex ?? 999999
+          return indexA - indexB
+        });
+
         console.log(`✅ Validated ${validImages.length}/${images.length} images`);
+        console.log('🔢 Images sorted by selection order:', sortedImages.map(img => `${img.filename} (${img.selectionIndex})`));
 
         // Use optimized GIF processing for GIF format
         if (format === 'gif') {
           console.log('🎨 Using optimized GIF processing');
 
-          await gifOptimizer.generateOptimizedGIF(validImages, outputFile, {
+          await gifOptimizer.generateOptimizedGIF(sortedImages, outputFile, {
             quality: quality || 'standard',
             frameDurations: frameDurations || [],
             maxWidth: 800,
@@ -763,8 +771,8 @@ router.post('/unified-export/:format', async (req, res) => {
         // For MP4/WebM, use optimized processing
         console.log(`🎬 Using optimized ${format.toUpperCase()} processing`);
 
-        // Process images with optimal settings
-        const processedResult = await imageProcessor.batchProcessImages(validImages, {
+        // Process images with optimal settings (in selection order)
+        const processedResult = await imageProcessor.batchProcessImages(sortedImages, {
           targetFormat: format,
           maxResolution: resolution,
           quality: 85 // Good balance for video input

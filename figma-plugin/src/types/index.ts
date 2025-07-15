@@ -11,6 +11,7 @@ export interface DetectedFrame {
   locked: boolean;
   type: 'FRAME';
   order: number;
+  selectionIndex: number; // Index based on user selection order
   selected: boolean;
   metadata?: FrameMetadata;
   analysis?: FrameAnalysis;
@@ -90,6 +91,7 @@ export interface FrameExportResult {
   imageData?: Uint8Array;
   metadata?: any;
   order: number;
+  selectionIndex: number; // Index based on user selection order
   exportTime: number;
   fileSize?: number;
   error?: string;
