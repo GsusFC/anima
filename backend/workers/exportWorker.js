@@ -176,42 +176,41 @@ function buildUnifiedTransitionChain(validImages, transitions, frameDurations, d
     return '[outv]';
   }
   
-  // Build transition chain with xfade
+  // Build transition chain with xfade - FIXED VERSION
   let lastLabel = '[v0]';
-  let cumulativeTime = (frameDurations[0] || defaultDuration) / 1000;
-  
-  console.log(`🎞️ Starting with cumulativeTime: ${cumulativeTime}s`);
-  
+  let cumulativeTime = 0; // Start from 0, add current frame duration before calculating offset
+
+  console.log(`🎞️ Starting transition chain for ${validImages.length} images`);
+  console.log(`🎞️ Frame durations:`, frameDurations.map((d, i) => `${i}: ${d}ms`));
+
   for (let i = 0; i < validImages.length - 1; i++) {
     const nextLabel = `[v${i + 1}]`;
     const trans = transitions[i] || { type: 'cut', duration: 0 };
-    
+
+    // Get current frame duration
+    const currentFrameDuration = (frameDurations[i] || defaultDuration) / 1000;
+    cumulativeTime += currentFrameDuration;
+
     // Ensure minimum duration for transitions
     const transDurSec = (trans.type && !['none', 'cut'].includes(trans.type))
       ? Math.max((trans.duration || 0) / 1000, 0.2)
       : 0.001;
-    
+
     const effect = (trans.type && transitionEffects[trans.type])
       ? transitionEffects[trans.type]
       : 'fade';
-    
-    // Fix offset calculation to ensure all frames are included
+
+    // Correct offset calculation: transition starts at end of current frame minus transition duration
     const offset = Math.max(cumulativeTime - transDurSec, 0);
     const outLabel = i === validImages.length - 2 ? '[outv]' : `[x${i}]`;
-    
-    console.log(`🎞️ Transition ${i}: ${trans.type} -> ${effect}, duration: ${transDurSec}s, offset: ${offset}s`);
-    
+
+    console.log(`🎞️ Frame ${i} -> ${i+1}: duration=${currentFrameDuration}s, cumulative=${cumulativeTime}s, transition=${transDurSec}s, offset=${offset}s`);
+
     const filterCommand = `${lastLabel}${nextLabel}xfade=transition=${effect}:duration=${transDurSec}:offset=${offset}${outLabel}`;
     complexFilter.push(filterCommand);
-    
+    console.log(`🎞️ Added filter: ${filterCommand}`);
+
     lastLabel = outLabel;
-    
-    // Update cumulative time correctly
-    if (i + 1 < frameDurations.length) {
-      const nextDuration = (frameDurations[i + 1] || defaultDuration) / 1000;
-      cumulativeTime += nextDuration;
-      console.log(`🎞️ Added duration for frame ${i+1}: ${nextDuration}s, new cumulativeTime: ${cumulativeTime}s`);
-    }
   }
   
   return lastLabel;
@@ -957,31 +956,43 @@ class ExportWorker {
       console.log(`🎞️  Using simple concat: ${concatFilter}`);
       return '[outv]';
     }
-    // Build transition chain with xfade
+    // Build transition chain with xfade - FIXED VERSION
     let lastLabel = '[v0]';
-    let cumulativeTime = (frameDurations[0] || defaultDuration) / 1000;
+    let cumulativeTime = 0; // Start from 0, add current frame duration before calculating offset
+
+    console.log(`🎞️ [CLASS] Starting transition chain for ${validImages.length} images`);
+    console.log(`🎞️ [CLASS] Frame durations:`, frameDurations.map((d, i) => `${i}: ${d}ms`));
+
     for (let i = 0; i < validImages.length - 1; i++) {
       const nextLabel = `[v${i + 1}]`;
       const trans = transitions[i] || { type: 'cut', duration: 0 };
+
+      // Get current frame duration
+      const currentFrameDuration = (frameDurations[i] || defaultDuration) / 1000;
+      cumulativeTime += currentFrameDuration;
+
       // Ensure minimum duration for non-cut transitions
-      const transDurSec = (trans.type && !['none', 'cut'].includes(trans.type)) 
+      const transDurSec = (trans.type && !['none', 'cut'].includes(trans.type))
         ? Math.max((trans.duration || 0) / 1000, 0.1)  // Minimum 100ms for real transitions
         : 0.001;  // Minimal duration for cuts (1ms)
+
       // Always use a real effect, even for cuts (with minimal duration)
-      const effect = (trans.type && this.transitionEffects[trans.type]) 
-        ? this.transitionEffects[trans.type] 
+      const effect = (trans.type && this.transitionEffects[trans.type])
+        ? this.transitionEffects[trans.type]
         : 'fade';  // Default to fade
-      console.log(`🎞️  Transition ${i}: ${trans.type} -> ${effect}, duration: ${transDurSec}s`);
-      const offset = cumulativeTime - transDurSec;
+
+      // Correct offset calculation: transition starts at end of current frame minus transition duration
+      const offset = Math.max(cumulativeTime - transDurSec, 0);
       const outLabel = i === validImages.length - 2 ? '[outv]' : `[x${i}]`;
+
+      console.log(`🎞️ [CLASS] Frame ${i} -> ${i+1}: duration=${currentFrameDuration}s, cumulative=${cumulativeTime}s, transition=${transDurSec}s, offset=${offset}s`);
+
       // Always create a transition, even for cuts (with minimal duration)
       const filterCommand = `${lastLabel}${nextLabel}xfade=transition=${effect}:duration=${transDurSec}:offset=${offset}${outLabel}`;
       complexFilter.push(filterCommand);
-      console.log(`🎞️  Added filter: ${filterCommand}`);
+      console.log(`🎞️ [CLASS] Added filter: ${filterCommand}`);
+
       lastLabel = outLabel;
-      if (i + 1 < frameDurations.length) {
-        cumulativeTime += (frameDurations[i + 1] || defaultDuration) / 1000;
-      }
     }
     return lastLabel;
   }

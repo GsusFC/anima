@@ -118,30 +118,41 @@ function buildUnifiedTransitionChain(validImages, transitions, frameDurations, d
     console.log(`Concat filter: ${concatVideo}concat=n=${validImages.length}[outv]`);
     return '[outv]';
   }
-  // Build transition chain with xfade
-  console.log('Using xfade transition chain');
+  // Build transition chain with xfade - FIXED VERSION
+  console.log('Using xfade transition chain - FIXED');
   let lastOutput = '[v0]';
   let totalVideoTime = 0;
+
+  console.log(`🎞️ [UNIFIED] Starting transition chain for ${validImages.length} images`);
+  console.log(`🎞️ [UNIFIED] Frame durations:`, frameDurations.map((d, i) => `${i}: ${d}ms`));
+
   for (let i = 0; i < validImages.length - 1; i++) {
     const currentFrameDuration = (frameDurations[i] || duration) / 1000;
     const transition = transitions[i] || { type: 'fade', duration: 500 };
+
     // transition.duration comes in milliseconds from frontend, convert to seconds for FFmpeg
     let transitionDuration = (transition.type && !['none', 'cut'].includes(transition.type))
       ? Math.max(transition.duration / 1000, 0.1)
       : 0.001;
     let transitionType = transitionEffects[transition.type] || 'fade';
+
     // Always use a real effect, even for cuts (with minimal duration)
     if (['none', 'cut'].includes(transition.type)) {
       transitionType = 'fade';
     }
+
     const nextInput = `[v${i + 1}]`;
     const outputLabel = (i === validImages.length - 2) ? '[outv]' : `[t${i}]`;
-    // Offset should be at the END of the current frame, not beginning + duration
-    const offset = totalVideoTime + currentFrameDuration - transitionDuration;
+
+    // Add current frame duration to total time
     totalVideoTime += currentFrameDuration;
+
+    // Correct offset calculation: transition starts at end of current frame minus transition duration
+    const offset = Math.max(totalVideoTime - transitionDuration, 0);
+
     const xfadeFilter = `${lastOutput}${nextInput}xfade=transition=${transitionType}:duration=${transitionDuration}:offset=${offset}${outputLabel}`;
-    console.log(`Frame ${i}->${i+1}: duration=${currentFrameDuration}s, offset=${offset}s, transition=${transitionDuration}s`);
-    console.log(`XFade filter: ${xfadeFilter}`);
+    console.log(`🎞️ [UNIFIED] Frame ${i}->${i+1}: duration=${currentFrameDuration}s, total=${totalVideoTime}s, transition=${transitionDuration}s, offset=${offset}s`);
+    console.log(`🎞️ [UNIFIED] XFade filter: ${xfadeFilter}`);
     complexFilter.push(xfadeFilter);
     lastOutput = outputLabel;
   }
