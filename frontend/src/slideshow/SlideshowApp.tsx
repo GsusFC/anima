@@ -7,7 +7,7 @@ import Timeline from './components/Timeline';
 import ExportControls from './components/ExportControls';
 import { useSlideshowContext } from './context/SlideshowContext';
 import APIKeyModal from '../components/APIKeyModal/APIKeyModal';
-import Header from '../components/Header/Header';
+import NavigationHeader from '../components/NavigationHeader/NavigationHeader';
 
 // Internal component that uses the context
 const SlideshowContent: React.FC = () => {
@@ -107,8 +107,11 @@ const SlideshowContent: React.FC = () => {
     return (
       <>
         <div className="app-container custom-scrollbar">
-          {/* Header */}
-          <Header onOpenAPIKeyModal={() => setIsAPIKeyModalOpen(true)} />
+          {/* Navigation Header */}
+          <NavigationHeader 
+            currentMode="slideshow"
+            onOpenAPIKeyModal={() => setIsAPIKeyModalOpen(true)} 
+          />
 
           {/* Viewer info */}
           <div className="bg-dark-800 border-b border-dark-700 px-6 py-3">
@@ -157,8 +160,11 @@ const SlideshowContent: React.FC = () => {
   return (
     <>
       <div className="app-container custom-scrollbar">
-        {/* Header */}
-        <Header onOpenAPIKeyModal={() => setIsAPIKeyModalOpen(true)} />
+        {/* Navigation Header */}
+        <NavigationHeader 
+          currentMode="slideshow"
+          onOpenAPIKeyModal={() => setIsAPIKeyModalOpen(true)} 
+        />
 
         {/* Main Content */}
         <div className="flex flex-col flex-1 min-h-0">

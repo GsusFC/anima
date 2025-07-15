@@ -5,17 +5,14 @@ import VideoPreview from './components/VideoPreview';
 import { VideoTimelineBuilder } from './components/timeline/VideoTimelineBuilder';
 import { VideoExportBuilder } from './components/export/VideoExportBuilder';
 import ToastContainer from './components/Toast';
+import NavigationHeader from '../components/NavigationHeader/NavigationHeader';
 
 const VideoEditorApp: React.FC = () => {
   return (
     <VideoEditorProvider>
       <div className="app-container custom-scrollbar">
-        {/* Header */}
-        <div className="h-15 border-b border-dark-700 flex items-center px-5 bg-dark-900">
-          <h1 className="m-0 text-lg text-accent-green font-bold">
-            🎬 VIDEO EDITOR - Enhanced Trimming Experience
-          </h1>
-        </div>
+        {/* Navigation Header */}
+        <NavigationHeader currentMode="video-editor" />
 
         {/* Main Editor Layout */}
         <div className="flex-1 flex flex-col min-h-0">
