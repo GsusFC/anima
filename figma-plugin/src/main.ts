@@ -18,8 +18,12 @@ export default function () {
   authController = new AuthController()
   apiService = new AnimaGenAPIService()
 
-  // Expose debug function globally for testing
-  ;(globalThis as any).debugSelectionOrder = debugSelectionOrder
+  // Expose debug function globally for testing (Figma environment)
+  try {
+    ;(global as any).debugSelectionOrder = debugSelectionOrder
+  } catch (e) {
+    console.log('⚠️ Could not expose debug function globally:', e.message)
+  }
 
   // Show UI
   showUI({
@@ -34,6 +38,7 @@ export default function () {
   // Listen for selection changes in Figma
   figma.on('selectionchange', () => {
     console.log('🎯 Selection changed in Figma, updating selection order...')
+    console.log('🎯 Current selection count:', figma.currentPage.selection.length)
     updateSelectionOrder()
     detectAndSendFrames()
   })
@@ -217,6 +222,8 @@ function updateSelectionOrder() {
 
 function detectAndSendFrames() {
   console.log('🔍 Detecting selected frames...')
+  console.log('🔍 Selection order map size:', selectionOrderMap.size)
+  console.log('🔍 Selection counter:', selectionCounter)
 
   // Get currently selected frames only
   const selectedFrames = figma.currentPage.selection.filter(node =>

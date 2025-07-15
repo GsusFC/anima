@@ -98,19 +98,30 @@ function Plugin() {
     })
 
     on('frames-detected', (data: { frames: Frame[], figmaSelection?: string[] }) => {
-      console.log('🖼️ Frames detected:', data)
-      console.log('📋 Frames received in UI (order):', data.frames.map(f => `${f.name} (order: ${f.order}, selectionIndex: ${f.selectionIndex})`))
+      console.log('🖼️ UI: Frames detected, count:', data.frames?.length || 0)
 
-      // Verify frames are in correct order before setting
-      const sortedFrames = [...data.frames].sort((a, b) => {
-        const indexA = a.selectionIndex ?? a.order ?? 999999
-        const indexB = b.selectionIndex ?? b.order ?? 999999
-        return indexA - indexB
-      })
+      if (data.frames && data.frames.length > 0) {
+        console.log('📋 UI: Frames received in order:')
+        data.frames.forEach((f, i) => {
+          console.log(`   ${i}: "${f.name}" (order: ${f.order}, selectionIndex: ${f.selectionIndex})`)
+        })
 
-      console.log('📋 Frames after UI sorting:', sortedFrames.map(f => `${f.name} (order: ${f.order}, selectionIndex: ${f.selectionIndex})`))
+        // Verify frames are in correct order before setting
+        const sortedFrames = [...data.frames].sort((a, b) => {
+          const indexA = a.selectionIndex ?? a.order ?? 999999
+          const indexB = b.selectionIndex ?? b.order ?? 999999
+          return indexA - indexB
+        })
 
-      setFrames(sortedFrames)
+        console.log('📋 UI: Frames after sorting:')
+        sortedFrames.forEach((f, i) => {
+          console.log(`   ${i}: "${f.name}" (order: ${f.order}, selectionIndex: ${f.selectionIndex})`)
+        })
+
+        setFrames(sortedFrames)
+      } else {
+        setFrames([])
+      }
 
       // Si hay selección de Figma, pre-seleccionar esos frames
       if (data.figmaSelection && data.figmaSelection.length > 0) {
