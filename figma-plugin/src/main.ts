@@ -18,6 +18,9 @@ export default function () {
   authController = new AuthController()
   apiService = new AnimaGenAPIService()
 
+  // Expose debug function globally for testing
+  ;(globalThis as any).debugSelectionOrder = debugSelectionOrder
+
   // Show UI
   showUI({
     width: 500,
@@ -140,6 +143,28 @@ async function initializePlugin() {
   }
 }
 
+function debugSelectionOrder() {
+  console.log('🐛 DEBUG: Selection Order State')
+  console.log('📊 Selection counter:', selectionCounter)
+  console.log('📊 Selection order map size:', selectionOrderMap.size)
+  console.log('📊 Last selection IDs size:', lastSelectionIds.size)
+
+  console.log('🗺️ Current selection order map:')
+  selectionOrderMap.forEach((index, id) => {
+    const frame = figma.getNodeById(id) as FrameNode
+    const frameName = frame?.name || 'DELETED'
+    console.log(`   ${index}: "${frameName}" (${id})`)
+  })
+
+  console.log('🎯 Current Figma selection:')
+  figma.currentPage.selection
+    .filter(node => node.type === 'FRAME')
+    .forEach((frame, index) => {
+      const selectionIndex = selectionOrderMap.get(frame.id)
+      console.log(`   ${index}: "${frame.name}" (${frame.id}) - selectionIndex: ${selectionIndex}`)
+    })
+}
+
 function updateSelectionOrder() {
   console.log('📋 Updating selection order tracking...')
 
@@ -150,28 +175,44 @@ function updateSelectionOrder() {
       .map(node => node.id)
   )
 
+  console.log('🔍 Current selection IDs:', [...currentSelectionIds])
+  console.log('🔍 Previous selection IDs:', [...lastSelectionIds])
+
   // Find newly selected frames (not in previous selection)
   const newlySelected = [...currentSelectionIds].filter(id => !lastSelectionIds.has(id))
 
   // Find deselected frames (in previous selection but not current)
   const deselected = [...lastSelectionIds].filter(id => !currentSelectionIds.has(id))
 
+  console.log('🆕 Newly selected frames:', newlySelected)
+  console.log('❌ Deselected frames:', deselected)
+
   // Remove deselected frames from order map
   deselected.forEach(id => {
+    const frame = figma.getNodeById(id) as FrameNode
+    const frameName = frame?.name || id
     selectionOrderMap.delete(id)
-    console.log(`🗑️ Removed frame ${id} from selection order`)
+    console.log(`🗑️ Removed frame "${frameName}" (${id}) from selection order`)
   })
 
   // Add newly selected frames to order map
   newlySelected.forEach(id => {
+    const frame = figma.getNodeById(id) as FrameNode
+    const frameName = frame?.name || id
     selectionOrderMap.set(id, selectionCounter++)
-    console.log(`➕ Added frame ${id} to selection order with index ${selectionCounter - 1}`)
+    console.log(`➕ Added frame "${frameName}" (${id}) to selection order with index ${selectionCounter - 1}`)
   })
 
   // Update last selection for next comparison
   lastSelectionIds = new Set(currentSelectionIds)
 
   console.log(`📊 Selection order map now has ${selectionOrderMap.size} frames`)
+  console.log('🗺️ Current selection order map:')
+  selectionOrderMap.forEach((index, id) => {
+    const frame = figma.getNodeById(id) as FrameNode
+    const frameName = frame?.name || id
+    console.log(`   ${index}: "${frameName}" (${id})`)
+  })
 }
 
 function detectAndSendFrames() {
@@ -188,6 +229,13 @@ function detectAndSendFrames() {
 
   if (selectedFrames.length === 0) {
     console.log('⚠️ No frames selected. Please select frames in Figma to export.')
+
+    // Reset selection tracking when no frames are selected
+    selectionOrderMap.clear()
+    selectionCounter = 0
+    lastSelectionIds.clear()
+    console.log('🔄 Reset selection tracking - no frames selected')
+
     emit('frames-detected', {
       frames: [],
       figmaSelection: []
@@ -196,11 +244,20 @@ function detectAndSendFrames() {
   }
 
   console.log('📋 Selected frame names:', selectedFrames.map(f => f.name))
+  console.log('📋 Selected frame IDs:', selectedFrames.map(f => f.id))
+
+  // Debug: Show current selection order map before sorting
+  console.log('🗺️ Selection order map before sorting:')
+  selectionOrderMap.forEach((index, id) => {
+    const frame = figma.getNodeById(id) as FrameNode
+    console.log(`   ${index}: "${frame?.name}" (${id})`)
+  })
 
   // Sort frames by selection order
   const sortedFrames = selectedFrames.sort((a, b) => {
     const orderA = selectionOrderMap.get(a.id) ?? 999999
     const orderB = selectionOrderMap.get(b.id) ?? 999999
+    console.log(`🔄 Comparing "${a.name}" (${orderA}) vs "${b.name}" (${orderB})`)
     return orderA - orderB
   })
 
@@ -210,6 +267,8 @@ function detectAndSendFrames() {
   const detectedFrames = sortedFrames.map((frame, displayIndex) => {
     const complexity = estimateComplexity(frame)
     const selectionIndex = selectionOrderMap.get(frame.id) ?? displayIndex
+
+    console.log(`📝 Mapping frame "${frame.name}": displayIndex=${displayIndex}, selectionIndex=${selectionIndex}`)
 
     return {
       id: frame.id,
@@ -229,6 +288,8 @@ function detectAndSendFrames() {
       aspectRatio: frame.width / frame.height
     }
   })
+
+  console.log('📤 Final detected frames order:', detectedFrames.map(f => `${f.name} (order: ${f.order}, selectionIndex: ${f.selectionIndex})`));
 
   // All frames are pre-selected since they were selected in Figma
   const figmaSelection = selectedFrames.map(frame => frame.id)

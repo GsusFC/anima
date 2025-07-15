@@ -15,6 +15,8 @@ interface Frame {
   complexity: 'low' | 'medium' | 'high'
   estimatedSize: string
   isValidForExport: boolean
+  order: number
+  selectionIndex: number
 }
 
 interface AuthState {
@@ -97,7 +99,18 @@ function Plugin() {
 
     on('frames-detected', (data: { frames: Frame[], figmaSelection?: string[] }) => {
       console.log('🖼️ Frames detected:', data)
-      setFrames(data.frames)
+      console.log('📋 Frames received in UI (order):', data.frames.map(f => `${f.name} (order: ${f.order}, selectionIndex: ${f.selectionIndex})`))
+
+      // Verify frames are in correct order before setting
+      const sortedFrames = [...data.frames].sort((a, b) => {
+        const indexA = a.selectionIndex ?? a.order ?? 999999
+        const indexB = b.selectionIndex ?? b.order ?? 999999
+        return indexA - indexB
+      })
+
+      console.log('📋 Frames after UI sorting:', sortedFrames.map(f => `${f.name} (order: ${f.order}, selectionIndex: ${f.selectionIndex})`))
+
+      setFrames(sortedFrames)
 
       // Si hay selección de Figma, pre-seleccionar esos frames
       if (data.figmaSelection && data.figmaSelection.length > 0) {
