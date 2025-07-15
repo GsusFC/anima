@@ -5,6 +5,18 @@ const ffmpeg = require('fluent-ffmpeg');
 const features = require('../config/features');
 const queueFunctions = require('../queues/videoQueue');
 const { JobTypes } = require('../queues/jobTypes');
+const { promisify } = require('util');
+const execAsync = promisify(require('child_process').exec);
+
+// Import optimizers
+const GIFOptimizer = require('../utils/gifOptimizer');
+const ImageProcessor = require('../utils/imageProcessor');
+const VideoOptimizer = require('../utils/videoOptimizer');
+
+// Initialize optimizers
+const gifOptimizer = new GIFOptimizer();
+const imageProcessor = new ImageProcessor();
+const videoOptimizer = new VideoOptimizer();
 
 const router = express.Router();
 
@@ -696,64 +708,108 @@ router.post('/unified-export/:format', async (req, res) => {
       const execAsync = util.promisify(exec);
 
       try {
+        console.log(`🚀 Starting optimized ${format.toUpperCase()} export with ${images.length} images`);
+
         // Generate unique output filename
         const outputDir = path.join(__dirname, '../output');
         if (!fs.existsSync(outputDir)) {
           fs.mkdirSync(outputDir, { recursive: true });
         }
 
-        const jobId = `fallback_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+        const jobId = `optimized_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
         const outputFile = path.join(outputDir, `unified_${jobId}.${format}`);
 
-        // Build FFmpeg command based on format
-        const inputFlags = [];
-        const filterParts = [];
+        // Validate images exist
+        const validImages = images.filter(img => img.path && fs.existsSync(img.path));
+        if (validImages.length === 0) {
+          return res.status(400).json({
+            success: false,
+            error: 'No valid images found'
+          });
+        }
 
-        images.forEach((img, index) => {
-          const imagePath = path.join(__dirname, '../uploads', sessionId, img.filename);
+        console.log(`✅ Validated ${validImages.length}/${images.length} images`);
+
+        // Use optimized GIF processing for GIF format
+        if (format === 'gif') {
+          console.log('🎨 Using optimized GIF processing');
+
+          await gifOptimizer.generateOptimizedGIF(validImages, outputFile, {
+            quality: quality || 'standard',
+            frameDurations: frameDurations || [],
+            maxWidth: 800,
+            maxHeight: 600
+          });
+
+          // Verify and return result
+          if (!fs.existsSync(outputFile)) {
+            throw new Error('Optimized GIF was not created');
+          }
+
+          const stats = fs.statSync(outputFile);
+          console.log(`✅ Optimized GIF created: ${(stats.size / 1024 / 1024).toFixed(2)}MB`);
+
+          return res.json({
+            success: true,
+            jobId: jobId,
+            downloadUrl: `/api/export/download/${jobId}`,
+            filename: path.basename(outputFile),
+            fileSize: stats.size,
+            optimized: true,
+            message: 'Optimized GIF export completed successfully'
+          });
+        }
+
+        // For MP4/WebM, use optimized processing
+        console.log(`🎬 Using optimized ${format.toUpperCase()} processing`);
+
+        // Process images with optimal settings
+        const processedResult = await imageProcessor.batchProcessImages(validImages, {
+          targetFormat: format,
+          maxResolution: resolution,
+          quality: 85 // Good balance for video input
+        });
+
+        console.log(`📊 Image processing stats:`, processedResult.stats);
+        const processedImages = processedResult.images;
+
+        // Build optimized FFmpeg command
+        const inputFlags = [];
+
+        // Use processed images for better quality
+        processedImages.forEach((img, index) => {
+          const imagePath = img.processedPath || img.path;
           const duration = (frameDurations[index] || 2000) / 1000; // Convert to seconds
           inputFlags.push(`-loop 1 -t ${duration} -i "${imagePath}"`);
         });
 
-        // Calculate resolution for 'auto' mode
-        let targetResolution = null;
-        if (resolution === 'auto') {
-          targetResolution = await calculateAutoResolution(images, sessionId, format === 'gif' ? 720 : 1920);
-          console.log('🎯 Auto resolution calculated:', targetResolution);
-        } else if (RESOLUTION_PRESETS[resolution]) {
-          targetResolution = RESOLUTION_PRESETS[resolution];
-        }
+        // Use optimal resolution from image processor
+        const targetResolution = processedResult.optimalResolution;
+        console.log('🎯 Using optimal resolution:', targetResolution);
 
-        // Build filter complex for slideshow
-        const scaleFilter = targetResolution ?
-          `scale=${targetResolution.width}:${targetResolution.height}:force_original_aspect_ratio=decrease,pad=${targetResolution.width}:${targetResolution.height}:(ow-iw)/2:(oh-ih)/2` :
-          'scale=1920:1080:force_original_aspect_ratio=decrease,pad=1920:1080:(ow-iw)/2:(oh-ih)/2';
+        // Build filter complex for slideshow with optimal resolution
+        const scaleFilter = `scale=${targetResolution.width}:${targetResolution.height}:force_original_aspect_ratio=decrease,pad=${targetResolution.width}:${targetResolution.height}:(ow-iw)/2:(oh-ih)/2`;
+        const concatList = processedImages.map((_, index) => `[${index}:v]${scaleFilter}[v${index}]`);
+        const concatInputs = processedImages.map((_, index) => `[v${index}]`).join('');
+        const filterComplex = `${concatList.join(';')};${concatInputs}concat=n=${processedImages.length}:v=1:a=0[out]`;
 
-        const concatList = images.map((_, index) => `[${index}:v]${scaleFilter}[v${index}]`);
-        const concatInputs = images.map((_, index) => `[v${index}]`).join('');
-        const filterComplex = `${concatList.join(';')};${concatInputs}concat=n=${images.length}:v=1:a=0[out]`;
+        // Get optimal FPS
+        const optimalFPS = videoOptimizer.getOptimalFPS(fps, format, 'slideshow');
+        console.log(`🎬 Using optimal FPS: ${optimalFPS} (requested: ${fps})`);
 
-        // Set codec and options based on format
-        let codecOptions;
-        let finalFilterComplex = filterComplex;
+        // Build optimized command based on format
+        let command;
+        const settings = {
+          quality: quality || 'standard',
+          resolution: targetResolution
+        };
 
-        if (format === 'gif') {
-          // GIF specific settings - integrate palette generation into filter_complex
-          const gifFps = Math.min(fps, 15); // Limit GIF fps
-          // Add palette generation to the filter complex chain
-          finalFilterComplex = `${filterComplex};[out]split[s0][s1];[s0]palettegen[p];[s1][p]paletteuse[gif]`;
-          codecOptions = `-filter_complex "${finalFilterComplex}" -map "[gif]" -r ${gifFps} -y`;
-        } else if (format === 'webm') {
-          // WebM with VP9
-          const preset = WEBM_PRESETS[quality] || WEBM_PRESETS.standard;
-          codecOptions = `-filter_complex "${finalFilterComplex}" -map "[out]" -c:v libvpx-vp9 -deadline ${preset.preset} -crf ${preset.crf} -b:v 0 -maxrate ${preset.maxBitrate} -bufsize ${preset.maxBitrate} -threads ${preset.threads} -r ${fps} -pix_fmt yuv420p -y`;
+        if (format === 'webm') {
+          command = videoOptimizer.buildWebMCommand(inputFlags, filterComplex, outputFile, settings, optimalFPS);
         } else {
-          // MP4/MOV with H.264
-          const preset = MP4_PRESETS[quality] || MP4_PRESETS.standard;
-          codecOptions = `-filter_complex "${finalFilterComplex}" -map "[out]" -c:v libx264 -preset ${preset.preset} -crf ${preset.crf} -maxrate ${preset.maxBitrate} -bufsize ${preset.maxBitrate} -r ${fps} -pix_fmt yuv420p -movflags +faststart -y`;
+          // MP4/MOV
+          command = videoOptimizer.buildMP4Command(inputFlags, filterComplex, outputFile, settings, optimalFPS);
         }
-
-        const command = `ffmpeg ${inputFlags.join(' ')} ${codecOptions} "${outputFile}"`;
 
         console.log(`🎬 Executing unified ${format.toUpperCase()} command:`, command);
 
@@ -768,7 +824,25 @@ router.post('/unified-export/:format', async (req, res) => {
           throw new Error('Output file was not created');
         }
 
+        const stats = fs.statSync(outputFile);
         const filename = path.basename(outputFile);
+
+        // Get performance recommendations
+        const perfRecommendations = videoOptimizer.getPerformanceRecommendations();
+
+        // Estimate processing time for reference
+        const timeEstimate = videoOptimizer.estimateProcessingTime(
+          processedImages.length,
+          targetResolution,
+          format,
+          quality
+        );
+
+        console.log(`✅ Optimized ${format.toUpperCase()} export completed:`);
+        console.log(`   - File size: ${(stats.size / 1024 / 1024).toFixed(2)}MB`);
+        console.log(`   - Resolution: ${targetResolution.width}x${targetResolution.height}`);
+        console.log(`   - Images processed: ${processedResult.stats.processed}/${processedResult.stats.total}`);
+        console.log(`   - Estimated time: ${timeEstimate.estimatedSeconds}s`);
 
         return res.json({
           success: true,
@@ -776,7 +850,18 @@ router.post('/unified-export/:format', async (req, res) => {
           filename: filename,
           downloadUrl: `/api/export/download/${jobId}`,
           statusUrl: `/api/export/status/${jobId}`,
-          message: `${format.toUpperCase()} export completed successfully (direct processing)`
+          fileSize: stats.size,
+          fileSizeMB: (stats.size / 1024 / 1024).toFixed(2),
+          optimized: true,
+          optimization: {
+            resolution: targetResolution,
+            fps: optimalFPS,
+            imagesProcessed: processedResult.stats,
+            cacheStats: imageProcessor.getCacheStats(),
+            performance: perfRecommendations,
+            estimatedTime: timeEstimate
+          },
+          message: `Optimized ${format.toUpperCase()} export completed successfully`
         });
 
       } catch (error) {
@@ -1115,8 +1200,55 @@ router.post('/gif-simple', async (req, res) => {
       });
     }
     
-    // Procesamiento directo (código existente)
-    // ...
+    // Procesamiento directo optimizado
+    console.log('🎨 Using optimized GIF processing');
+
+    // Validate and prepare images
+    const validImages = images.filter(img => img.path && fs.existsSync(img.path));
+    if (validImages.length === 0) {
+      return res.status(400).json({ error: 'No valid images found' });
+    }
+
+    console.log(`🎨 Processing ${validImages.length} images for optimized GIF`);
+
+    // Generate output filename
+    const outputFilename = `gif_optimized_${sessionId}_${Date.now()}.gif`;
+    const outputPath = path.join(__dirname, '../uploads', outputFilename);
+
+    try {
+      // Use optimized GIF generation
+      await gifOptimizer.generateOptimizedGIF(validImages, outputPath, {
+        quality: quality || 'standard',
+        frameDurations: frameDurations || [],
+        maxWidth: 800,
+        maxHeight: 600
+      });
+
+      // Verify output file exists
+      if (!fs.existsSync(outputPath)) {
+        throw new Error('Optimized GIF was not created');
+      }
+
+      const stats = fs.statSync(outputPath);
+      console.log(`✅ Optimized GIF created: ${outputFilename} (${(stats.size / 1024 / 1024).toFixed(2)}MB)`);
+
+      res.json({
+        success: true,
+        filename: outputFilename,
+        downloadUrl: `/download/${outputFilename}`,
+        fileSize: stats.size,
+        fileSizeMB: (stats.size / 1024 / 1024).toFixed(2),
+        optimized: true,
+        message: 'Optimized GIF generated successfully'
+      });
+
+    } catch (error) {
+      console.error('❌ Optimized GIF generation failed:', error);
+      res.status(500).json({
+        error: 'Optimized GIF generation failed',
+        details: error.message
+      });
+    }
   } catch (error) {
     console.error('GIF export error:', error);
     res.status(500).json({ error: 'GIF export failed', details: error.message });
@@ -1156,6 +1288,67 @@ router.post('/video-simple', async (req, res) => {
   } catch (error) {
     console.error('Video export error:', error);
     res.status(500).json({ error: 'Video export failed', details: error.message });
+  }
+});
+
+// Cache management endpoints
+router.get('/cache/stats', (req, res) => {
+  try {
+    const imageStats = imageProcessor.getCacheStats();
+    const perfRecommendations = videoOptimizer.getPerformanceRecommendations();
+
+    res.json({
+      success: true,
+      cache: {
+        images: imageStats,
+        // Add GIF cache stats if needed
+      },
+      performance: perfRecommendations,
+      system: {
+        uptime: process.uptime(),
+        memory: process.memoryUsage(),
+        platform: process.platform,
+        nodeVersion: process.version
+      }
+    });
+  } catch (error) {
+    console.error('❌ Cache stats error:', error);
+    res.status(500).json({
+      success: false,
+      error: 'Failed to get cache stats',
+      details: error.message
+    });
+  }
+});
+
+router.post('/cache/clean', (req, res) => {
+  try {
+    const { maxAge = 24 * 60 * 60 * 1000 } = req.body; // 24 hours default
+
+    console.log('🧹 Starting cache cleanup...');
+
+    // Clean image cache
+    imageProcessor.cleanCache(maxAge);
+
+    // Clean GIF palette cache
+    gifOptimizer.cleanCache(maxAge);
+
+    const newStats = imageProcessor.getCacheStats();
+
+    res.json({
+      success: true,
+      message: 'Cache cleaned successfully',
+      stats: {
+        images: newStats
+      }
+    });
+  } catch (error) {
+    console.error('❌ Cache cleanup error:', error);
+    res.status(500).json({
+      success: false,
+      error: 'Failed to clean cache',
+      details: error.message
+    });
   }
 });
 
