@@ -1,4 +1,4 @@
-import React, { useState, useMemo, useCallback } from 'react';
+import React, { useState, useMemo, useCallback, useEffect } from 'react';
 import { useSlideshowContext } from '../context/SlideshowContext';
 import { TimelineItem as TimelineItemType } from '../types/slideshow.types';
 import TimelineItem, { DragState, DragHandlers, ActionHandlers, UIHandlers } from './timeline/TimelineItem';
@@ -57,6 +57,43 @@ const Timeline: React.FC = () => {
   const formatDuration = useCallback((duration: number): string => {
     return `${(duration / 1000).toFixed(1)}s`;
   }, []);
+
+  // Calculate total duration including transitions
+  const totalDuration = useMemo(() => {
+    return project.timeline.reduce((total, item) => {
+      // Add frame duration
+      let itemTotal = item.duration;
+
+      // Add transition duration if it exists
+      if (item.transition && item.transition.duration) {
+        itemTotal += item.transition.duration;
+      }
+
+      return total + itemTotal;
+    }, 0);
+  }, [project.timeline]);
+
+  // Update header duration display and share timeline data
+  useEffect(() => {
+    const durationElement = document.getElementById('timeline-duration');
+    if (durationElement) {
+      durationElement.textContent = `${(totalDuration / 1000).toFixed(1)}s`;
+    }
+
+    // Share timeline data with other components (for compatibility)
+    (window as any).__timelineData = project.timeline.map(item => {
+      const image = project.images.find(img => img.id === item.imageId);
+      return {
+        file: image?.file,
+        uploadedFile: image?.uploadedInfo,
+        duration: item.duration, // Already in milliseconds
+        transition: {
+          type: item.transition?.type || 'none',
+          duration: item.transition?.duration || 0
+        }
+      };
+    });
+  }, [totalDuration, project.timeline, project.images]);
 
   // Export validation for floating button
   const currentValidationSettings: ValidationExportSettings = {
