@@ -30,9 +30,14 @@ WORKDIR /app/backend
 # Copy backend package files
 COPY backend/package*.json ./
 
-# Install backend dependencies
-RUN npm ci --only=production
+# Install **all** backend dependencies (prod + dev) para compilar TypeScript
+RUN npm ci
 
+# Copy backend source code (incluye tsconfig, src/, etc.)
+COPY backend/ ./
+
+# Compile TypeScript → genera dist/
+RUN npm run build
 # =============================================================================
 # Production Stage
 # =============================================================================
@@ -52,8 +57,8 @@ WORKDIR /app
 # Copy backend dependencies
 COPY --from=backend-builder /app/backend/node_modules ./node_modules
 
-# Copy backend source code
-COPY backend/ ./
+# Copy compiled backend (dist) únicamente
+COPY --from=backend-builder /app/backend/dist ./dist
 
 # Copy built frontend to backend public directory
 COPY --from=frontend-builder /app/frontend/dist ./public
@@ -79,5 +84,5 @@ ENV NODE_ENV=production \
     OUTPUT_DIR=output \
     TEMP_DIR=uploads
 
-# Start the application
-CMD ["node", "index.js"]
+# Start the application (ya compilado)
+CMD ["node", "dist/main.js"]
