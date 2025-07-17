@@ -1,5 +1,5 @@
 import { useState, useCallback } from 'react';
-import { VideoFile, LegacyVideoProject } from '../types/video-editor.types';
+import { VideoFile, VideoProject } from '../types/video-editor.types';
 
 // Video-specific API functions
 const uploadVideoFile = async (file: File, sessionId?: string): Promise<any> => {
@@ -28,7 +28,10 @@ const uploadVideoFile = async (file: File, sessionId?: string): Promise<any> => 
 /**
  * Hook specialized in video upload and management
  */
-export const useVideoManagement = (sessionId: string, setProject: React.Dispatch<React.SetStateAction<LegacyVideoProject>>) => {
+export const useVideoManagement = (
+  sessionId: string,
+  setProject: React.Dispatch<React.SetStateAction<VideoProject>>
+) => {
   const [isUploading, setIsUploading] = useState(false);
 
   // Generate thumbnails for video preview
@@ -161,11 +164,14 @@ export const useVideoManagement = (sessionId: string, setProject: React.Dispatch
         id: `video_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
         name: file.name,
         size: file.size,
+        type: 'video',
         duration: videoElement.duration,
         width: videoElement.videoWidth,
         height: videoElement.videoHeight,
         thumbnails: [], // Empty initially
         addedAt: new Date(),
+        createdAt: new Date(),
+        updatedAt: new Date(),
         videoUrl: URL.createObjectURL(file)
       };
 
@@ -174,7 +180,7 @@ export const useVideoManagement = (sessionId: string, setProject: React.Dispatch
         console.log('🎥 Generated thumbnails:', thumbnails.length, 'URLs:', thumbnails.slice(0, 2));
         videoMetadata.thumbnails = thumbnails;
         // Update the project state to trigger re-render
-        setProject((prev: LegacyVideoProject) => ({
+        setProject((prev: VideoProject) => ({
           ...prev,
           video: {
             ...prev.video!,

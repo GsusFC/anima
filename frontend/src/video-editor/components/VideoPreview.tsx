@@ -18,7 +18,9 @@ const VideoPreview: React.FC = () => {
     // Video loaded successfully
   }, []);
 
-  const handleVideoError = useCallback((e: React.SyntheticEvent<HTMLVideoElement, Event>) => {
+  // Use `any` for the event parameter to avoid type mismatch with the underlying
+  // BaseVideoPreview expectations (DOM `Event` vs React SyntheticEvent).
+  const handleVideoError = useCallback((e: any) => {
     console.error('❌ Video preview error:', e);
   }, []);
 

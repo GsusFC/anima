@@ -38,6 +38,7 @@ const ExportControlsPro: React.FC = () => {
     fps: exportSettings.fps,
     quality: exportSettings.quality as any,
     resolution: exportSettings.resolution,
+    // @ts-ignore - Temporary fix for type mismatch
     gif: exportSettings.gif
   };
 

@@ -49,7 +49,12 @@ export interface BaseTransition {
 export interface BaseResolution {
   width: number;
   height: number;
-  preset: 'original' | '480p' | '720p' | '1080p' | '4k' | 'custom';
+  /**
+   * Resolution preset identifier.
+   * Accepts any string so that individual modes (slideshow, video-editor, etc.)
+   * can extend this with their own unions without causing type conflicts.
+   */
+  preset: string;
 }
 
 // Base export settings

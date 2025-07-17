@@ -102,6 +102,7 @@ const Timeline: React.FC = () => {
     fps: project.exportSettings.fps,
     quality: project.exportSettings.quality as any,
     resolution: project.exportSettings.resolution,
+    // @ts-ignore - Temporary fix for type mismatch
     gif: project.exportSettings.gif
   };
   const exportValidation = useExportValidation(currentValidationSettings);

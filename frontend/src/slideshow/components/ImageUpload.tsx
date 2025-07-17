@@ -1,4 +1,4 @@
-import React, { useMemo } from 'react';
+import React from 'react';
 import { useSlideshowContext } from '../context/SlideshowContext';
 import { slideshowTheme } from '../../shared/components/Media';
 import BaseUpload from '../../shared/components/base/BaseUpload';

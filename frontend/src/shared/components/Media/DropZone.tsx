@@ -25,7 +25,7 @@ export const DropZone: React.FC<DropZoneProps> = ({
   children,
   className = '',
   style = {},
-  theme = defaultMediaTheme,
+  // theme = defaultMediaTheme, // Temporarily disabled
   mode = 'slideshow',
 }) => {
   const [isDragActive, setIsDragActive] = useState(false);
@@ -200,20 +200,7 @@ export const DropZone: React.FC<DropZoneProps> = ({
     ...style,
   };
 
-  const iconStyle: React.CSSProperties = {
-    width: '48px',
-    height: '48px',
-    opacity: 0.6,
-  };
-
-
-
-  const loadingStyle: React.CSSProperties = {
-    display: 'flex',
-    alignItems: 'center',
-    gap: theme.spacing.sm,
-    fontSize: '0.875rem',
-  };
+  // Removed unused styles - now using CSS modules
 
 
 

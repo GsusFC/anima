@@ -1,13 +1,15 @@
 // Shared Types Index
-// Central export point for all shared type definitions
+// Central export point for all shared type definitions.
+// Use `export type` to ensure only type information is re-exported,
+// satisfying the compiler when `isolatedModules` is enabled.
 
-export * from './media.types';
-export * from './export.types';
-export * from './validation.types';
-export * from './global.types';
+export type * from './media.types';
+export type * from './export.types';
+export type * from './validation.types';
+export type * from './global.types';
 
 // Export unified types with explicit naming to avoid conflicts
-export {
+export type {
   BaseFile,
   BaseUploadedInfo,
   BaseTimelineItem,

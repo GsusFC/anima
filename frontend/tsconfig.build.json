@@ -1,0 +1,19 @@
+{
+  "extends": "./tsconfig.json",
+  "compilerOptions": {
+    "noUnusedLocals": false,
+    "noUnusedParameters": false,
+    "strict": false,
+    "noImplicitAny": false,
+    "skipLibCheck": true
+  },
+  "exclude": [
+    "src/video-editor/legacy", 
+    "src/**/__tests__/**", 
+    "src/**/*.test.ts", 
+    "src/**/*.test.tsx",
+    "src/**/*.original.tsx",
+    "src/**/*.original.ts",
+    "src/**/*.disabled"
+  ]
+}

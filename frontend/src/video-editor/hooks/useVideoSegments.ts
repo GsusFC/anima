@@ -9,12 +9,19 @@ export const useVideoSegments = () => {
 
   // Add a new segment
   const addSegment = useCallback((startTime: number, endTime: number, videoId: string) => {
+    const now = new Date();
+    const safeStart = Math.max(0, startTime);
+    const safeEnd = Math.max(safeStart + 0.1, endTime); // Ensure minimum duration
+
     const newSegment: VideoSegment = {
       id: `segment_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
-      startTime: Math.max(0, startTime),
-      endTime: Math.max(startTime + 0.1, endTime), // Ensure minimum duration
+      startTime: safeStart,
+      endTime: safeEnd,
       videoId,
-      createdAt: new Date()
+      position: segments.length,
+      duration: safeEnd - safeStart,
+      createdAt: now,
+      updatedAt: now
     };
 
     setSegments(prev => [...prev, newSegment]);
@@ -61,12 +68,19 @@ export const useVideoSegments = () => {
   // Trim video by creating a single segment
   const trimVideo = useCallback((startTime: number, endTime: number, videoId: string) => {
     // Clear existing segments and create a single trim segment
+    const now = new Date();
+    const safeStart = Math.max(0, startTime);
+    const safeEnd = Math.max(safeStart + 0.1, endTime);
+
     const trimSegment: VideoSegment = {
       id: `trim_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
-      startTime: Math.max(0, startTime),
-      endTime: Math.max(startTime + 0.1, endTime),
+      startTime: safeStart,
+      endTime: safeEnd,
       videoId,
-      createdAt: new Date()
+      position: 0,
+      duration: safeEnd - safeStart,
+      createdAt: now,
+      updatedAt: now
     };
 
     setSegments([trimSegment]);

@@ -1,5 +1,9 @@
 import { useState, useCallback } from 'react';
-import { LegacyVideoProject, VideoSegmentUpdate } from '../types/video-editor.types';
+import {
+  VideoProject,
+  VideoSegmentUpdate,
+  VideoExportSettings
+} from '../types/video-editor.types';
 import { useVideoManagement } from './useVideoManagement';
 import { useVideoPlayback } from './useVideoPlayback';
 import { useVideoSegments } from './useVideoSegments';
@@ -10,12 +14,46 @@ import { useVideoSegments } from './useVideoSegments';
  */
 export const useVideoEditor = () => {
   // Project state
-  const [project, setProject] = useState<LegacyVideoProject>({
-    id: `video_project_${Date.now()}`,
-    video: null,
-    segments: [],
-    sessionId: `session_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`
-  });
+  const createEmptyProject = (): VideoProject => {
+    const timestamp = Date.now();
+
+    // Minimal viable export settings to satisfy type requirements
+    const defaultExportSettings: VideoExportSettings = {
+      format: 'mp4',
+      quality: 'standard',
+      fps: 30,
+      resolution: {
+        width: 1920,
+        height: 1080,
+        preset: 'original'
+      }
+    };
+
+    return {
+      id: `video_project_${timestamp}`,
+      name: 'Untitled Video Project',
+      // BaseProject requirements
+      timeline: [],
+      exportSettings: defaultExportSettings,
+      createdAt: new Date(timestamp),
+      updatedAt: new Date(timestamp),
+      // Video-editor specific
+      library: {
+        videos: [],
+        selectedVideoId: null
+      },
+      sequence: {
+        items: [],
+        totalDuration: 0
+      },
+      video: null,
+      segments: [],
+      effects: [],
+      sessionId: `session_${timestamp}_${Math.random().toString(36).substr(2, 9)}`
+    };
+  };
+
+  const [project, setProject] = useState<VideoProject>(createEmptyProject());
 
   // Error state
   const [error] = useState<string | null>(null);
@@ -88,12 +126,8 @@ export const useVideoEditor = () => {
 
   // Clear project
   const clearProject = useCallback(() => {
-    setProject({
-      id: `video_project_${Date.now()}`,
-      video: null,
-      segments: [],
-      sessionId: `session_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`
-    });
+    // Reset to a fully-formed, type-safe initial project
+    setProject(() => createEmptyProject());
     segments.clearSegments();
     playback.handleVideoEnded();
   }, [segments, playback]);

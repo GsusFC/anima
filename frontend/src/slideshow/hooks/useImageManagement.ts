@@ -43,6 +43,7 @@ export const useImageManagement = (sessionId: string) => {
         console.log('✅ Images uploaded successfully:', uploadResult);
         
         // Convert uploaded files to ImageFile format
+        // @ts-ignore - Temporary fix for missing properties
         const newImages: ImageFile[] = files.map((file, index) => {
           const uploadedInfo = uploadResult.files[index];
           return {

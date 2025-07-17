@@ -150,6 +150,11 @@ export interface UploadConfig {
   maxSize?: number;
   maxFiles?: number;
   autoUpload?: boolean;
+  text?: {
+    primary?: string;
+    secondary?: string;
+  };
+  showEmptyState?: boolean;
 }
 
 // Virtualization types
