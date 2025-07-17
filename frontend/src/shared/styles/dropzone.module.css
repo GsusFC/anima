@@ -5,14 +5,13 @@
  * Provides distinctive colors for slideshow (pink) and video-editor (blue).
  */
 
-/* Base DropZone */
+/* Base DropZone - Optimized for brand color prominence */
 .dropzone {
-  border: 2px dashed #374151;
+  border: 2px dashed;
   border-radius: 12px;
   padding: 24px;
   text-align: center;
   background-color: transparent;
-  color: #9ca3af;
   cursor: pointer;
   transition: all 0.2s ease;
   position: relative;
@@ -23,43 +22,56 @@
   justify-content: center;
   gap: 12px;
   font-family: "Space Mono", monospace;
+  backdrop-filter: blur(1px);
 }
 
-/* Mode-specific DropZone Colors */
+/* Mode-specific DropZone Colors - Brand colors prominent by default */
 .dropzoneSlideshow {
-  border-color: #374151;
+  border-color: #ec4899;
+  color: #ec4899;
+  background-color: rgba(236, 72, 153, 0.03);
+  box-shadow: 0 2px 8px rgba(236, 72, 153, 0.1);
 }
 
 .dropzoneSlideshow:hover,
 .dropzoneSlideshow.active {
-  border-color: #ec4899;
-  background-color: rgba(236, 72, 153, 0.05);
-  color: #ec4899;
+  border-color: #f472b6;
+  background-color: rgba(236, 72, 153, 0.08);
+  color: #f472b6;
+  box-shadow: 0 4px 12px rgba(236, 72, 153, 0.15), 0 0 0 1px rgba(236, 72, 153, 0.2);
+  transform: translateY(-1px);
 }
 
 .dropzoneSlideshow.dragActive {
-  border-color: #ec4899;
-  background-color: rgba(236, 72, 153, 0.1);
-  color: #ec4899;
-  transform: scale(1.02);
+  border-color: #f472b6;
+  background-color: rgba(236, 72, 153, 0.12);
+  color: #f472b6;
+  transform: scale(1.02) translateY(-1px);
+  box-shadow: 0 6px 16px rgba(236, 72, 153, 0.2), 0 0 0 2px rgba(236, 72, 153, 0.3);
 }
 
 .dropzoneVideoEditor {
-  border-color: #374151;
+  border-color: #3b82f6;
+  color: #3b82f6;
+  background-color: rgba(59, 130, 246, 0.03);
+  box-shadow: 0 2px 8px rgba(59, 130, 246, 0.1);
 }
 
 .dropzoneVideoEditor:hover,
 .dropzoneVideoEditor.active {
-  border-color: #3b82f6;
-  background-color: rgba(59, 130, 246, 0.05);
-  color: #3b82f6;
+  border-color: #60a5fa;
+  background-color: rgba(59, 130, 246, 0.08);
+  color: #60a5fa;
+  box-shadow: 0 4px 12px rgba(59, 130, 246, 0.15), 0 0 0 1px rgba(59, 130, 246, 0.2);
+  transform: translateY(-1px);
 }
 
 .dropzoneVideoEditor.dragActive {
-  border-color: #3b82f6;
-  background-color: rgba(59, 130, 246, 0.1);
-  color: #3b82f6;
-  transform: scale(1.02);
+  border-color: #60a5fa;
+  background-color: rgba(59, 130, 246, 0.12);
+  color: #60a5fa;
+  transform: scale(1.02) translateY(-1px);
+  box-shadow: 0 6px 16px rgba(59, 130, 246, 0.2), 0 0 0 2px rgba(59, 130, 246, 0.3);
 }
 
 /* DropZone States */
@@ -80,30 +92,35 @@
   color: #ef4444;
 }
 
-/* DropZone Content */
+/* DropZone Content - Enhanced visibility with brand colors */
 .dropzoneIcon {
   width: 48px;
   height: 48px;
-  opacity: 0.6;
-  transition: opacity 0.2s ease;
+  opacity: 0.8;
+  transition: all 0.2s ease;
+  filter: drop-shadow(0 1px 2px rgba(0, 0, 0, 0.1));
 }
 
 .dropzone:hover .dropzoneIcon,
 .dropzone.active .dropzoneIcon,
 .dropzone.dragActive .dropzoneIcon {
   opacity: 1;
+  transform: translateY(-1px);
+  filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.15));
 }
 
 .dropzoneText {
   font-size: 14px;
-  font-weight: 500;
+  font-weight: 600;
   margin: 0;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
 }
 
 .dropzoneSubtext {
   font-size: 12px;
-  opacity: 0.7;
+  opacity: 0.8;
   margin: 0;
+  font-weight: 500;
 }
 
 /* DropZone Loading Spinner */
