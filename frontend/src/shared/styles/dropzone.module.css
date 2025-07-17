@@ -1,0 +1,264 @@
+/**
+ * DropZone CSS Module
+ * 
+ * Centralized styles for dropzone components with mode-specific branding.
+ * Provides distinctive colors for slideshow (pink) and video-editor (blue).
+ */
+
+/* Base DropZone */
+.dropzone {
+  border: 2px dashed #374151;
+  border-radius: 12px;
+  padding: 24px;
+  text-align: center;
+  background-color: transparent;
+  color: #9ca3af;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  position: relative;
+  min-height: 120px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  font-family: "Space Mono", monospace;
+}
+
+/* Mode-specific DropZone Colors */
+.dropzoneSlideshow {
+  border-color: #374151;
+}
+
+.dropzoneSlideshow:hover,
+.dropzoneSlideshow.active {
+  border-color: #ec4899;
+  background-color: rgba(236, 72, 153, 0.05);
+  color: #ec4899;
+}
+
+.dropzoneSlideshow.dragActive {
+  border-color: #ec4899;
+  background-color: rgba(236, 72, 153, 0.1);
+  color: #ec4899;
+  transform: scale(1.02);
+}
+
+.dropzoneVideoEditor {
+  border-color: #374151;
+}
+
+.dropzoneVideoEditor:hover,
+.dropzoneVideoEditor.active {
+  border-color: #3b82f6;
+  background-color: rgba(59, 130, 246, 0.05);
+  color: #3b82f6;
+}
+
+.dropzoneVideoEditor.dragActive {
+  border-color: #3b82f6;
+  background-color: rgba(59, 130, 246, 0.1);
+  color: #3b82f6;
+  transform: scale(1.02);
+}
+
+/* DropZone States */
+.dropzoneLoading {
+  opacity: 0.6;
+  pointer-events: none;
+}
+
+.dropzoneDisabled {
+  opacity: 0.4;
+  pointer-events: none;
+  cursor: not-allowed;
+}
+
+.dropzoneError {
+  border-color: #ef4444;
+  background-color: rgba(239, 68, 68, 0.05);
+  color: #ef4444;
+}
+
+/* DropZone Content */
+.dropzoneIcon {
+  width: 48px;
+  height: 48px;
+  opacity: 0.6;
+  transition: opacity 0.2s ease;
+}
+
+.dropzone:hover .dropzoneIcon,
+.dropzone.active .dropzoneIcon,
+.dropzone.dragActive .dropzoneIcon {
+  opacity: 1;
+}
+
+.dropzoneText {
+  font-size: 14px;
+  font-weight: 500;
+  margin: 0;
+}
+
+.dropzoneSubtext {
+  font-size: 12px;
+  opacity: 0.7;
+  margin: 0;
+}
+
+/* DropZone Loading Spinner */
+.dropzoneSpinner {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 14px;
+}
+
+.dropzoneSpinnerIcon {
+  width: 20px;
+  height: 20px;
+  border: 2px solid #374151;
+  border-top: 2px solid currentColor;
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
+/* DropZone Sizes */
+.dropzoneSmall {
+  min-height: 80px;
+  padding: 16px;
+}
+
+.dropzoneSmall .dropzoneIcon {
+  width: 32px;
+  height: 32px;
+}
+
+.dropzoneSmall .dropzoneText {
+  font-size: 12px;
+}
+
+.dropzoneSmall .dropzoneSubtext {
+  font-size: 11px;
+}
+
+.dropzoneMedium {
+  min-height: 120px;
+  padding: 24px;
+}
+
+.dropzoneLarge {
+  min-height: 160px;
+  padding: 32px;
+}
+
+.dropzoneLarge .dropzoneIcon {
+  width: 64px;
+  height: 64px;
+}
+
+.dropzoneLarge .dropzoneText {
+  font-size: 16px;
+}
+
+.dropzoneLarge .dropzoneSubtext {
+  font-size: 14px;
+}
+
+/* DropZone Accessibility */
+.dropzone:focus {
+  outline: 2px solid currentColor;
+  outline-offset: 2px;
+}
+
+.dropzone:focus-visible {
+  outline: 2px solid currentColor;
+  outline-offset: 2px;
+}
+
+/* DropZone Animation */
+.dropzoneEnter {
+  animation: dropzoneEnter 0.3s ease-out;
+}
+
+@keyframes dropzoneEnter {
+  from {
+    opacity: 0;
+    transform: scale(0.95);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+  .dropzone {
+    padding: 16px;
+    min-height: 100px;
+  }
+  
+  .dropzoneIcon {
+    width: 40px;
+    height: 40px;
+  }
+  
+  .dropzoneText {
+    font-size: 13px;
+  }
+  
+  .dropzoneSubtext {
+    font-size: 11px;
+  }
+}
+
+/* High contrast mode support */
+@media (prefers-contrast: high) {
+  .dropzone {
+    border-width: 3px;
+  }
+  
+  .dropzoneText {
+    font-weight: bold;
+  }
+}
+
+/* Reduced motion support */
+@media (prefers-reduced-motion: reduce) {
+  .dropzone {
+    transition: none;
+  }
+  
+  .dropzone.dragActive {
+    transform: none;
+  }
+  
+  .dropzoneEnter {
+    animation: none;
+  }
+  
+  .dropzoneSpinnerIcon {
+    animation: none;
+  }
+}
+
+/* Dark theme consistency */
+.dropzone {
+  background-color: transparent;
+  color: #9ca3af;
+}
+
+/* Print styles */
+@media print {
+  .dropzone {
+    border-style: solid;
+    background-color: white;
+    color: black;
+  }
+}

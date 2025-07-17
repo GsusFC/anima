@@ -44,14 +44,16 @@ export const defaultMediaTheme: MediaTheme = {
 export const slideshowTheme: Partial<MediaTheme> = {
   colors: {
     ...defaultMediaTheme.colors,
-    accent: '#ec4899', // Pink accent for slideshow
+    primary: '#ec4899',   // Pink primary for slideshow dropzones
+    accent: '#ec4899',    // Pink accent for slideshow
   },
 };
 
 export const videoEditorTheme: Partial<MediaTheme> = {
   colors: {
     ...defaultMediaTheme.colors,
-    accent: '#22c55e', // Green accent for video editor
+    primary: '#3b82f6',   // Blue primary for video editor dropzones
+    accent: '#3b82f6',    // Blue accent for video editor
   },
 };
 

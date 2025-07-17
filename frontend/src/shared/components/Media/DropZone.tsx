@@ -1,6 +1,7 @@
 import React, { useState, useCallback, useRef } from 'react';
-import { UploadConfig, MediaEventHandlers } from '../../types/media.types';
+import { UploadConfig, MediaEventHandlers, MediaTheme } from '../../types/media.types';
 import { defaultMediaTheme } from '../../theme/mediaTheme';
+import styles from '../../styles/dropzone.module.css';
 
 interface DropZoneProps {
   config: UploadConfig;
@@ -11,6 +12,8 @@ interface DropZoneProps {
   children?: React.ReactNode;
   className?: string;
   style?: React.CSSProperties;
+  theme?: MediaTheme;
+  mode?: 'slideshow' | 'video-editor';
 }
 
 export const DropZone: React.FC<DropZoneProps> = ({
@@ -22,12 +25,13 @@ export const DropZone: React.FC<DropZoneProps> = ({
   children,
   className = '',
   style = {},
+  theme = defaultMediaTheme,
+  mode = 'slideshow',
 }) => {
   const [isDragActive, setIsDragActive] = useState(false);
   const [, setDragCounter] = useState(0);
 
   const fileInputRef = useRef<HTMLInputElement>(null);
-  const theme = defaultMediaTheme;
 
   const { accept, multiple, maxSize, maxFiles } = config;
   const { onUpload } = handlers;
@@ -159,30 +163,40 @@ export const DropZone: React.FC<DropZoneProps> = ({
     }
   }, [disabled, loading]);
 
+  // Generate CSS classes based on mode and state
+  const getDropZoneClasses = () => {
+    const classes = [styles.dropzone];
+
+    // Mode-specific styling
+    if (mode === 'slideshow') {
+      classes.push(styles.dropzoneSlideshow);
+    } else {
+      classes.push(styles.dropzoneVideoEditor);
+    }
+
+    // State classes
+    if (isDragActive) {
+      classes.push(styles.dragActive);
+    }
+    if (loading) {
+      classes.push(styles.dropzoneLoading);
+    }
+    if (disabled) {
+      classes.push(styles.dropzoneDisabled);
+    }
+    if (error) {
+      classes.push(styles.dropzoneError);
+    }
+
+    // Custom className
+    if (className) {
+      classes.push(className);
+    }
+
+    return classes.join(' ');
+  };
+
   const containerStyle: React.CSSProperties = {
-    border: `2px dashed ${
-      error ? theme.colors.error :
-      isDragActive ? theme.colors.primary :
-      theme.colors.border
-    }`,
-    borderRadius: theme.borderRadius.lg,
-    padding: theme.spacing.xl,
-    textAlign: 'center',
-    backgroundColor: isDragActive ? `${theme.colors.primary}10` : 'transparent',
-    color: error ? theme.colors.error :
-           isDragActive ? theme.colors.primary :
-           theme.colors.textSecondary,
-    cursor: disabled ? 'not-allowed' : 'pointer',
-    transition: theme.transitions.normal,
-    opacity: disabled ? 0.6 : 1,
-    position: 'relative',
-    minHeight: '120px',
-    display: 'flex',
-    flexDirection: 'column',
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: theme.spacing.md,
-    fontFamily: '"Space Mono", monospace',
     ...style,
   };
 
@@ -205,7 +219,7 @@ export const DropZone: React.FC<DropZoneProps> = ({
 
   return (
     <div
-      className={`drop-zone ${className}`}
+      className={getDropZoneClasses()}
       style={containerStyle}
       onDragEnter={handleDragEnter}
       onDragLeave={handleDragLeave}
@@ -224,17 +238,9 @@ export const DropZone: React.FC<DropZoneProps> = ({
       />
 
       {loading ? (
-        <div style={loadingStyle}>
-          <div
-            style={{
-              width: '20px',
-              height: '20px',
-              border: `2px solid ${theme.colors.border}`,
-              borderTop: `2px solid ${theme.colors.primary}`,
-              borderRadius: '50%',
-              animation: 'spin 1s linear infinite',
-            }}
-          />
+        <div className={styles.dropzoneSpinner}>
+          <div className={styles.dropzoneSpinnerIcon} />
+          <span>Uploading...</span>
         </div>
       ) : children ? (
         children
@@ -242,7 +248,7 @@ export const DropZone: React.FC<DropZoneProps> = ({
         <>
           {/* Upload Icon */}
           <svg
-            style={iconStyle}
+            className={styles.dropzoneIcon}
             fill="none"
             stroke="currentColor"
             viewBox="0 0 24 24"
@@ -254,16 +260,18 @@ export const DropZone: React.FC<DropZoneProps> = ({
               d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"
             />
           </svg>
+
+          {/* Upload Text */}
+          <div>
+            <p className={styles.dropzoneText}>
+              {config.text?.primary || 'Drop files here or click to browse'}
+            </p>
+            <p className={styles.dropzoneSubtext}>
+              {config.text?.secondary || 'Supported file types'}
+            </p>
+          </div>
         </>
       )}
-
-      {/* CSS for spin animation */}
-      <style>{`
-        @keyframes spin {
-          0% { transform: rotate(0deg); }
-          100% { transform: rotate(360deg); }
-        }
-      `}</style>
     </div>
   );
 };

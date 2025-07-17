@@ -1,6 +1,7 @@
 import React from 'react';
 import { DropZone } from '../Media/DropZone';
-import { UploadConfig, MediaEventHandlers } from '../../types/media.types';
+import { UploadConfig, MediaEventHandlers, MediaTheme } from '../../types/media.types';
+import { defaultMediaTheme, slideshowTheme, videoEditorTheme, mergeThemes } from '../../theme/mediaTheme';
 
 interface UnifiedUploadInterfaceProps {
   mode: 'slideshow' | 'video-editor';
@@ -26,10 +27,20 @@ export const UnifiedUploadInterface: React.FC<UnifiedUploadInterfaceProps> = ({
   children,
   className = ''
 }) => {
+  // Get theme for current mode
+  const getThemeForMode = (): MediaTheme => {
+    const baseTheme = mode === 'slideshow'
+      ? mergeThemes(defaultMediaTheme, slideshowTheme)
+      : mergeThemes(defaultMediaTheme, videoEditorTheme);
+    return baseTheme;
+  };
+
+  const theme = getThemeForMode();
+
   // Mode-specific DropZone styling
   const getDropZoneStyle = () => {
     const baseStyle = {
-      borderColor: '#343536',
+      borderColor: theme.colors.border,
       backgroundColor: 'transparent',
     };
 
@@ -78,6 +89,8 @@ export const UnifiedUploadInterface: React.FC<UnifiedUploadInterfaceProps> = ({
           loading={loading}
           className="h-auto"
           style={getDropZoneStyle()}
+          theme={theme}
+          mode={mode}
         />
       </div>
 
