@@ -8,6 +8,7 @@ import {
   MediaEventHandlers
 } from '../../shared/components/Media';
 import { useMediaUpload } from '../../shared/hooks';
+import { UnifiedUploadInterface, UnifiedUploadEmptyState } from '../../shared/components/unified';
 
 const VideoUploader: React.FC = () => {
   const { uploadVideo, isUploading, project } = useVideoEditorContext();
@@ -79,26 +80,20 @@ const VideoUploader: React.FC = () => {
   };
 
   return (
-    <div className="h-full flex flex-col p-5">
+    <div className="h-full flex flex-col">
       {!project.video ? (
-        /* Upload Area */
-        <div className="flex-1">
-          <DropZone
-            config={uploadConfig}
-            handlers={handlers}
-            loading={isUploading}
-            className="h-full"
-            style={{
-              minHeight: '200px',
-              backgroundColor: '#1a1a1b',
-              borderColor: '#343536',
-            }}
-          >
-          </DropZone>
-        </div>
+        /* Upload Area with Unified Interface */
+        <UnifiedUploadInterface
+          mode="video-editor"
+          config={uploadConfig}
+          handlers={handlers}
+          loading={isUploading}
+        >
+          <UnifiedUploadEmptyState mode="video-editor" />
+        </UnifiedUploadInterface>
       ) : (
         /* Video Info Display */
-        <div className="panel p-5">
+        <div className="panel" style={{ padding: '8px' }}>
           <div className="flex items-start gap-4 mb-4">
             {/* Video Thumbnail */}
             <div className="flex-shrink-0">

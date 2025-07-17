@@ -10,6 +10,7 @@ import {
 } from '../../types/media.types';
 import { defaultMediaTheme, mediaLayouts } from '../../theme/mediaTheme';
 import MediaItem from './MediaItem';
+import { UnifiedUploadEmptyState } from '../unified';
 
 interface MediaListProps {
   items: MediaItemType[];
@@ -23,6 +24,7 @@ interface MediaListProps {
   className?: string;
   style?: React.CSSProperties;
   theme?: Partial<MediaTheme>;
+  mode?: 'slideshow' | 'video-editor'; // For unified empty state
 }
 
 export const MediaList: React.FC<MediaListProps> = ({
@@ -37,6 +39,7 @@ export const MediaList: React.FC<MediaListProps> = ({
   className = '',
   style = {},
   theme = {},
+  mode = 'slideshow', // Default to slideshow for backward compatibility
 }) => {
   const [draggedItem, setDraggedItem] = useState<string | null>(null);
   const [dragOverIndex, setDragOverIndex] = useState<number | null>(null);
@@ -180,16 +183,7 @@ export const MediaList: React.FC<MediaListProps> = ({
     scrollbarColor: `${mergedTheme.colors.border} transparent`,
   };
 
-  const emptyStateStyle: React.CSSProperties = {
-    display: 'flex',
-    flexDirection: 'column',
-    alignItems: 'center',
-    justifyContent: 'center',
-    padding: mergedTheme.spacing.xl,
-    color: mergedTheme.colors.textSecondary,
-    textAlign: 'center',
-    fontFamily: '"Space Mono", monospace',
-  };
+
 
   const loadingStyle: React.CSSProperties = {
     display: 'flex',
@@ -244,28 +238,8 @@ export const MediaList: React.FC<MediaListProps> = ({
 
   if (processedItems.length === 0) {
     return (
-      <div className={`media-list ${className}`} style={containerStyle}>
-        <div style={emptyStateStyle}>
-          <svg
-            width="64"
-            height="64"
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="currentColor"
-            strokeWidth="1"
-            style={{ marginBottom: mergedTheme.spacing.md, opacity: 0.5 }}
-          >
-            <rect x="3" y="3" width="18" height="18" rx="2" ry="2" />
-            <circle cx="8.5" cy="8.5" r="1.5" />
-            <polyline points="21,15 16,10 5,21" />
-          </svg>
-          <p style={{ margin: 0, fontSize: '1rem', fontWeight: 'bold' }}>
-            No media files
-          </p>
-          <p style={{ margin: `${mergedTheme.spacing.xs} 0 0 0`, fontSize: '0.875rem', opacity: 0.8 }}>
-            {filter ? 'No files match your filter criteria' : 'Upload some files to get started'}
-          </p>
-        </div>
+      <div className={`media-list ${className}`} style={{ ...containerStyle, padding: 0 }}>
+        <UnifiedUploadEmptyState mode={mode} />
       </div>
     );
   }

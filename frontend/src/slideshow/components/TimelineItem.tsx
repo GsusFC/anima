@@ -140,11 +140,11 @@ const TimelineItem: React.FC<TimelineItemProps> = ({
         </div>
         <input
           type="range"
-          min="100"
-          max="5000"
-          step="100"
-          value={item.duration}
-          onChange={(e) => onDurationChange(item.id, parseInt(e.target.value))}
+          min="0.5"
+          max="5"
+          step="0.1"
+          value={item.duration / 1000} // Convert from ms to seconds for display
+          onChange={(e) => onDurationChange(item.id, parseFloat(e.target.value) * 1000)} // Convert back to ms
           style={{
             width: '100%',
             height: '4px',

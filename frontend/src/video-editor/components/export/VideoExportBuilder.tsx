@@ -1,10 +1,15 @@
 import React, { useState, useCallback, useEffect } from 'react';
 import { useVideoEditorContext } from '../../context/VideoEditorContext';
 import { VideoExportSettings } from '../../types/video-editor.types';
-import { showToast } from '../Toast';
+import { showToast } from '../../../shared/components/Toast';
 import { ExportStrategyFactory } from './strategies/ExportStrategyFactory';
-import { ExportFormatSelector } from './ExportFormatSelector';
-import { ExportQualitySettings } from './ExportQualitySettings';
+import {
+  UnifiedFormatSelector,
+  UnifiedQualitySelector,
+  UnifiedEmptyState,
+  type ExportFormat,
+  type QualityLevel
+} from '../../../shared/components/export';
 import { ExportResolutionSettings } from './ExportResolutionSettings';
 import { ExportGIFSettings } from './ExportGIFSettings';
 import { useExportValidation, ExportSettings } from '../../../hooks/useExportValidation';
@@ -179,14 +184,7 @@ export const VideoExportBuilder: React.FC = () => {
 
   // Empty state
   if (!hasVideo) {
-    return (
-      <div className="h-full flex items-center justify-center text-dark-500 bg-dark-850">
-        <div className="text-center font-mono">
-          <p className="m-0 text-lg">No Video Loaded</p>
-          <p className="mt-1 text-sm">Export options will appear here</p>
-        </div>
-      </div>
-    );
+    return <UnifiedEmptyState mode="video-editor" />;
   }
 
   // const currentStrategy = ExportStrategyFactory.getStrategy(exportSettings.format);
@@ -195,7 +193,7 @@ export const VideoExportBuilder: React.FC = () => {
   //   : '0.0';
 
   return (
-    <div className="h-full flex flex-col p-4 gap-4">
+    <div className="h-full flex flex-col gap-4">
       {/* Export Progress */}
       {isExporting && (
         <div className="p-3 bg-dark-900 rounded border border-dark-650">
@@ -213,14 +211,16 @@ export const VideoExportBuilder: React.FC = () => {
 
       {/* Simple Format & Quality Selection */}
       <div className="space-y-3">
-        <ExportFormatSelector
-          selectedFormat={exportSettings.format}
-          onFormatChange={handleFormatChange}
+        <UnifiedFormatSelector
+          currentFormat={exportSettings.format as ExportFormat}
+          onFormatChange={(format) => handleFormatChange(format)}
+          mode="video-editor"
         />
 
-        <ExportQualitySettings
-          settings={exportSettings}
-          onSettingsChange={setExportSettings}
+        <UnifiedQualitySelector
+          currentQuality={exportSettings.quality as QualityLevel}
+          onQualityChange={(quality) => setExportSettings(prev => ({ ...prev, quality: quality as any }))}
+          mode="video-editor"
         />
 
         <ExportResolutionSettings

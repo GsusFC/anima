@@ -5,9 +5,16 @@ import { ExportStrategyFactory } from '../strategies/ExportStrategyFactory';
 import { useExportValidation, ExportSettings as ValidationExportSettings } from '../../hooks/useExportValidation';
 import { useExportHandlers } from '../hooks/useExportHandlers';
 
-// Import refactored components
-import FormatSelector from './export/FormatSelector';
-import QualitySelector from './export/QualitySelector';
+// Import unified components
+import {
+  UnifiedFormatSelector,
+  UnifiedQualitySelector,
+  UnifiedEmptyState,
+  type ExportFormat,
+  type QualityLevel
+} from '../../shared/components/export';
+
+// Import remaining specific components
 import ResolutionSelectorSimple from './export/ResolutionSelectorSimple';
 import AdvancedSettingsPanel from './export/AdvancedSettingsPanel';
 import ValidationSummaryCompact from './export/ValidationSummaryCompact';
@@ -55,35 +62,24 @@ const ExportControls: React.FC = () => {
   const currentStrategy = ExportStrategyFactory.create(exportSettings.format);
 
   if (!hasTimeline) {
-    return (
-      <div className="h-full bg-dark-950 flex flex-col p-3">
-        <div className="panel flex-1 flex items-center justify-center flex-col gap-3">
-          <svg className="w-12 h-12 text-dark-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-          </svg>
-          <div className="text-center text-dark-400 font-mono">
-            <div className="text-lg mb-1">No Export Available</div>
-            <div className="text-sm">Add images to timeline to enable export</div>
-          </div>
-        </div>
-      </div>
-    );
+    return <UnifiedEmptyState mode="slideshow" />;
   }
 
   return (
-    <div className="h-full bg-dark-950 p-3 flex flex-col gap-3" style={{ width: '280px' }}>
+    <div className="h-full flex flex-col gap-3">
 
-      {/* Format Selection */}
-      <FormatSelector
-        currentFormat={handlers.format.currentFormat}
-        onFormatChange={handlers.format.onFormatChange}
+      {/* Format Selection - Unified */}
+      <UnifiedFormatSelector
+        currentFormat={handlers.format.currentFormat as ExportFormat}
+        onFormatChange={(format) => handlers.format.onFormatChange(format)}
+        mode="slideshow"
       />
 
-      {/* Quality Selection */}
-      <QualitySelector
-        currentQuality={handlers.quality.currentQuality}
-        strategy={currentStrategy}
-        onQualityChange={handlers.quality.onQualityChange}
+      {/* Quality Selection - Unified */}
+      <UnifiedQualitySelector
+        currentQuality={handlers.quality.currentQuality as QualityLevel}
+        onQualityChange={(quality) => handlers.quality.onQualityChange(quality as any)}
+        mode="slideshow"
       />
 
       {/* Simplified Resolution Selection */}

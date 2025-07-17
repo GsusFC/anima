@@ -9,6 +9,7 @@ import { TimelinePlayhead } from './TimelinePlayhead';
 import { TimelineSegments } from './TimelineSegments';
 import { TimelineThumbnails } from './TimelineThumbnails';
 import { HotkeysHelp } from '../HotkeysHelp';
+import { UnifiedTimelineEmptyState } from '../../../shared/components/unified';
 
 /**
  * Video Timeline Builder - Composition Pattern
@@ -133,18 +134,11 @@ export const VideoTimelineBuilder: React.FC = () => {
 
   // Empty state
   if (!hasVideo) {
-    return (
-      <div className="h-full flex items-center justify-center bg-dark-850 text-dark-500">
-        <div className="text-center font-mono">
-          <p className="m-0 text-lg">No Video Loaded</p>
-          <p className="m-0 text-sm mt-1">Timeline will appear here</p>
-        </div>
-      </div>
-    );
+    return <UnifiedTimelineEmptyState mode="video-editor" />;
   }
 
   return (
-    <div className="h-full flex flex-col bg-dark-950 p-5">
+    <div className="h-full flex flex-col bg-dark-950" style={{ padding: '8px' }}>
       {/* Timeline Controls */}
       <TimelineControls
       zoom={zoom}

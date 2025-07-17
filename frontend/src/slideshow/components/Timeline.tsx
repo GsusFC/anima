@@ -6,6 +6,7 @@ import TransitionElement from './timeline/TransitionElement';
 import TransitionModal from './TransitionModal';
 import FloatingExportButton from './export/FloatingExportButton';
 import { useExportValidation, ExportSettings as ValidationExportSettings } from '../../hooks/useExportValidation';
+import { UnifiedTimelineEmptyState } from '../../shared/components/unified';
 
 // Types for rendering
 interface TimelineRenderItem {
@@ -269,19 +270,7 @@ const Timeline: React.FC = () => {
   ]);
 
   if (!hasTimeline) {
-    return (
-      <div className="timeline-empty" style={{
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'center',
-        height: '120px',
-        color: '#6b7280',
-        fontFamily: '"Space Mono", monospace',
-        fontSize: '14px'
-      }}>
-        No images in timeline. Drag images here to create your slideshow.
-      </div>
-    );
+    return <UnifiedTimelineEmptyState mode="slideshow" />;
   }
 
   return (
@@ -302,7 +291,7 @@ const Timeline: React.FC = () => {
         gap: '12px', // Increased gap for better spacing with larger cards
         overflowX: 'auto',
         overflowY: 'hidden',
-        padding: '12px 0', // Increased padding
+        padding: '8px 0', // Optimized padding for consistency
         minHeight: '140px' // Increased to accommodate larger cards + controls
       }}>
         {renderItems.map((renderItem) => {

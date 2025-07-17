@@ -1,5 +1,6 @@
 import React, { useEffect, useRef } from 'react';
 import { useSlideshowContext } from '../context/SlideshowContext';
+import { UnifiedPreviewEmptyState } from '../../shared/components/unified';
 
 const Preview: React.FC = () => {
   const { preview, hasTimeline, generatePreview } = useSlideshowContext();
@@ -15,23 +16,11 @@ const Preview: React.FC = () => {
   }, [hasTimeline]); // Only depend on hasTimeline to prevent loops
 
   if (!hasTimeline) {
-    return (
-      <div className="h-full bg-dark-950 flex flex-col p-3">
-        <div className="panel flex-1 flex items-center justify-center flex-col gap-3">
-          <svg className="w-12 h-12 text-dark-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 4V2a1 1 0 011-1h8a1 1 0 011 1v2M7 4h10M7 4H5a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2V6a2 2 0 00-2-2h-2" />
-          </svg>
-          <div className="text-center text-dark-400 font-mono">
-            <div className="text-lg mb-1">No Preview Available</div>
-            <div className="text-sm">Add images to timeline to generate preview</div>
-          </div>
-        </div>
-      </div>
-    );
+    return <UnifiedPreviewEmptyState mode="slideshow" />;
   }
 
   return (
-    <div className="h-full bg-dark-950 flex flex-col p-3">
+    <div className="h-full flex flex-col" style={{ backgroundColor: '#0a0a0b' }}>
       {/* Preview Area */}
       <div className="panel flex-1 flex items-center justify-center relative min-h-[500px] overflow-hidden">
         {preview.isGenerating && (

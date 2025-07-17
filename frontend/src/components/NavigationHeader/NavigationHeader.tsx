@@ -15,30 +15,7 @@ const NavigationHeader: React.FC<NavigationHeaderProps> = ({
   // const location = useLocation();
   // const navigate = useNavigate();
 
-  const getModeDisplay = () => {
-    switch (currentMode) {
-      case 'slideshow':
-        return {
-          icon: '🖼️',
-          title: 'SlideShow Creator',
-          subtitle: 'Create videos from images'
-        };
-      case 'video-editor':
-        return {
-          icon: '🎬',
-          title: 'Video Editor',
-          subtitle: 'Edit and trim videos'
-        };
-      default:
-        return {
-          icon: '🎨',
-          title: 'AnimaGen',
-          subtitle: 'Animated GIF & Video Creator'
-        };
-    }
-  };
 
-  const modeDisplay = getModeDisplay();
 
   return (
     <header style={{
@@ -112,38 +89,7 @@ const NavigationHeader: React.FC<NavigationHeaderProps> = ({
           </div>
         </Link>
 
-        {/* Breadcrumb Separator */}
-        {currentMode !== 'home' && (
-          <>
-            <span style={{ color: '#666666', fontSize: '20px' }}>→</span>
-            <div style={{
-              display: 'flex',
-              alignItems: 'center',
-              gap: '8px'
-            }}>
-              <span style={{ fontSize: '24px' }}>{modeDisplay.icon}</span>
-              <div>
-                <h2 style={{
-                  fontSize: '16px',
-                  fontWeight: 'bold',
-                  color: '#ec4899',
-                  margin: 0,
-                  fontFamily: '"Space Mono", monospace'
-                }}>
-                  {modeDisplay.title}
-                </h2>
-                <p style={{
-                  fontSize: '10px',
-                  color: '#9ca3af',
-                  margin: 0,
-                  fontFamily: '"Space Mono", monospace'
-                }}>
-                  {modeDisplay.subtitle}
-                </p>
-              </div>
-            </div>
-          </>
-        )}
+
 
         {/* Project Name */}
         {projectName && (
@@ -168,14 +114,15 @@ const NavigationHeader: React.FC<NavigationHeaderProps> = ({
         )}
       </div>
 
-      {/* Center Navigation */}
-      <nav style={{
-        display: 'flex',
-        alignItems: 'center',
-        gap: '8px',
-        marginLeft: 'auto',
-        marginRight: 'auto'
-      }}>
+      {/* Center Navigation - Only show when not on home */}
+      {currentMode !== 'home' && (
+        <nav style={{
+          display: 'flex',
+          alignItems: 'center',
+          gap: '8px',
+          marginLeft: 'auto',
+          marginRight: 'auto'
+        }}>
         <Link
           to="/slideshow"
           style={{
@@ -235,68 +182,17 @@ const NavigationHeader: React.FC<NavigationHeaderProps> = ({
         >
           🎬 Video Editor
         </Link>
-      </nav>
+        </nav>
+      )}
 
       {/* Right Actions */}
       <div style={{
         display: 'flex',
         alignItems: 'center',
-        gap: '16px'
+        gap: '16px',
+        marginLeft: currentMode === 'home' ? 'auto' : '0'
       }}>
-        {/* Quick Actions */}
-        <div style={{
-          display: 'flex',
-          alignItems: 'center',
-          gap: '8px'
-        }}>
-          <button
-            style={{
-              background: 'none',
-              border: '1px solid #343536',
-              color: '#9ca3af',
-              fontSize: '12px',
-              cursor: 'pointer',
-              padding: '6px 12px',
-              borderRadius: '4px',
-              transition: 'all 0.2s ease',
-              fontFamily: '"Space Mono", monospace'
-            }}
-            onMouseEnter={(e) => {
-              e.currentTarget.style.color = '#ffffff';
-              e.currentTarget.style.borderColor = '#ec4899';
-            }}
-            onMouseLeave={(e) => {
-              e.currentTarget.style.color = '#9ca3af';
-              e.currentTarget.style.borderColor = '#343536';
-            }}
-          >
-            📂 Projects
-          </button>
-          
-          <button
-            style={{
-              background: 'none',
-              border: '1px solid #343536',
-              color: '#9ca3af',
-              fontSize: '12px',
-              cursor: 'pointer',
-              padding: '6px 12px',
-              borderRadius: '4px',
-              transition: 'all 0.2s ease',
-              fontFamily: '"Space Mono", monospace'
-            }}
-            onMouseEnter={(e) => {
-              e.currentTarget.style.color = '#ffffff';
-              e.currentTarget.style.borderColor = '#ec4899';
-            }}
-            onMouseLeave={(e) => {
-              e.currentTarget.style.color = '#9ca3af';
-              e.currentTarget.style.borderColor = '#343536';
-            }}
-          >
-            ⚙️ Settings
-          </button>
-        </div>
+
 
         {/* API Key Button */}
         {onOpenAPIKeyModal && (

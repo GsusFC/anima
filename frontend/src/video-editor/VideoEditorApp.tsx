@@ -4,8 +4,14 @@ import VideoUploader from './components/VideoUploader';
 import VideoPreview from './components/VideoPreview';
 import { VideoTimelineBuilder } from './components/timeline/VideoTimelineBuilder';
 import { VideoExportBuilder } from './components/export/VideoExportBuilder';
-import ToastContainer from './components/Toast';
+import { ToastContainer } from '../shared/components/Toast';
 import NavigationHeader from '../components/NavigationHeader/NavigationHeader';
+import {
+  UnifiedUploadPanel,
+  UnifiedPreviewPanel,
+  UnifiedExportPanel,
+  UnifiedTimelinePanel
+} from '../shared/components/unified';
 
 const VideoEditorApp: React.FC = () => {
   return (
@@ -17,27 +23,27 @@ const VideoEditorApp: React.FC = () => {
         {/* Main Editor Layout */}
         <div className="flex-1 flex flex-col min-h-0">
           {/* Top Section - Upload + Preview + Export */}
-          <div className="flex-1 flex min-h-0">
+          <div className="flex-1 flex min-h-0" style={{ gap: '4px' }}>
             {/* Left - Video Upload */}
-            <div className="w-80 border-r border-dark-700 flex flex-col min-h-0">
+            <UnifiedUploadPanel>
               <VideoUploader />
-            </div>
+            </UnifiedUploadPanel>
 
             {/* Center - Video Preview */}
-            <div className="flex-1 border-r border-dark-700 flex flex-col min-h-0">
+            <UnifiedPreviewPanel>
               <VideoPreview />
-            </div>
+            </UnifiedPreviewPanel>
 
             {/* Right - Export Controls */}
-            <div className="w-80 flex flex-col min-h-0 overflow-auto">
+            <UnifiedExportPanel>
               <VideoExportBuilder />
-            </div>
+            </UnifiedExportPanel>
           </div>
 
           {/* Bottom Section - Video Timeline */}
-          <div className="h-[250px] border-t border-dark-700 flex-shrink-0 overflow-auto">
+          <UnifiedTimelinePanel>
             <VideoTimelineBuilder />
-          </div>
+          </UnifiedTimelinePanel>
         </div>
       </div>
       <ToastContainer />

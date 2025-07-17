@@ -1,5 +1,6 @@
 import React, { useRef, useEffect, useCallback, useMemo } from 'react';
 import { useVideoEditorContext } from '../context/VideoEditorContext';
+import { UnifiedPreviewEmptyState } from '../../shared/components/unified';
 
 const VideoPreview: React.FC = () => {
   const { project, hasVideo, setVideoRef } = useVideoEditorContext();
@@ -36,22 +37,11 @@ const VideoPreview: React.FC = () => {
   }, [videoSrc]);
 
   if (!hasVideo) {
-    return (
-      <div className="h-full flex items-center justify-center bg-dark-850">
-        <div className="text-center text-dark-500">
-          <p className="m-0 text-xl font-mono">
-            No Video Loaded
-          </p>
-          <p className="mt-2 text-sm">
-            Upload a video to see preview
-          </p>
-        </div>
-      </div>
-    );
+    return <UnifiedPreviewEmptyState mode="video-editor" />;
   }
 
   return (
-    <div className="h-full flex flex-col p-5">
+    <div className="h-full flex flex-col" style={{ backgroundColor: '#0a0a0b' }}>
       {/* Video Preview Area */}
       <div className="panel flex-1 flex items-center justify-center relative min-h-[500px] overflow-hidden">
         <video

@@ -172,7 +172,7 @@ export const MediaItem: React.FC<MediaItemProps> = ({
         </div>
       )}
 
-      {/* Thumbnail - Click to add to timeline - Full width */}
+      {/* Thumbnail - Click to add to timeline or preview */}
       <MediaThumbnail
         item={item}
         size={size}
@@ -189,6 +189,52 @@ export const MediaItem: React.FC<MediaItemProps> = ({
         }}
       />
 
+      {/* Add to Timeline Button - Only visible on hover */}
+      {onAdd && isHovered && (
+        <button
+          style={{
+            position: 'absolute',
+            bottom: '8px',
+            left: '8px',
+            right: '8px',
+            height: '32px',
+            backgroundColor: 'rgba(236, 72, 153, 0.95)',
+            color: 'white',
+            border: 'none',
+            borderRadius: '4px',
+            fontSize: '12px',
+            fontWeight: 'bold',
+            fontFamily: '"Space Mono", monospace',
+            cursor: 'pointer',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            gap: '4px',
+            transition: 'all 0.2s ease',
+            zIndex: 5,
+            opacity: 1,
+          }}
+          onClick={(e) => {
+            e.stopPropagation();
+            onAdd(item);
+          }}
+          onMouseEnter={(e) => {
+            e.currentTarget.style.backgroundColor = 'rgba(236, 72, 153, 1)';
+            e.currentTarget.style.transform = 'translateY(-1px)';
+          }}
+          onMouseLeave={(e) => {
+            e.currentTarget.style.backgroundColor = 'rgba(236, 72, 153, 0.9)';
+            e.currentTarget.style.transform = 'translateY(0)';
+          }}
+        >
+          {/* Plus icon */}
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor">
+            <path d="M12 5v14m-7-7h14" stroke="currentColor" strokeWidth="2" fill="none" strokeLinecap="round" strokeLinejoin="round"/>
+          </svg>
+          ADD TO TIMELINE
+        </button>
+      )}
+
       {/* Delete Button - Only visible on hover */}
       {onRemove && isHovered && (
         <button
@@ -196,8 +242,8 @@ export const MediaItem: React.FC<MediaItemProps> = ({
             position: 'absolute',
             top: '8px',
             right: '8px',
-            width: '24px',
-            height: '24px',
+            width: '28px',
+            height: '28px',
             backgroundColor: 'rgba(239, 68, 68, 0.9)',
             border: 'none',
             borderRadius: '50%',

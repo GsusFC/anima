@@ -8,6 +8,13 @@ import ExportControls from './components/ExportControls';
 import { useSlideshowContext } from './context/SlideshowContext';
 import APIKeyModal from '../components/APIKeyModal/APIKeyModal';
 import NavigationHeader from '../components/NavigationHeader/NavigationHeader';
+import { ToastContainer } from '../shared/components/Toast';
+import {
+  UnifiedUploadPanel,
+  UnifiedPreviewPanel,
+  UnifiedExportPanel,
+  UnifiedTimelinePanel
+} from '../shared/components/unified';
 
 // Internal component that uses the context
 const SlideshowContent: React.FC = () => {
@@ -54,29 +61,29 @@ const SlideshowContent: React.FC = () => {
         {/* Main Content */}
         <div className="flex flex-col flex-1 min-h-0">
           {/* Top Section - Three Columns */}
-          <div className="flex flex-1 min-h-0">
+          <div className="flex flex-1 min-h-0" style={{ gap: '4px' }}>
             {/* Left Sidebar - Image Upload */}
-            <div className="w-80 border-r border-dark-700 flex flex-col min-h-0">
+            <UnifiedUploadPanel>
               <ImageUpload />
-            </div>
+            </UnifiedUploadPanel>
 
             {/* Center - Preview */}
-            <div className="flex-1 border-r border-dark-700 flex flex-col min-h-0">
+            <UnifiedPreviewPanel>
               <Preview />
-            </div>
+            </UnifiedPreviewPanel>
 
             {/* Right Sidebar - Export Controls */}
-            <div className="w-80 flex flex-col min-h-0">
+            <UnifiedExportPanel>
               <ExportControls />
-            </div>
+            </UnifiedExportPanel>
           </div>
 
           {/* Bottom Section - Enhanced Timeline */}
-          <div className="h-[300px] border-t border-dark-700 flex-shrink-0 relative">
+          <UnifiedTimelinePanel>
             <div className="h-full overflow-x-auto overflow-y-hidden">
               <Timeline />
             </div>
-          </div>
+          </UnifiedTimelinePanel>
         </div>
       </div>
 
@@ -85,6 +92,9 @@ const SlideshowContent: React.FC = () => {
         isOpen={isAPIKeyModalOpen}
         onClose={() => setIsAPIKeyModalOpen(false)}
       />
+
+      {/* Toast System */}
+      <ToastContainer />
     </>
   );
 };
