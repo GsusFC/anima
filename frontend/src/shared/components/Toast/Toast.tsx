@@ -82,10 +82,16 @@ const ToastContainer: React.FC = () => {
 
 // Global toast function
 export const showToast = (message: string, type: ToastMessage['type'] = 'info') => {
-  if ((window as any).showToast) {
-    (window as any).showToast(message, type);
-  } else {
-    console.warn('Toast system not initialized');
+  try {
+    if ((window as any).showToast) {
+      (window as any).showToast(message, type);
+    } else {
+      console.warn('Toast system not initialized');
+    }
+  } catch (error) {
+    console.error('Failed to show toast:', error);
+    // Fallback to console log if toast system fails
+    console.log(`Toast [${type}]: ${message}`);
   }
 };
 
