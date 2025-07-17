@@ -1,34 +1,43 @@
 // Slideshow Types - Professional Architecture
+// Extends unified base types for slideshow-specific functionality
 
-export interface ImageFile {
-  file: File;
-  id: string;
-  name: string;
-  size: number;
+import {
+  BaseFile,
+  BaseUploadedInfo,
+  BaseTimelineItem,
+  BaseTransition,
+  BaseExportSettings,
+  BaseExportState,
+  BasePreviewState,
+  BaseProject,
+  BaseResolution
+} from '../../shared/types/unified.types';
+
+// Slideshow-specific image file interface
+export interface ImageFile extends BaseFile {
+  type: 'image';
   preview: string; // data URL for preview
   uploadedInfo?: UploadedImageInfo;
   addedAt: Date;
 }
 
-export interface UploadedImageInfo {
+// Slideshow-specific uploaded info
+export interface UploadedImageInfo extends BaseUploadedInfo {
   filename: string;
   originalName: string;
   path: string;
-  size: number;
   mimetype: string;
 }
 
-export interface TimelineItem {
-  id: string;
+// Slideshow-specific timeline item
+export interface TimelineItem extends BaseTimelineItem {
   imageId: string; // Reference to ImageFile
-  duration: number; // milliseconds
-  position: number; // order in timeline
   transition?: TransitionConfig;
 }
 
-export interface TransitionConfig {
+// Slideshow-specific transition configuration
+export interface TransitionConfig extends BaseTransition {
   type: TransitionType;
-  duration: number; // milliseconds
 }
 
 export type TransitionType = 
@@ -43,55 +52,44 @@ export type TransitionType =
   // Legacy (mantener compatibilidad)
   | 'slide' | 'zoom';
 
-export interface SlideshowProject {
-  id: string;
+// Slideshow-specific project interface
+export interface SlideshowProject extends BaseProject<TimelineItem, ExportSettings> {
   images: ImageFile[];
-  timeline: TimelineItem[];
-  exportSettings: ExportSettings;
   sessionId: string;
 }
 
-export interface ExportSettings {
+// Slideshow-specific export settings
+export interface ExportSettings extends BaseExportSettings {
   format: 'gif' | 'mp4' | 'webm' | 'mov';
   preset: 'web' | 'quality' | 'size' | 'social' | 'custom';
   quality: 'low' | 'medium' | 'high' | 'ultra';
   fps: number;
-  resolution: {
-    width: number;
-    height: number;
-    preset: 'original' | '480p' | '720p' | '1080p' | '4k' | 'custom';
-  };
+  resolution: BaseResolution;
   loop: boolean;
   tags: {[key: string]: string};
   bitrate?: number;
   fastStart?: boolean;
   optimizeSize?: boolean;
-  filename?: string;
   gif?: {
     dither?: 'none' | 'bayer' | 'floyd_steinberg' | 'sierra2' | 'sierra2_4a';
     colors?: 16 | 32 | 64 | 128 | 256;
+    loop?: boolean | string;
   };
 }
 
-export interface PreviewState {
-  url: string | null;
-  isGenerating: boolean;
-  error: string | null;
+// Slideshow-specific preview state
+export interface PreviewState extends BasePreviewState {
   progress?: number;
   stage?: string;
 }
 
-export interface ExportState {
-  isExporting: boolean;
-  progress: number;
+// Slideshow-specific export state
+export interface ExportState extends BaseExportState {
   lastResult: string | null;
-  error: string | null;
-  currentStep?: string;
-  isCompleted: boolean;
-  downloadUrl?: string;
   filename?: string;
 }
 
+// Slideshow-specific application state
 export interface SlideshowState {
   project: SlideshowProject;
   preview: PreviewState;

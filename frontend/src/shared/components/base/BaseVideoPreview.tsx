@@ -68,7 +68,7 @@ export const BaseVideoPreview: React.FC<BaseVideoPreviewProps> = ({
   errorContent
 }) => {
   const videoRef = useRef<HTMLVideoElement>(null);
-  const [videoLoaded, setVideoLoaded] = useState(false);
+  const [_videoLoaded, setVideoLoaded] = useState(false);
   const [videoError, setVideoError] = useState<string | null>(null);
 
   // Handle video load event
@@ -79,11 +79,11 @@ export const BaseVideoPreview: React.FC<BaseVideoPreviewProps> = ({
   };
 
   // Handle video error event
-  const handleVideoError = (event: Event) => {
+  const handleVideoError = (event: React.SyntheticEvent<HTMLVideoElement, Event>) => {
     const errorMessage = 'Failed to load video preview';
     setVideoError(errorMessage);
     setVideoLoaded(false);
-    onVideoError?.(event);
+    onVideoError?.(event.nativeEvent);
   };
 
   // Handle video play event

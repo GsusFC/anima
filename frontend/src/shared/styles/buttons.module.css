@@ -1,0 +1,343 @@
+/**
+ * Buttons CSS Module
+ * 
+ * Centralized styles for button components across AnimaGen.
+ * Eliminates inline style duplication for common button patterns.
+ */
+
+/* Base Button */
+.button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 12px 16px;
+  font-family: "Space Mono", monospace;
+  font-size: 14px;
+  font-weight: 600;
+  border-radius: 6px;
+  border: 1px solid transparent;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  text-decoration: none;
+  user-select: none;
+  white-space: nowrap;
+}
+
+.button:focus {
+  outline: 2px solid transparent;
+  outline-offset: 2px;
+}
+
+/* Button Variants */
+.buttonPrimary {
+  background-color: #ec4899;
+  border-color: #ec4899;
+  color: #ffffff;
+}
+
+.buttonPrimary:hover {
+  background-color: #db2777;
+  border-color: #db2777;
+}
+
+.buttonPrimary:focus {
+  box-shadow: 0 0 0 3px rgba(236, 72, 153, 0.3);
+}
+
+.buttonSecondary {
+  background-color: #3b82f6;
+  border-color: #3b82f6;
+  color: #ffffff;
+}
+
+.buttonSecondary:hover {
+  background-color: #2563eb;
+  border-color: #2563eb;
+}
+
+.buttonSecondary:focus {
+  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.3);
+}
+
+.buttonSuccess {
+  background-color: #10b981;
+  border-color: #10b981;
+  color: #ffffff;
+}
+
+.buttonSuccess:hover {
+  background-color: #059669;
+  border-color: #059669;
+}
+
+.buttonSuccess:focus {
+  box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.3);
+}
+
+.buttonWarning {
+  background-color: #f59e0b;
+  border-color: #f59e0b;
+  color: #ffffff;
+}
+
+.buttonWarning:hover {
+  background-color: #d97706;
+  border-color: #d97706;
+}
+
+.buttonWarning:focus {
+  box-shadow: 0 0 0 3px rgba(245, 158, 11, 0.3);
+}
+
+.buttonDanger {
+  background-color: #ef4444;
+  border-color: #ef4444;
+  color: #ffffff;
+}
+
+.buttonDanger:hover {
+  background-color: #dc2626;
+  border-color: #dc2626;
+}
+
+.buttonDanger:focus {
+  box-shadow: 0 0 0 3px rgba(239, 68, 68, 0.3);
+}
+
+/* Button Outline Variants */
+.buttonOutline {
+  background-color: transparent;
+  color: #f3f4f6;
+  border-color: #4b5563;
+}
+
+.buttonOutline:hover {
+  background-color: #374151;
+  border-color: #6b7280;
+}
+
+.buttonOutlinePrimary {
+  background-color: transparent;
+  color: #ec4899;
+  border-color: #ec4899;
+}
+
+.buttonOutlinePrimary:hover {
+  background-color: rgba(236, 72, 153, 0.1);
+}
+
+.buttonOutlineSecondary {
+  background-color: transparent;
+  color: #3b82f6;
+  border-color: #3b82f6;
+}
+
+.buttonOutlineSecondary:hover {
+  background-color: rgba(59, 130, 246, 0.1);
+}
+
+/* Button Ghost Variants */
+.buttonGhost {
+  background-color: transparent;
+  border-color: transparent;
+  color: #9ca3af;
+}
+
+.buttonGhost:hover {
+  background-color: #374151;
+  color: #f3f4f6;
+}
+
+/* Button Sizes */
+.buttonSmall {
+  padding: 8px 12px;
+  font-size: 12px;
+  border-radius: 4px;
+}
+
+.buttonMedium {
+  padding: 12px 16px;
+  font-size: 14px;
+  border-radius: 6px;
+}
+
+.buttonLarge {
+  padding: 16px 24px;
+  font-size: 16px;
+  border-radius: 8px;
+}
+
+.buttonXLarge {
+  padding: 20px 32px;
+  font-size: 18px;
+  border-radius: 10px;
+}
+
+/* Button States */
+.buttonDisabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  pointer-events: none;
+}
+
+.buttonLoading {
+  opacity: 0.7;
+  cursor: wait;
+  pointer-events: none;
+}
+
+/* Button Full Width */
+.buttonFullWidth {
+  width: 100%;
+}
+
+/* Button Icon Only */
+.buttonIconOnly {
+  padding: 12px;
+  aspect-ratio: 1;
+}
+
+.buttonIconOnlySmall {
+  padding: 8px;
+}
+
+.buttonIconOnlyLarge {
+  padding: 16px;
+}
+
+/* Button Group */
+.buttonGroup {
+  display: inline-flex;
+  border-radius: 6px;
+  overflow: hidden;
+}
+
+.buttonGroup .button {
+  border-radius: 0;
+  border-right-width: 0;
+}
+
+.buttonGroup .button:first-child {
+  border-top-left-radius: 6px;
+  border-bottom-left-radius: 6px;
+}
+
+.buttonGroup .button:last-child {
+  border-top-right-radius: 6px;
+  border-bottom-right-radius: 6px;
+  border-right-width: 1px;
+}
+
+/* Button with Icon */
+.buttonWithIcon {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.buttonIconLeft {
+  margin-right: 4px;
+}
+
+.buttonIconRight {
+  margin-left: 4px;
+}
+
+/* Button Loading Spinner */
+.buttonSpinner {
+  width: 16px;
+  height: 16px;
+  border: 2px solid transparent;
+  border-top: 2px solid currentColor;
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
+/* Button Animations */
+.buttonPulse {
+  animation: pulse 2s infinite;
+}
+
+@keyframes pulse {
+  0%, 100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.7;
+  }
+}
+
+.buttonBounce:hover {
+  animation: bounce 0.6s;
+}
+
+@keyframes bounce {
+  0%, 20%, 53%, 80%, 100% {
+    transform: translate3d(0, 0, 0);
+  }
+  40%, 43% {
+    transform: translate3d(0, -8px, 0);
+  }
+  70% {
+    transform: translate3d(0, -4px, 0);
+  }
+  90% {
+    transform: translate3d(0, -2px, 0);
+  }
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+  .button {
+    padding: 10px 14px;
+    font-size: 13px;
+  }
+  
+  .buttonSmall {
+    padding: 6px 10px;
+    font-size: 11px;
+  }
+  
+  .buttonLarge {
+    padding: 14px 20px;
+    font-size: 15px;
+  }
+  
+  .buttonXLarge {
+    padding: 16px 24px;
+    font-size: 16px;
+  }
+}
+
+/* High contrast mode support */
+@media (prefers-contrast: high) {
+  .button {
+    border-width: 2px;
+    font-weight: 700;
+  }
+}
+
+/* Reduced motion support */
+@media (prefers-reduced-motion: reduce) {
+  .button {
+    transition: none;
+  }
+  
+  .buttonSpinner {
+    animation: none;
+  }
+  
+  .buttonPulse {
+    animation: none;
+  }
+  
+  .buttonBounce:hover {
+    animation: none;
+  }
+}

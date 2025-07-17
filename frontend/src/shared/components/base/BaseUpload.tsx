@@ -95,7 +95,7 @@ export function BaseUpload<TItem>({
   }, [items, convertToMediaItem]);
 
   // Media upload hook for validation and processing
-  const { uploadFiles, errors: uploadErrors, clearErrors } = useMediaUpload({
+  const { uploadFiles, errors: _uploadErrors, clearErrors } = useMediaUpload({
     config: uploadConfig,
     onSuccess: (uploadedItems) => {
       // Extract files from uploaded items and pass to parent handler
@@ -148,6 +148,7 @@ export function BaseUpload<TItem>({
       colors: {
         primary: mode === 'slideshow' ? '#ec4899' : '#3b82f6',
         secondary: '#6b7280',
+        accent: mode === 'slideshow' ? '#ec4899' : '#3b82f6',
         background: '#0a0a0b',
         surface: '#1f2937',
         text: '#f3f4f6',

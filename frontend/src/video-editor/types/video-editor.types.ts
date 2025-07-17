@@ -1,14 +1,22 @@
 // Multi-Video Editor Types - Professional Architecture
+// Extends unified base types for video-editor-specific functionality
 
-export interface VideoFile {
-  file: File;
-  id: string;
-  name: string;           // Display name
+import {
+  BaseFile,
+  BaseUploadedInfo,
+  BaseTimelineItem,
+  BaseExportSettings,
+  BaseProject,
+  BaseResolution
+} from '../../shared/types/unified.types';
+
+// Video-specific file interface
+export interface VideoFile extends BaseFile {
+  type: 'video';
   duration: number;
   fps?: number;
   width: number;
   height: number;
-  size: number;
   thumbnails: string[];
   uploadedInfo?: UploadedVideoInfo;
   sessionId?: string;     // Session ID for backend file tracking
@@ -16,10 +24,10 @@ export interface VideoFile {
   videoUrl?: string;      // Local or remote video URL
 }
 
-export interface UploadedVideoInfo {
+// Video-specific uploaded info
+export interface UploadedVideoInfo extends BaseUploadedInfo {
   filename: string;
   path: string;
-  sessionId: string;
   metadata: VideoMetadata;
 }
 
@@ -33,12 +41,9 @@ export interface VideoMetadata {
   hasAudio: boolean;
 }
 
-// Timeline items can be videos or transitions
-export interface TimelineItem {
-  id: string;
+// Video-specific timeline items
+export interface TimelineItem extends BaseTimelineItem {
   type: 'video' | 'transition';
-  position: number;       // Position in timeline (seconds)
-  duration: number;       // Duration of this item
 }
 
 export interface VideoTimelineItem extends TimelineItem {
@@ -94,12 +99,11 @@ export type GIFLoopValue = 'infinite' | 'once' | '3' | '5';
 // Type for GIF color palette settings
 export type GIFColorValue = 256 | 128 | 64 | 32;
 
-export interface VideoExportSettings {
+// Video-specific export settings
+export interface VideoExportSettings extends BaseExportSettings {
   format: 'mp4' | 'webm' | 'mov' | 'gif';
   quality: QualityValue;
-  resolution: {
-    width: number;
-    height: number;
+  resolution: BaseResolution & {
     preset: ResolutionPreset;
   };
   fps: number;
@@ -126,28 +130,28 @@ export interface VideoTimelineState {
   isDragging: boolean;
 }
 
-// Legacy single-video types for compatibility
-export interface VideoSegment {
-  id: string;
+// Video-specific segment interface (extends BaseTimelineItem)
+export interface VideoSegment extends BaseTimelineItem {
   startTime: number;
   endTime: number;
   originalStart?: number;
   originalEnd?: number;
   videoId?: string;
-  createdAt?: Date;
   // Note: No more trimmedPath - segments are now UI-only until export
 }
 
 // Type for partial updates to video segments
 export type VideoSegmentUpdate = Partial<Pick<VideoSegment, 'startTime' | 'endTime' | 'originalStart' | 'originalEnd'>>;
 
-export interface LegacyVideoProject {
-  id: string;
+// Video-specific project interface
+export interface VideoProject extends BaseProject<VideoSegment, VideoExportSettings> {
   video: VideoFile | null;
   segments: VideoSegment[];
   effects?: VideoEffect[];
-  exportSettings?: Partial<VideoExportSettings>;
   sessionId?: string;
 }
+
+// Legacy alias for compatibility
+export type LegacyVideoProject = VideoProject;
 
 

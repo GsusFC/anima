@@ -1,0 +1,34 @@
+declare const styles: {
+  readonly panel: string;
+  readonly panelPrimary: string;
+  readonly panelSecondary: string;
+  readonly panelSuccess: string;
+  readonly panelWarning: string;
+  readonly panelError: string;
+  readonly panelSmall: string;
+  readonly panelMedium: string;
+  readonly panelLarge: string;
+  readonly panelHeader: string;
+  readonly panelTitle: string;
+  readonly panelSubtitle: string;
+  readonly panelContent: string;
+  readonly panelFooter: string;
+  readonly panelActions: string;
+  readonly panelGrid: string;
+  readonly panelGrid2: string;
+  readonly panelGrid3: string;
+  readonly panelGrid4: string;
+  readonly panelFlex: string;
+  readonly panelFlexColumn: string;
+  readonly panelFlexRow: string;
+  readonly panelLoading: string;
+  readonly panelDisabled: string;
+  readonly panelHoverable: string;
+  readonly panelScrollable: string;
+  readonly panelCollapsible: string;
+  readonly panelCollapsed: string;
+  readonly panelEnter: string;
+  readonly panelExit: string;
+};
+
+export default styles;

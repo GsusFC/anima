@@ -1,4 +1,4 @@
-import React, { useState, useCallback } from 'react';
+import React, { useCallback } from 'react';
 import { UnifiedFormatSelector, UnifiedQualitySelector, UnifiedEmptyState } from '../export';
 import type { ExportFormat, QualityLevel } from '../export';
 import { useExportValidation, ExportSettings as ValidationExportSettings } from '../../../hooks/useExportValidation';
@@ -79,7 +79,7 @@ export function BaseExportBuilder<TSettings extends BaseExportSettings>({
   exportState,
   onSettingsChange,
   onExport,
-  onCancel,
+  onCancel: _onCancel,
   additionalControls,
   customValidation,
   progressContent,
@@ -96,7 +96,12 @@ export function BaseExportBuilder<TSettings extends BaseExportSettings>({
     fps: exportSettings.fps,
     quality: convertToValidationQuality(exportSettings.quality),
     resolution: exportSettings.resolution,
-    gif: exportSettings.gif
+    gif: exportSettings.gif ? {
+      ...exportSettings.gif,
+      loop: typeof exportSettings.gif.loop === 'boolean'
+        ? (exportSettings.gif.loop ? 'infinite' : 'once')
+        : exportSettings.gif.loop
+    } : undefined
   };
 
   // Real-time validation

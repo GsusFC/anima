@@ -1,0 +1,31 @@
+declare const styles: {
+  readonly button: string;
+  readonly buttonPrimary: string;
+  readonly buttonSecondary: string;
+  readonly buttonSuccess: string;
+  readonly buttonWarning: string;
+  readonly buttonDanger: string;
+  readonly buttonOutline: string;
+  readonly buttonOutlinePrimary: string;
+  readonly buttonOutlineSecondary: string;
+  readonly buttonGhost: string;
+  readonly buttonSmall: string;
+  readonly buttonMedium: string;
+  readonly buttonLarge: string;
+  readonly buttonXLarge: string;
+  readonly buttonDisabled: string;
+  readonly buttonLoading: string;
+  readonly buttonFullWidth: string;
+  readonly buttonIconOnly: string;
+  readonly buttonIconOnlySmall: string;
+  readonly buttonIconOnlyLarge: string;
+  readonly buttonGroup: string;
+  readonly buttonWithIcon: string;
+  readonly buttonIconLeft: string;
+  readonly buttonIconRight: string;
+  readonly buttonSpinner: string;
+  readonly buttonPulse: string;
+  readonly buttonBounce: string;
+};
+
+export default styles;
