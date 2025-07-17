@@ -10,7 +10,6 @@ import {
   UnifiedFormatSelector,
   UnifiedQualitySelector,
   UnifiedEmptyState,
-  type ExportFormat,
   type QualityLevel
 } from '../../shared/components/export';
 
@@ -61,6 +60,15 @@ const ExportControls: React.FC = () => {
   // Get current strategy for format-specific controls
   const currentStrategy = ExportStrategyFactory.create(exportSettings.format);
 
+  // Type-safe wrapper for quality change handler
+  const handleQualityChange = (quality: QualityLevel) => {
+    // Only accept quality levels that are valid for slideshow mode
+    const validSlideshowQualities: QualityLevel[] = ['low', 'medium', 'high', 'ultra'];
+    if (validSlideshowQualities.includes(quality)) {
+      handlers.quality.onQualityChange(quality as 'low' | 'medium' | 'high' | 'ultra');
+    }
+  };
+
   if (!hasTimeline) {
     return <UnifiedEmptyState mode="slideshow" />;
   }
@@ -70,15 +78,15 @@ const ExportControls: React.FC = () => {
 
       {/* Format Selection - Unified */}
       <UnifiedFormatSelector
-        currentFormat={handlers.format.currentFormat as ExportFormat}
-        onFormatChange={(format) => handlers.format.onFormatChange(format)}
+        currentFormat={handlers.format.currentFormat}
+        onFormatChange={handlers.format.onFormatChange}
         mode="slideshow"
       />
 
       {/* Quality Selection - Unified */}
       <UnifiedQualitySelector
-        currentQuality={handlers.quality.currentQuality as QualityLevel}
-        onQualityChange={(quality) => handlers.quality.onQualityChange(quality as any)}
+        currentQuality={handlers.quality.currentQuality}
+        onQualityChange={handleQualityChange}
         mode="slideshow"
       />
 

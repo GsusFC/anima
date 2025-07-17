@@ -1,0 +1,133 @@
+/**
+ * BaseEmptyState CSS Module
+ * 
+ * Centralized styles for all Empty State components across AnimaGen.
+ * Replaces inline styles to improve maintainability and theming consistency.
+ */
+
+/* Main container */
+.container {
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  background-color: #0a0a0b;
+}
+
+/* Panel wrapper */
+.panel {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-direction: column;
+  gap: 12px;
+}
+
+/* Icon container */
+.iconContainer {
+  color: #6a6a6d;
+}
+
+/* Text content wrapper */
+.textContent {
+  text-align: center;
+  font-family: "Space Mono", monospace;
+  color: #9ca3af;
+}
+
+/* Title styles */
+.title {
+  font-size: 18px;
+  font-weight: bold;
+  margin-bottom: 4px;
+}
+
+/* Subtitle styles */
+.subtitle {
+  font-size: 14px;
+  color: #6b7280;
+}
+
+/* Mode-specific title colors */
+.titleSlideshow {
+  color: #ec4899;
+}
+
+.titleVideoEditor {
+  color: #3b82f6;
+}
+
+.titleNeutral {
+  color: #9ca3af;
+}
+
+/* Icon size variants */
+.iconSmall {
+  width: 8rem;
+  height: 8rem;
+}
+
+.iconMedium {
+  width: 12rem;
+  height: 12rem;
+}
+
+.iconLarge {
+  width: 16rem;
+  height: 16rem;
+}
+
+/* Default icon size */
+.icon {
+  width: 3rem;
+  height: 3rem;
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+  .title {
+    font-size: 16px;
+  }
+  
+  .subtitle {
+    font-size: 12px;
+  }
+  
+  .icon {
+    width: 2.5rem;
+    height: 2.5rem;
+  }
+}
+
+/* Dark theme consistency */
+.darkTheme {
+  background-color: #0a0a0b;
+}
+
+.darkTheme .textContent {
+  color: #9ca3af;
+}
+
+.darkTheme .subtitle {
+  color: #6b7280;
+}
+
+.darkTheme .iconContainer {
+  color: #6a6a6d;
+}
+
+/* Animation for smooth transitions */
+.fadeIn {
+  animation: fadeIn 0.3s ease-in-out;
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
