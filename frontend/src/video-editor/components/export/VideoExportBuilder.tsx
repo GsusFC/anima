@@ -219,7 +219,11 @@ export const VideoExportBuilder: React.FC = () => {
 
         <UnifiedQualitySelector
           currentQuality={exportSettings.quality as QualityLevel}
-          onQualityChange={(quality) => setExportSettings(prev => ({ ...prev, quality: quality as any }))}
+          onQualityChange={(quality) => {
+            // Map QualityLevel to VideoExportSettings quality type
+            const mappedQuality = quality as VideoExportSettings['quality'];
+            setExportSettings(prev => ({ ...prev, quality: mappedQuality }));
+          }}
           mode="video-editor"
         />
 

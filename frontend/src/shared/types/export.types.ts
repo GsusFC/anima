@@ -1,9 +1,64 @@
 /**
  * Tipos canónicos para export en AnimaGen
- * 
+ *
  * Este archivo define los tipos relacionados con el proceso de export
  * y el estado de export de manera consistente.
+ *
+ * Incluye tipos unificados para eliminar 'as any' y mejorar type safety.
  */
+
+// Unified export format types to eliminate type casting
+export type UnifiedExportFormat = 'gif' | 'mp4' | 'webm' | 'mov';
+
+// Unified quality levels across applications
+export type UnifiedQualityLevel = 'low' | 'medium' | 'high' | 'ultra' | 'web' | 'standard' | 'max';
+
+// Type conversion utilities to eliminate 'as any'
+export const convertToUnifiedFormat = (format: string): UnifiedExportFormat => {
+  if (['gif', 'mp4', 'webm', 'mov'].includes(format)) {
+    return format as UnifiedExportFormat;
+  }
+  throw new Error(`Invalid export format: ${format}`);
+};
+
+export const convertToUnifiedQuality = (quality: string): UnifiedQualityLevel => {
+  if (['low', 'medium', 'high', 'ultra', 'web', 'standard', 'max'].includes(quality)) {
+    return quality as UnifiedQualityLevel;
+  }
+  throw new Error(`Invalid quality level: ${quality}`);
+};
+
+// Type guards for safe conversion
+export const isValidUnifiedFormat = (format: string): format is UnifiedExportFormat => {
+  return ['gif', 'mp4', 'webm', 'mov'].includes(format);
+};
+
+export const isValidUnifiedQuality = (quality: string): quality is UnifiedQualityLevel => {
+  return ['low', 'medium', 'high', 'ultra', 'web', 'standard', 'max'].includes(quality);
+};
+
+// Validation-specific quality type (from useExportValidation.ts)
+export type ValidationQualityLevel = 'web' | 'standard' | 'high' | 'premium' | 'ultra';
+
+// Safe conversion to validation quality types
+export const convertToValidationQuality = (quality: string): ValidationQualityLevel => {
+  // Map unified quality levels to validation quality levels
+  const qualityMap: Record<string, ValidationQualityLevel> = {
+    'low': 'web',
+    'medium': 'standard',
+    'high': 'high',
+    'ultra': 'ultra',
+    'web': 'web',
+    'standard': 'standard',
+    'max': 'premium'
+  };
+
+  return qualityMap[quality] || 'standard';
+};
+
+export const isValidValidationQuality = (quality: string): quality is ValidationQualityLevel => {
+  return ['web', 'standard', 'high', 'premium', 'ultra'].includes(quality);
+};
 
 /**
  * Estado de export unificado

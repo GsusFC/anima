@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
+import { getTimelineData, getSessionId } from '../../shared/types/global.types';
 
 // Add spinning animation inline
 const spinKeyframes = `
@@ -25,12 +26,12 @@ const Preview: React.FC = () => {
   // Sync with timeline data and generate preview
   useEffect(() => {
     const checkTimelineData = () => {
-      const data = (window as any).__timelineData || [];
+      const data = getTimelineData();
       if (JSON.stringify(data) !== JSON.stringify(timelineData)) {
         setTimelineData(data);
         setPreviewVideoUrl(null);
         setError(null);
-        
+
         if (data.length > 0) {
           generatePreview(data);
         }
@@ -41,7 +42,7 @@ const Preview: React.FC = () => {
   }, [timelineData]);
 
   const generatePreview = async (data: any[]) => {
-    const sessionId = (window as any).__sessionId;
+    const sessionId = getSessionId();
     if (!sessionId || data.length === 0) return;
 
     setIsGenerating(true);

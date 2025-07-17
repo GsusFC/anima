@@ -1,0 +1,199 @@
+/**
+ * BaseVideoPreview CSS Module
+ * 
+ * Centralized styles for video preview functionality across AnimaGen.
+ * Replaces inline styles and provides consistent theming.
+ */
+
+/* Main container */
+.container {
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  background-color: #0a0a0b;
+  border-radius: 8px;
+  overflow: hidden;
+  position: relative;
+}
+
+/* Mode-specific container styling */
+.containerSlideshow {
+  border: 1px solid #ec4899;
+}
+
+.containerVideoEditor {
+  border: 1px solid #3b82f6;
+}
+
+/* Video element */
+.video {
+  width: 100%;
+  height: auto;
+  max-height: 90%;
+  object-fit: contain;
+  border-radius: 8px;
+  background-color: #0a0a0b;
+}
+
+/* Loading state */
+.loadingContainer {
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.loadingDefault {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+}
+
+.loadingSpinner {
+  width: 32px;
+  height: 32px;
+  border: 3px solid #374151;
+  border-top: 3px solid #ec4899;
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+}
+
+.loadingText {
+  font-family: "Space Mono", monospace;
+  font-size: 14px;
+  color: #9ca3af;
+}
+
+/* Error state */
+.errorContainer {
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.errorDefault {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+  text-align: center;
+}
+
+.errorIcon {
+  font-size: 48px;
+  opacity: 0.6;
+}
+
+.errorText {
+  font-family: "Space Mono", monospace;
+  font-size: 14px;
+  color: #ef4444;
+  max-width: 300px;
+}
+
+/* Empty state */
+.emptyContainer {
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.emptyIcon {
+  font-size: 48px;
+  opacity: 0.6;
+}
+
+.emptyText {
+  font-family: "Space Mono", monospace;
+  font-size: 14px;
+  color: #9ca3af;
+}
+
+/* Overlay */
+.overlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background-color: rgba(0, 0, 0, 0.5);
+  backdrop-filter: blur(4px);
+  z-index: 10;
+}
+
+/* Animations */
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+  .video {
+    max-height: 85%;
+  }
+  
+  .loadingText,
+  .errorText,
+  .emptyText {
+    font-size: 12px;
+  }
+  
+  .errorIcon,
+  .emptyIcon {
+    font-size: 36px;
+  }
+}
+
+/* Dark theme consistency */
+.container {
+  color: #f3f4f6;
+}
+
+/* Focus states for accessibility */
+.video:focus {
+  outline: 2px solid #ec4899;
+  outline-offset: 2px;
+}
+
+/* Hover effects */
+.container:hover .video {
+  transform: scale(1.01);
+  transition: transform 0.2s ease-in-out;
+}
+
+/* High contrast mode support */
+@media (prefers-contrast: high) {
+  .container {
+    border-width: 2px;
+  }
+  
+  .loadingText,
+  .errorText,
+  .emptyText {
+    font-weight: bold;
+  }
+}
+
+/* Reduced motion support */
+@media (prefers-reduced-motion: reduce) {
+  .loadingSpinner {
+    animation: none;
+  }
+  
+  .container:hover .video {
+    transform: none;
+  }
+}

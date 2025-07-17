@@ -63,18 +63,18 @@
 
 /* Icon size variants */
 .iconSmall {
-  width: 8rem;
-  height: 8rem;
+  width: 3rem;
+  height: 3rem;
 }
 
 .iconMedium {
-  width: 12rem;
-  height: 12rem;
+  width: 4.5rem;
+  height: 4.5rem;
 }
 
 .iconLarge {
-  width: 16rem;
-  height: 16rem;
+  width: 6rem;
+  height: 6rem;
 }
 
 /* Default icon size */

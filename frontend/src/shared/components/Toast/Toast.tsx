@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { setGlobalToast, clearGlobalToast, getGlobalToast } from '../../types/global.types';
 
 export interface ToastMessage {
   id: string;
@@ -53,11 +54,11 @@ const ToastContainer: React.FC = () => {
     setToasts(prev => prev.filter(toast => toast.id !== id));
   };
 
-  // Expose addToast globally for easy access
+  // Expose addToast globally for easy access with type safety
   useEffect(() => {
-    (window as any).showToast = addToast;
+    setGlobalToast(addToast);
     return () => {
-      delete (window as any).showToast;
+      clearGlobalToast();
     };
   }, []);
 
@@ -80,11 +81,12 @@ const ToastContainer: React.FC = () => {
   );
 };
 
-// Global toast function
+// Global toast function with type safety
 export const showToast = (message: string, type: ToastMessage['type'] = 'info') => {
   try {
-    if ((window as any).showToast) {
-      (window as any).showToast(message, type);
+    const globalToast = getGlobalToast();
+    if (globalToast) {
+      globalToast(message, type);
     } else {
       console.warn('Toast system not initialized');
     }

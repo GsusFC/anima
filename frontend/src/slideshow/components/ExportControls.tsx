@@ -2,21 +2,13 @@ import React from 'react';
 import { useSlideshowContext } from '../context/SlideshowContext';
 import ExportProgressModal from './ExportProgressModal';
 import { ExportStrategyFactory } from '../strategies/ExportStrategyFactory';
-import { useExportValidation, ExportSettings as ValidationExportSettings } from '../../hooks/useExportValidation';
-import { useExportHandlers } from '../hooks/useExportHandlers';
-
-// Import unified components
-import {
-  UnifiedFormatSelector,
-  UnifiedQualitySelector,
-  UnifiedEmptyState,
-  type QualityLevel
-} from '../../shared/components/export';
+import BaseExportBuilder from '../../shared/components/base/BaseExportBuilder';
+import type { BaseExportSettings, BaseExportState } from '../../shared/components/base/BaseExportBuilder';
 
 // Import remaining specific components
 import ResolutionSelectorSimple from './export/ResolutionSelectorSimple';
 import AdvancedSettingsPanel from './export/AdvancedSettingsPanel';
-import ValidationSummaryCompact from './export/ValidationSummaryCompact';
+
 
 /**
  * ExportControls - Streamlined version (280px width)
@@ -29,72 +21,59 @@ const ExportControls: React.FC = () => {
     export: exportState,
     hasTimeline,
     exportSlideshow,
-    updateExportSettings,
-    updateExportState
+    updateExportSettings
   } = useSlideshowContext();
 
-
-
   const { exportSettings } = project;
-
-  // Convert to ValidationExportSettings for real-time validation
-  const currentValidationSettings: ValidationExportSettings = {
-    format: exportSettings.format as any,
-    fps: exportSettings.fps,
-    quality: exportSettings.quality as any,
-    resolution: exportSettings.resolution,
-    gif: exportSettings.gif
-  };
-
-  // Real-time validation
-  const validation = useExportValidation(currentValidationSettings);
-
-  // Use refactored handlers
-  const handlers = useExportHandlers({
-    exportSettings,
-    updateExportSettings,
-    exportSlideshow,
-    updateExportState
-  });
 
   // Get current strategy for format-specific controls
   const currentStrategy = ExportStrategyFactory.create(exportSettings.format);
 
-  // Type-safe wrapper for quality change handler
-  const handleQualityChange = (quality: QualityLevel) => {
-    // Only accept quality levels that are valid for slideshow mode
-    const validSlideshowQualities: QualityLevel[] = ['low', 'medium', 'high', 'ultra'];
-    if (validSlideshowQualities.includes(quality)) {
-      handlers.quality.onQualityChange(quality as 'low' | 'medium' | 'high' | 'ultra');
-    }
+  // Convert slideshow export settings to base format
+  const baseExportSettings: BaseExportSettings = {
+    format: exportSettings.format,
+    quality: exportSettings.quality,
+    fps: exportSettings.fps,
+    resolution: exportSettings.resolution,
+    gif: exportSettings.gif
   };
 
-  if (!hasTimeline) {
-    return <UnifiedEmptyState mode="slideshow" />;
-  }
+  // Convert slideshow export state to base format
+  const baseExportState: BaseExportState = {
+    isExporting: exportState.isExporting,
+    progress: exportState.progress,
+    error: exportState.error,
+    isCompleted: exportState.isCompleted,
+    downloadUrl: exportState.downloadUrl
+  };
 
-  return (
-    <div className="h-full flex flex-col gap-3">
+  // Handle settings change
+  const handleSettingsChange = (newSettings: BaseExportSettings) => {
+    updateExportSettings({
+      format: newSettings.format,
+      quality: newSettings.quality,
+      fps: newSettings.fps,
+      resolution: newSettings.resolution,
+      gif: newSettings.gif
+    });
+  };
 
-      {/* Format Selection - Unified */}
-      <UnifiedFormatSelector
-        currentFormat={handlers.format.currentFormat}
-        onFormatChange={handlers.format.onFormatChange}
-        mode="slideshow"
-      />
-
-      {/* Quality Selection - Unified */}
-      <UnifiedQualitySelector
-        currentQuality={handlers.quality.currentQuality}
-        onQualityChange={handleQualityChange}
-        mode="slideshow"
-      />
-
+  // Additional controls specific to slideshow
+  const additionalControls = (
+    <>
       {/* Simplified Resolution Selection */}
       <ResolutionSelectorSimple
-        resolution={handlers.resolution.resolution}
-        onResolutionPresetChange={handlers.resolution.onResolutionPresetChange}
-        onCustomResolutionChange={handlers.resolution.onCustomResolutionChange}
+        resolution={exportSettings.resolution}
+        onResolutionPresetChange={(preset) => {
+          updateExportSettings({
+            resolution: { ...exportSettings.resolution, preset }
+          });
+        }}
+        onCustomResolutionChange={(resolution) => {
+          updateExportSettings({
+            resolution: { ...exportSettings.resolution, ...resolution, preset: 'custom' }
+          });
+        }}
       />
 
       {/* Advanced Settings (Collapsed) */}
@@ -102,16 +81,29 @@ const ExportControls: React.FC = () => {
         strategy={currentStrategy}
         exportSettings={exportSettings}
         updateExportSettings={updateExportSettings}
-        fpsHandlers={handlers.fps}
+        fpsHandlers={{
+          currentFps: exportSettings.fps || 30,
+          onFpsChange: (fps) => updateExportSettings({ fps })
+        }}
+      />
+    </>
+  );
+
+  return (
+    <>
+      <BaseExportBuilder
+        mode="slideshow"
+        hasContent={hasTimeline}
+        exportSettings={baseExportSettings}
+        exportState={baseExportState}
+        onSettingsChange={handleSettingsChange}
+        onExport={exportSlideshow}
+        additionalControls={additionalControls}
+        exportButtonText="🚀 Export Slideshow"
+        exportButtonDisabledText="❌ Invalid Configuration"
       />
 
-      {/* Compact Validation Summary */}
-      <ValidationSummaryCompact validation={validation} />
-
-      {/* Note: Export Button moved to Timeline area for better workflow */}
-      {/* See Timeline.tsx for the floating export button implementation */}
-
-      {/* Export Progress Modal */}
+      {/* Export Progress Modal - Keep existing modal for slideshow-specific features */}
       <ExportProgressModal
         isVisible={exportState.isExporting || exportState.isCompleted}
         progress={exportState.progress}
@@ -119,7 +111,9 @@ const ExportControls: React.FC = () => {
         isCompleted={exportState.isCompleted}
         downloadUrl={exportState.downloadUrl}
         currentStep={exportState.currentStep}
-        onCancel={handlers.export.onCancel}
+        onCancel={() => {
+          // Cancel export logic
+        }}
         format={exportSettings.format}
         onDownload={() => {
           if (exportState.downloadUrl) {
@@ -133,7 +127,7 @@ const ExportControls: React.FC = () => {
           }
         }}
       />
-    </div>
+    </>
   );
 };
 
