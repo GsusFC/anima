@@ -3,7 +3,31 @@ const Redis = require('ioredis');
 // Redis connection configuration
 let redisConfig;
 
-if (process.env.REDIS_URL) {
+// Check for Railway Redis configuration first
+const railwayHost = process.env.REDISHOST;
+const railwayPort = process.env.REDISPORT;
+const railwayUser = process.env.REDISUSER;
+const railwayPassword = process.env.REDISPASSWORD;
+
+if (railwayHost && railwayPort) {
+  // Railway Redis configuration
+  console.log('🚂 Detected Railway Redis configuration');
+  redisConfig = {
+    host: railwayHost,
+    port: parseInt(railwayPort),
+    username: railwayUser || undefined,
+    password: railwayPassword || undefined,
+    db: process.env.REDIS_DB || 0,
+    retryDelayOnFailover: 100,
+    enableReadyCheck: false,
+    maxRetriesPerRequest: null,
+    lazyConnect: true,
+    keepAlive: 30000,
+    connectTimeout: 10000,
+    commandTimeout: 120000,
+    family: 4
+  };
+} else if (process.env.REDIS_URL) {
   // Railway/cloud Redis URL format: redis://user:pass@host:port
   redisConfig = process.env.REDIS_URL;
 } else {
@@ -15,12 +39,12 @@ if (process.env.REDIS_URL) {
     db: process.env.REDIS_DB || 0,
     retryDelayOnFailover: 100,
     enableReadyCheck: false,
-    maxRetriesPerRequest: null, // Fix BullMQ deprecation warning
+    maxRetriesPerRequest: null,
     lazyConnect: true,
     keepAlive: 30000,
     connectTimeout: 10000,
-    commandTimeout: 120000, // Increased to 120 seconds for heavy operations
-    family: 4 // Force IPv4
+    commandTimeout: 120000,
+    family: 4
   };
 }
 

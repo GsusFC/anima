@@ -24,22 +24,78 @@ interface RedisConnectionOptions {
 
 /**
  * Default Redis connection options
+ * Handles Railway environment variables and Redis URL format
  */
-const defaultRedisOptions: RedisConnectionOptions = {
-  host: config.redis.host,
-  port: config.redis.port,
-  password: config.redis.password || undefined,
-  db: config.redis.db,
-  maxRetriesPerRequest: config.redis.maxRetriesPerRequest,
-  enableOfflineQueue: config.redis.enableOfflineQueue,
-  connectTimeout: 10000, // 10 seconds
-  retryStrategy: (times: number) => {
-    // Exponential backoff with max 30 seconds
-    const delay = Math.min(Math.pow(2, times) * 1000, 30000);
-    console.log(`⏱️ Redis connection retry in ${delay}ms (attempt ${times})`);
-    return delay;
+const defaultRedisOptions: RedisConnectionOptions = (() => {
+  // Railway provides these specific variables
+  const railwayHost = process.env.REDISHOST;
+  const railwayPort = process.env.REDISPORT;
+  const railwayUser = process.env.REDISUSER;
+  const railwayPassword = process.env.REDISPASSWORD;
+  
+  // Check for Railway Redis configuration
+  if (railwayHost && railwayPort) {
+    console.log('🚂 Detected Railway Redis configuration');
+    return {
+      host: railwayHost,
+      port: parseInt(railwayPort),
+      username: railwayUser || undefined,
+      password: railwayPassword || undefined,
+      db: config.redis.db,
+      maxRetriesPerRequest: config.redis.maxRetriesPerRequest,
+      enableOfflineQueue: config.redis.enableOfflineQueue,
+      connectTimeout: 10000,
+      retryStrategy: (times: number) => {
+        const delay = Math.min(Math.pow(2, times) * 1000, 30000);
+        console.log(`⏱️ Redis connection retry in ${delay}ms (attempt ${times})`);
+        return delay;
+      }
+    };
   }
-};
+  
+  // Check for Redis URL format (Railway also provides this)
+  const redisUrl = process.env.REDIS_URL;
+  if (redisUrl) {
+    console.log('🔗 Using Redis URL configuration');
+    try {
+      const url = new URL(redisUrl);
+      return {
+        host: url.hostname,
+        port: parseInt(url.port) || 6379,
+        username: url.username || undefined,
+        password: url.password || undefined,
+        db: config.redis.db,
+        maxRetriesPerRequest: config.redis.maxRetriesPerRequest,
+        enableOfflineQueue: config.redis.enableOfflineQueue,
+        connectTimeout: 10000,
+        retryStrategy: (times: number) => {
+          const delay = Math.min(Math.pow(2, times) * 1000, 30000);
+          console.log(`⏱️ Redis connection retry in ${delay}ms (attempt ${times})`);
+          return delay;
+        }
+      };
+    } catch (error) {
+      console.warn('⚠️ Invalid Redis URL format, falling back to defaults');
+    }
+  }
+  
+  // Fallback to standard configuration
+  console.log('🏠 Using standard Redis configuration');
+  return {
+    host: config.redis.host,
+    port: config.redis.port,
+    password: config.redis.password || undefined,
+    db: config.redis.db,
+    maxRetriesPerRequest: config.redis.maxRetriesPerRequest,
+    enableOfflineQueue: config.redis.enableOfflineQueue,
+    connectTimeout: 10000,
+    retryStrategy: (times: number) => {
+      const delay = Math.min(Math.pow(2, times) * 1000, 30000);
+      console.log(`⏱️ Redis connection retry in ${delay}ms (attempt ${times})`);
+      return delay;
+    }
+  };
+})();
 
 /**
  * Creates a Redis connection with the specified options

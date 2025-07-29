@@ -40,8 +40,9 @@ export const UnifiedUploadInterface: React.FC<UnifiedUploadInterfaceProps> = ({
   // Mode-specific DropZone styling
   const getDropZoneStyle = () => {
     const baseStyle = {
-      borderColor: theme.colors.border,
+      borderColor: theme.colors.primary, // Use brand colors by default
       backgroundColor: 'transparent',
+      color: theme.colors.primary, // Text also uses brand colors
     };
 
     if (mode === 'slideshow') {

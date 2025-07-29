@@ -205,8 +205,42 @@ export async function createServer(): Promise<{ app: Express; server: http.Serve
       }
       
       // Start worker manager
-      const workerManager = await import('./workers/workerManager');
-      await workerManager.start();
+      try {
+          const workerManager = await import('./workers/workerManager');
+          
+          // Handle both named exports and default export patterns with proper typing
+          let startFunction: (() => Promise<void>) | undefined;
+          
+          // Check for named export
+          if ('start' in workerManager && typeof workerManager.start === 'function') {
+            startFunction = workerManager.start;
+          }
+          // Check for default export with start method
+          else if (workerManager.default && typeof workerManager.default.start === 'function') {
+            startFunction = workerManager.default.start;
+          }
+          // Check for other possible function exports
+          else {
+            const exports = Object.values(workerManager) as any[];
+            const foundStart = exports.find(
+              (value: any) => typeof value === 'function' && value.name === 'start'
+            );
+            if (foundStart) {
+              startFunction = foundStart;
+            }
+          }
+          
+          if (startFunction) {
+            await startFunction();
+          } else {
+            console.error('❌ Could not find workerManager.start function');
+            console.log('Available exports:', Object.keys(workerManager));
+            throw new Error('Worker manager start function not found');
+          }
+        } catch (importError) {
+          console.error('❌ Error importing workerManager:', importError);
+          throw importError;
+        }
       
       console.log('✅ Job queue system initialized');
       return true;
@@ -498,6 +532,26 @@ export async function createServer(): Promise<{ app: Express; server: http.Serve
     next();
   });
   
+  // Serve React frontend for any route not handled by API
+  app.get('*', (_req: Request, res: Response) => {
+    console.log('🎯 Serving React frontend for route:', _req.originalUrl);
+    try {
+      const indexPath = path.join(__dirname, 'public', 'index.html');
+      if (fs.existsSync(indexPath)) {
+        res.sendFile(indexPath);
+      } else {
+        console.log('❌ index.html not found for frontend route');
+        res.status(404).json({
+          error: 'Frontend not found',
+          message: 'The requested route is not available. Please ensure the frontend is built.'
+        });
+      }
+    } catch (error) {
+      console.error('❌ Error serving frontend route:', error);
+      res.status(500).json({ error: 'Server Error', details: (error as Error).message });
+    }
+  });
+
   // Register error handling middleware last
   app.use(errorHandler);
   
